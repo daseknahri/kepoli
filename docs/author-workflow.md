@@ -13,6 +13,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 - The Text editor tab also gets the same quick buttons.
 - The `Kepoli post setup` box lets the writer choose `Reteta` or `Articol`, write a meta description, add related post slugs, and complete recipe structured data.
 - The `Kepoli writing tools` box includes quick buttons for inserting a recipe or article writing structure.
+- The `Posts` list includes `Tip Kepoli` and `Setup` columns, plus a Reteta/Articol filter for quick editorial audits.
 
 ## How To Use It
 
@@ -33,3 +34,4 @@ The split uses WordPress' native `<!--nextpage-->` marker. On the public post pa
 - After splitting, keep each page useful on its own: intro/context first, method/details next, conclusion/resources last.
 - For AdSense readiness, avoid splitting posts only to increase ad views. Split only when it improves readability.
 - Related slugs should be post URL slugs, for example `sarmale-in-foi-de-varza` or `ghidul-camarii-romanesti`.
+- In the `Posts` list, `De completat` means the post is missing one or more useful editorial items such as meta description, excerpt, featured image, internal links, or recipe schema.

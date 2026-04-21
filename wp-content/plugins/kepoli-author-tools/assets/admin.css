@@ -110,6 +110,55 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   color: #6b654f;
 }
 
+.column-kepoli_kind {
+  width: 110px;
+}
+
+.column-kepoli_readiness {
+  width: 180px;
+}
+
+.kepoli-status-pill {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #fbf7ef;
+  color: #252416;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.kepoli-status-pill--recipe {
+  background: #edd9c8;
+  color: #6b3f1f;
+}
+
+.kepoli-status-pill--article {
+  background: #dce8df;
+  color: #2f4b3e;
+}
+
+.kepoli-status-pill--ready {
+  background: #e2ecd0;
+  color: #3e4f18;
+}
+
+.kepoli-status-pill--needs {
+  background: #fff0d8;
+  color: #84501f;
+}
+
+.kepoli-admin-note {
+  display: block;
+  margin-top: 5px;
+  color: #6b654f;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
 @media (max-width: 782px) {
   .kepoli-post-setup__grid,
   .kepoli-post-setup__grid--thirds {

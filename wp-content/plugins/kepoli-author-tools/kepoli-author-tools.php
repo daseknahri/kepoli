@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the post editor for Kepoli authors and adds toolbar tools for splitting long posts into two or three pages.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.1.0';
+    private const VERSION = '1.2.0';
 
     public static function init(): void
     {
@@ -24,6 +24,10 @@ final class Kepoli_Author_Tools
         add_action('add_meta_boxes_post', [self::class, 'add_writer_guide_box']);
         add_action('add_meta_boxes_post', [self::class, 'add_post_setup_box']);
         add_action('save_post_post', [self::class, 'save_post_setup'], 10, 3);
+        add_filter('manage_post_posts_columns', [self::class, 'add_post_list_columns']);
+        add_action('manage_post_posts_custom_column', [self::class, 'render_post_list_column'], 10, 2);
+        add_action('restrict_manage_posts', [self::class, 'render_post_kind_filter']);
+        add_action('pre_get_posts', [self::class, 'filter_posts_by_kind']);
     }
 
     public static function use_classic_editor_for_posts(bool $use_block_editor, string $post_type): bool
@@ -237,6 +241,88 @@ final class Kepoli_Author_Tools
         delete_post_meta($post_id, '_kepoli_recipe_json');
     }
 
+    public static function add_post_list_columns(array $columns): array
+    {
+        $updated = [];
+
+        foreach ($columns as $key => $label) {
+            $updated[$key] = $label;
+
+            if ($key === 'title') {
+                $updated['kepoli_kind'] = __('Tip Kepoli', 'kepoli-author-tools');
+                $updated['kepoli_readiness'] = __('Setup', 'kepoli-author-tools');
+            }
+        }
+
+        return $updated;
+    }
+
+    public static function render_post_list_column(string $column, int $post_id): void
+    {
+        if ($column === 'kepoli_kind') {
+            $kind = self::post_kind($post_id);
+            $label = $kind === 'article' ? __('Articol', 'kepoli-author-tools') : __('Reteta', 'kepoli-author-tools');
+
+            echo '<span class="kepoli-status-pill kepoli-status-pill--' . esc_attr($kind) . '">' . esc_html($label) . '</span>';
+            return;
+        }
+
+        if ($column === 'kepoli_readiness') {
+            $missing = self::post_missing_items($post_id);
+
+            if (!$missing) {
+                echo '<span class="kepoli-status-pill kepoli-status-pill--ready">' . esc_html__('Complet', 'kepoli-author-tools') . '</span>';
+                return;
+            }
+
+            echo '<span class="kepoli-status-pill kepoli-status-pill--needs">' . esc_html__('De completat', 'kepoli-author-tools') . '</span>';
+            echo '<span class="kepoli-admin-note">' . esc_html(implode(', ', $missing)) . '</span>';
+        }
+    }
+
+    public static function render_post_kind_filter(string $post_type): void
+    {
+        if ($post_type !== 'post') {
+            return;
+        }
+
+        $selected = isset($_GET['kepoli_post_kind_filter']) ? sanitize_key(wp_unslash((string) $_GET['kepoli_post_kind_filter'])) : '';
+        ?>
+        <label class="screen-reader-text" for="kepoli-post-kind-filter"><?php esc_html_e('Filtreaza dupa tip Kepoli', 'kepoli-author-tools'); ?></label>
+        <select id="kepoli-post-kind-filter" name="kepoli_post_kind_filter">
+            <option value=""><?php esc_html_e('Toate tipurile Kepoli', 'kepoli-author-tools'); ?></option>
+            <option value="recipe" <?php selected($selected, 'recipe'); ?>><?php esc_html_e('Retete', 'kepoli-author-tools'); ?></option>
+            <option value="article" <?php selected($selected, 'article'); ?>><?php esc_html_e('Articole', 'kepoli-author-tools'); ?></option>
+        </select>
+        <?php
+    }
+
+    public static function filter_posts_by_kind(WP_Query $query): void
+    {
+        if (!is_admin() || !$query->is_main_query()) {
+            return;
+        }
+
+        $post_type = $query->get('post_type');
+        if ($post_type !== 'post' && $post_type !== '') {
+            return;
+        }
+
+        $selected = isset($_GET['kepoli_post_kind_filter']) ? sanitize_key(wp_unslash((string) $_GET['kepoli_post_kind_filter'])) : '';
+        if (!in_array($selected, ['recipe', 'article'], true)) {
+            return;
+        }
+
+        $meta_query = (array) $query->get('meta_query');
+        $meta_query[] = [
+            'key' => '_kepoli_post_kind',
+            'value' => $selected,
+            'compare' => '=',
+        ];
+
+        $query->set('meta_query', $meta_query);
+    }
+
     private static function is_post_editor_screen(): bool
     {
         if (!is_admin()) {
@@ -269,6 +355,46 @@ final class Kepoli_Author_Tools
         }
 
         return $post_type !== '' ? $post_type : 'post';
+    }
+
+    private static function post_kind(int $post_id): string
+    {
+        $kind = (string) get_post_meta($post_id, '_kepoli_post_kind', true);
+        return in_array($kind, ['recipe', 'article'], true) ? $kind : 'recipe';
+    }
+
+    private static function post_missing_items(int $post_id): array
+    {
+        $missing = [];
+        $kind = self::post_kind($post_id);
+        $related_recipes = get_post_meta($post_id, '_kepoli_related_recipe_slugs', true);
+        $related_articles = get_post_meta($post_id, '_kepoli_related_article_slugs', true);
+        $related_count = (is_array($related_recipes) ? count($related_recipes) : 0) + (is_array($related_articles) ? count($related_articles) : 0);
+
+        if ((string) get_post_meta($post_id, '_kepoli_meta_description', true) === '') {
+            $missing[] = __('meta', 'kepoli-author-tools');
+        }
+
+        if (!has_excerpt($post_id)) {
+            $missing[] = __('excerpt', 'kepoli-author-tools');
+        }
+
+        if (!has_post_thumbnail($post_id)) {
+            $missing[] = __('imagine', 'kepoli-author-tools');
+        }
+
+        if ($related_count === 0) {
+            $missing[] = __('linkuri', 'kepoli-author-tools');
+        }
+
+        if ($kind === 'recipe') {
+            $recipe = self::recipe_data($post_id);
+            if (!$recipe['ingredients'] || !$recipe['steps'] || $recipe['servings'] === '') {
+                $missing[] = __('schema reteta', 'kepoli-author-tools');
+            }
+        }
+
+        return $missing;
     }
 
     private static function array_meta_to_text(int $post_id, string $key): string
