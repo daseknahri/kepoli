@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the post editor for Kepoli authors and adds toolbar tools for splitting long posts into two or three pages.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.0.0';
+    private const VERSION = '1.0.1';
 
     public static function init(): void
     {
@@ -32,7 +32,11 @@ final class Kepoli_Author_Tools
     public static function register_tinymce_plugin(array $plugins): array
     {
         if (self::is_post_editor_screen()) {
-            $plugins['kepoli_author_tools'] = plugins_url('assets/editor-tools.js', __FILE__);
+            $plugins['kepoli_author_tools'] = add_query_arg(
+                'ver',
+                self::VERSION,
+                plugins_url('assets/editor-tools.js', __FILE__)
+            );
         }
 
         return $plugins;
