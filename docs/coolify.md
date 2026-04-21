@@ -2,7 +2,7 @@
 
 1. Connect the GitHub repository to Coolify as a Docker Compose application.
 2. Set the branch to `main`.
-3. Use the root `docker-compose.yml`.
+3. Use the root `docker-compose.yml` only.
 4. Assign the domain `https://kepoli.com` to service `wordpress`, port `80`.
 5. Add persistent volumes created by Compose:
    - `kepoli_db`
@@ -17,3 +17,5 @@ docker compose run --rm wp-init
 ```
 
 `wp-init` is intentionally one-shot. It has no public port and no healthcheck. The public service to monitor is `wordpress`.
+
+Do not use `docker-compose.local.yml` in Coolify. That override publishes host port `8080` for local development and can fail on shared servers when the port is already allocated.

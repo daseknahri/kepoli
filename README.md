@@ -15,13 +15,13 @@ Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and food arti
 2. Run:
 
 ```powershell
-docker compose up -d
-docker compose run --rm wp-init
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.local.yml run --rm wp-init
 ```
 
 3. Open `http://localhost:8080`.
 
-The seed is idempotent: rerunning `docker compose run --rm wp-init` updates content by slug instead of duplicating it.
+The seed is idempotent: rerunning `docker compose -f docker-compose.yml -f docker-compose.local.yml run --rm wp-init` updates content by slug instead of duplicating it.
 
 ## Coolify
 
@@ -35,6 +35,8 @@ The seed is idempotent: rerunning `docker compose run --rm wp-init` updates cont
 ```sh
 docker compose run --rm wp-init
 ```
+
+Use only `docker-compose.yml` in Coolify. Do not add `docker-compose.local.yml`; that file publishes `localhost:8080` for local development only.
 
 ## AdSense Notes
 

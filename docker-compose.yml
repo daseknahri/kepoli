@@ -44,8 +44,8 @@ services:
       - kepoli_uploads:/var/www/html/wp-content/uploads
       - ./wp-content/themes/kepoli:/var/www/html/wp-content/themes/kepoli:ro
       - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
-    ports:
-      - "8080:80"
+    expose:
+      - "80"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost/wp-login.php >/dev/null || exit 1"]
       interval: 30s
