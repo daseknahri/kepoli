@@ -35,3 +35,84 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   margin-bottom: 0;
   color: #6b654f;
 }
+
+.kepoli-template-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.kepoli-post-setup {
+  display: grid;
+  gap: 18px;
+  color: #252416;
+}
+
+.kepoli-post-setup__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.kepoli-post-setup__group legend,
+.kepoli-post-setup label > span,
+.kepoli-recipe-fields h4 {
+  display: block;
+  margin: 0 0 7px;
+  color: #252416;
+  font-weight: 700;
+}
+
+.kepoli-choice {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid #d9c8af;
+  border-radius: 999px;
+  background: #fbf7ef;
+}
+
+.kepoli-post-setup__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.kepoli-post-setup__grid--thirds {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.kepoli-post-setup input[type="text"],
+.kepoli-post-setup input[type="number"],
+.kepoli-post-setup textarea {
+  width: 100%;
+  border-color: #d9c8af;
+}
+
+.kepoli-post-setup textarea {
+  resize: vertical;
+}
+
+.kepoli-recipe-fields {
+  padding: 16px;
+  border: 1px solid #d9c8af;
+  background: #fbf7ef;
+}
+
+.kepoli-recipe-fields p {
+  margin-top: 0;
+  color: #6b654f;
+}
+
+@media (max-width: 782px) {
+  .kepoli-post-setup__grid,
+  .kepoli-post-setup__grid--thirds {
+    grid-template-columns: 1fr;
+  }
+}
