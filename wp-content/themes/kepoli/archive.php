@@ -9,6 +9,7 @@ get_header();
     <p class="eyebrow"><?php esc_html_e('Arhiva', 'kepoli'); ?></p>
     <h1><?php the_archive_title(); ?></h1>
     <?php the_archive_description('<p>', '</p>'); ?>
+    <?php kepoli_render_browse_links(); ?>
 </header>
 <section class="section section--tight">
     <div class="post-grid">

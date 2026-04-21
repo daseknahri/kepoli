@@ -5,16 +5,31 @@
 get_header();
 ?>
 <?php while (have_posts()) : the_post(); ?>
-    <article <?php post_class('content-layout'); ?>>
+    <article <?php post_class('content-layout'); ?> data-reading-progress-source>
         <div class="entry">
             <header class="entry-header">
                 <?php kepoli_breadcrumbs(); ?>
                 <div class="entry-meta">
                     <?php echo esc_html(get_the_date()); ?> / <?php echo esc_html(kepoli_read_time()); ?> / <?php echo esc_html(get_the_author()); ?>
                 </div>
+                <div class="entry-toolbar">
+                    <span class="entry-toolbar__pill <?php echo esc_attr(kepoli_post_tone_class()); ?>"><?php echo esc_html(kepoli_post_kind_label()); ?></span>
+                    <?php $category = kepoli_primary_category(); ?>
+                    <?php if ($category) : ?>
+                        <a class="entry-toolbar__pill entry-toolbar__pill--link" href="<?php echo esc_url(get_category_link($category)); ?>"><?php echo esc_html($category->name); ?></a>
+                    <?php endif; ?>
+                </div>
                 <h1 class="entry-title"><?php the_title(); ?></h1>
                 <?php if (has_excerpt()) : ?>
                     <p class="entry-excerpt"><?php echo esc_html(get_the_excerpt()); ?></p>
+                <?php endif; ?>
+                <?php if (kepoli_post_kind() === 'recipe') : ?>
+                    <nav class="entry-jumpnav" aria-label="<?php esc_attr_e('Navigatie reteta', 'kepoli'); ?>">
+                        <a href="#ingrediente"><?php esc_html_e('Ingrediente', 'kepoli'); ?></a>
+                        <a href="#mod-de-preparare"><?php esc_html_e('Preparare', 'kepoli'); ?></a>
+                        <a href="#sfaturi-pentru-reusita"><?php esc_html_e('Sfaturi', 'kepoli'); ?></a>
+                        <a href="#legaturi-utile"><?php esc_html_e('Mai departe', 'kepoli'); ?></a>
+                    </nav>
                 <?php endif; ?>
             </header>
             <div class="entry-content">

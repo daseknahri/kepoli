@@ -8,6 +8,7 @@ get_header();
     <p class="eyebrow"><?php esc_html_e('Kepoli', 'kepoli'); ?></p>
     <h1><?php esc_html_e('Retete si articole', 'kepoli'); ?></h1>
     <p><?php esc_html_e('Toate materialele Kepoli, de la ciorbe si mancaruri calde la deserturi si ghiduri de bucatarie.', 'kepoli'); ?></p>
+    <?php kepoli_render_browse_links(); ?>
 </header>
 <section class="section section--tight">
     <div class="post-grid">

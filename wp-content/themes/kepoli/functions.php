@@ -78,6 +78,94 @@ function kepoli_ads_enabled(): bool
     return kepoli_env_bool('ADSENSE_ENABLE', false);
 }
 
+function kepoli_primary_category(int $post_id = 0): ?WP_Term
+{
+    $post_id = $post_id ?: get_the_ID();
+    $categories = get_the_category($post_id);
+    return !empty($categories) ? $categories[0] : null;
+}
+
+function kepoli_tone_class(string $slug = ''): string
+{
+    $map = [
+        'ciorbe-si-supe' => 'tone-soups',
+        'feluri-principale' => 'tone-mains',
+        'patiserie-si-deserturi' => 'tone-sweets',
+        'conserve-si-garnituri' => 'tone-pantry',
+        'articole' => 'tone-guides',
+    ];
+
+    return $map[$slug] ?? 'tone-default';
+}
+
+function kepoli_post_tone_class(int $post_id = 0): string
+{
+    $category = kepoli_primary_category($post_id);
+    return kepoli_tone_class($category ? $category->slug : '');
+}
+
+function kepoli_post_kind_label(int $post_id = 0): string
+{
+    return kepoli_post_kind($post_id) === 'article' ? __('Articol', 'kepoli') : __('Reteta', 'kepoli');
+}
+
+function kepoli_browse_items(): array
+{
+    $items = [
+        [
+            'label' => __('Toate retetele', 'kepoli'),
+            'url' => home_url('/retete/'),
+            'meta' => __('Retete organizate pe categorii', 'kepoli'),
+            'class' => 'tone-mains',
+        ],
+        [
+            'label' => __('Articole utile', 'kepoli'),
+            'url' => home_url('/articole/'),
+            'meta' => __('Ghiduri, tehnici si ingrediente', 'kepoli'),
+            'class' => 'tone-guides',
+        ],
+    ];
+
+    foreach (['ciorbe-si-supe', 'feluri-principale', 'patiserie-si-deserturi', 'conserve-si-garnituri'] as $slug) {
+        $category = get_category_by_slug($slug);
+        if (!$category instanceof WP_Term) {
+            continue;
+        }
+
+        $items[] = [
+            'label' => $category->name,
+            'url' => get_category_link($category),
+            'meta' => sprintf(_n('%d articol', '%d articole', $category->count, 'kepoli'), $category->count),
+            'class' => kepoli_tone_class($slug),
+        ];
+    }
+
+    return $items;
+}
+
+function kepoli_render_browse_links(string $class = 'browse-links'): void
+{
+    echo '<div class="' . esc_attr($class) . '" aria-label="' . esc_attr__('Descoperire rapida', 'kepoli') . '">';
+    foreach (kepoli_browse_items() as $item) {
+        echo '<a class="browse-link ' . esc_attr($item['class']) . '" href="' . esc_url($item['url']) . '">';
+        echo '<strong>' . esc_html($item['label']) . '</strong>';
+        echo '<span>' . esc_html($item['meta']) . '</span>';
+        echo '</a>';
+    }
+    echo '</div>';
+}
+
+function kepoli_render_topic_rail(): void
+{
+    echo '<div class="topic-rail"><div class="topic-rail__inner">';
+    foreach (kepoli_browse_items() as $item) {
+        echo '<a class="topic-pill ' . esc_attr($item['class']) . '" href="' . esc_url($item['url']) . '">';
+        echo '<span>' . esc_html($item['label']) . '</span>';
+        echo '</a>';
+    }
+    echo '</div></div>';
+}
+
 function kepoli_setup(): void
 {
     add_theme_support('title-tag');
@@ -96,6 +184,17 @@ add_action('after_setup_theme', 'kepoli_setup');
 function kepoli_scripts(): void
 {
     wp_enqueue_style('kepoli-style', get_stylesheet_uri(), [], wp_get_theme()->get('Version'));
+
+    $script = get_template_directory() . '/assets/js/site.js';
+    if (file_exists($script)) {
+        wp_enqueue_script(
+            'kepoli-site',
+            get_template_directory_uri() . '/assets/js/site.js',
+            [],
+            (string) filemtime($script),
+            true
+        );
+    }
 }
 add_action('wp_enqueue_scripts', 'kepoli_scripts');
 
@@ -398,6 +497,22 @@ function kepoli_site_json_ld(): void
     echo '<script type="application/ld+json">' . wp_json_encode($graph, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
 }
 add_action('wp_head', 'kepoli_site_json_ld', 19);
+
+function kepoli_recipe_content_anchors(string $content): string
+{
+    if (!is_singular('post') || kepoli_post_kind() !== 'recipe') {
+        return $content;
+    }
+
+    return strtr($content, [
+        '<h2>Pe scurt</h2>' => '<h2 id="pe-scurt">Pe scurt</h2>',
+        '<h2>Ingrediente</h2>' => '<h2 id="ingrediente">Ingrediente</h2>',
+        '<h2>Mod de preparare</h2>' => '<h2 id="mod-de-preparare">Mod de preparare</h2>',
+        '<h2>Sfaturi pentru reusita</h2>' => '<h2 id="sfaturi-pentru-reusita">Sfaturi pentru reusita</h2>',
+        '<section class="related-posts"><h2>Legaturi utile</h2>' => '<section class="related-posts" id="legaturi-utile"><h2>Legaturi utile</h2>',
+    ]);
+}
+add_filter('the_content', 'kepoli_recipe_content_anchors', 5);
 
 function kepoli_breadcrumbs(): void
 {
