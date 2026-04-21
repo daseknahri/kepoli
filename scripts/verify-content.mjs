@@ -42,6 +42,7 @@ const requiredPages = [
   'contact',
   'politica-de-confidentialitate',
   'politica-de-cookies',
+  'publicitate-si-consimtamant',
   'termeni-si-conditii',
   'disclaimer-culinar',
 ];

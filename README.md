@@ -44,13 +44,14 @@ Use only `docker-compose.yml` in Coolify. Do not add `docker-compose.local.yml`;
 
 ## AdSense Notes
 
-The theme contains inactive ad placements. Live ad markup is only emitted when both an AdSense client ID and the matching slot environment variable are set. `ads.txt` is generated only when `ADSENSE_PUB_ID` is configured.
+The theme contains inactive ad placements. Live ad markup is emitted only when `ADSENSE_ENABLE=1`, an AdSense client ID exists, and the matching slot environment variable is set. `ads.txt` is generated only when `ADSENSE_PUB_ID` is configured.
 
 Before submitting to AdSense:
 
 - Review all 30 posts for culinary accuracy and originality.
 - Connect Google Site Kit from WordPress admin.
-- Configure Privacy & Messaging or another Google-certified CMP for EEA/UK/Switzerland traffic before personalized ads.
+- Configure Google Privacy & Messaging or another Google-certified CMP for Romania, EEA, UK, and Switzerland traffic before personalized ads.
+- Keep `ADSENSE_ENABLE=0` until the consent layer is live and tested.
 - Add your real AdSense client, publisher, and slot IDs in Coolify.
 
 ## Media

@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
 }
 
 add_action('init', static function (): void {
-    $target_version = '2026-04-21-official-pages-copy';
+    $target_version = '2026-04-21-consent-guardrails';
 
     if (get_option('kepoli_seed_version') === $target_version && wp_get_theme()->get_stylesheet() === 'kepoli') {
         return;

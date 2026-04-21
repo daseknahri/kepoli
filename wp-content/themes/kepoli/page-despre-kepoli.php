@@ -37,6 +37,7 @@ get_header();
                 <div class="page-links">
                     <a href="<?php echo esc_url(home_url('/despre-autor/')); ?>"><?php esc_html_e('Despre autoare', 'kepoli'); ?></a>
                     <a href="<?php echo esc_url(home_url('/contact/')); ?>"><?php esc_html_e('Contact', 'kepoli'); ?></a>
+                    <a href="<?php echo esc_url(home_url('/publicitate-si-consimtamant/')); ?>"><?php esc_html_e('Publicitate si consimtamant', 'kepoli'); ?></a>
                     <a href="<?php echo esc_url(home_url('/politica-de-confidentialitate/')); ?>"><?php esc_html_e('Politica de confidentialitate', 'kepoli'); ?></a>
                     <a href="<?php echo esc_url(home_url('/politica-de-cookies/')); ?>"><?php esc_html_e('Politica de cookies', 'kepoli'); ?></a>
                 </div>

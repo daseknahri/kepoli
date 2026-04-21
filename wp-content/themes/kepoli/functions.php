@@ -13,6 +13,12 @@ function kepoli_env(string $key, string $default = ''): string
     return $value === false || $value === '' ? $default : trim((string) $value);
 }
 
+function kepoli_env_bool(string $key, bool $default = false): bool
+{
+    $value = strtolower(kepoli_env($key, $default ? '1' : '0'));
+    return in_array($value, ['1', 'true', 'yes', 'on'], true);
+}
+
 function kepoli_asset_uri(string $basename, string $fallback_extension = 'svg'): string
 {
     $dir = get_template_directory();
@@ -65,6 +71,11 @@ function kepoli_current_url(): string
 
     $request_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash((string) $_SERVER['REQUEST_URI']) : '/';
     return home_url($request_uri);
+}
+
+function kepoli_ads_enabled(): bool
+{
+    return kepoli_env_bool('ADSENSE_ENABLE', false);
 }
 
 function kepoli_setup(): void
@@ -142,7 +153,7 @@ add_action('wp_head', 'kepoli_social_meta', 3);
 function kepoli_adsense_head(): void
 {
     $client = kepoli_env('ADSENSE_CLIENT_ID');
-    if ($client === '') {
+    if ($client === '' || !kepoli_ads_enabled()) {
         return;
     }
 
@@ -178,7 +189,7 @@ function kepoli_ad_slot(string $slot, string $class = ''): string
     $slot_id = kepoli_env($slot_key);
     $classes = trim('ad-slot ad-slot--' . sanitize_html_class(str_replace('_', '-', $slot)) . ' ' . $class);
 
-    if ($client !== '' && $slot_id !== '') {
+    if (kepoli_ads_enabled() && $client !== '' && $slot_id !== '') {
         return sprintf(
             '<div class="%1$s"><ins class="adsbygoogle" style="display:block" data-ad-client="%2$s" data-ad-slot="%3$s" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></div>',
             esc_attr($classes . ' ad-slot--live'),
@@ -201,6 +212,30 @@ function kepoli_ad_shortcode(array $atts): string
     return kepoli_ad_slot((string) $atts['slot']);
 }
 add_shortcode('kepoli_ad', 'kepoli_ad_shortcode');
+
+function kepoli_admin_adsense_notice(): void
+{
+    if (!is_admin() || !current_user_can('manage_options')) {
+        return;
+    }
+
+    if (kepoli_env('ADSENSE_CLIENT_ID') === '' || kepoli_ads_enabled()) {
+        return;
+    }
+
+    $consent_url = get_page_by_path('publicitate-si-consimtamant', OBJECT, 'page');
+    $consent_link = $consent_url ? get_permalink($consent_url) : home_url('/publicitate-si-consimtamant/');
+
+    echo '<div class="notice notice-warning"><p>';
+    echo esc_html__('AdSense este configurat, dar codul de reclame ramane oprit pana cand finalizezi consimtamantul pentru vizitatorii din Romania/EEA.', 'kepoli');
+    echo ' ';
+    echo wp_kses_post(sprintf(
+        __('Configureaza Google Privacy & Messaging sau un CMP certificat, apoi seteaza <code>ADSENSE_ENABLE=1</code> in Coolify. Vezi si pagina <a href="%s">Publicitate si consimtamant</a>.', 'kepoli'),
+        esc_url($consent_link)
+    ));
+    echo '</p></div>';
+}
+add_action('admin_notices', 'kepoli_admin_adsense_notice');
 
 function kepoli_read_time(int $post_id = 0): string
 {
