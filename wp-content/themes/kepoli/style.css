@@ -1163,6 +1163,11 @@ h3 {
   line-height: 1.72;
 }
 
+.entry-content--page {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
 .entry-content > p:first-child {
   font-size: 1.12rem;
 }

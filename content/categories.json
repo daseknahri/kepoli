@@ -2,26 +2,26 @@
   {
     "name": "Ciorbe si supe",
     "slug": "ciorbe-si-supe",
-    "description": "Ciorbe acre, supe limpezi si retete calde pentru mese romanesti de familie."
+    "description": "Ciorbe acre, supe limpezi si retete calde pentru mese romanesti de familie, cu explicatii despre dreseala, aciditate, fierbere lenta si pastrare."
   },
   {
     "name": "Feluri principale",
     "slug": "feluri-principale",
-    "description": "Mancaruri romanesti satioase pentru pranzuri, cine si mese de duminica."
+    "description": "Mancaruri romanesti satioase pentru pranzuri, cine si mese de duminica, de la sarmale si tochitura la tocanite, fasole si retete cu mamaliga."
   },
   {
     "name": "Patiserie si deserturi",
     "slug": "patiserie-si-deserturi",
-    "description": "Deserturi, aluaturi si prajituri romanesti pentru acasa."
+    "description": "Deserturi, aluaturi si prajituri romanesti pentru acasa, cu repere pentru dospire, textura, coacere, prajire si pastrare."
   },
   {
     "name": "Conserve si garnituri",
     "slug": "conserve-si-garnituri",
-    "description": "Zacusca, muraturi, salate si garnituri care completeaza masa."
+    "description": "Zacusca, muraturi, salate si garnituri care completeaza masa, cu atentie la sezon, borcane curate, echilibru de sare si servire."
   },
   {
     "name": "Articole",
     "slug": "articole",
-    "description": "Ghiduri despre ingrediente, tehnici, meniuri si organizare in bucatarie."
+    "description": "Ghiduri despre ingrediente, tehnici, meniuri, pastrare si organizare in bucatarie, scrise pentru decizii mai clare inainte si dupa gatit."
   }
 ]

@@ -80,7 +80,10 @@ get_header();
                     <nav class="entry-jumpnav" aria-label="<?php esc_attr_e('Navigatie reteta', 'kepoli'); ?>">
                         <a href="#ingrediente"><?php esc_html_e('Ingrediente', 'kepoli'); ?></a>
                         <a href="#mod-de-preparare"><?php esc_html_e('Preparare', 'kepoli'); ?></a>
+                        <a href="#inainte-sa-incepi"><?php esc_html_e('Inainte', 'kepoli'); ?></a>
                         <a href="#sfaturi-pentru-reusita"><?php esc_html_e('Sfaturi', 'kepoli'); ?></a>
+                        <a href="#cum-pastrezi"><?php esc_html_e('Pastrare', 'kepoli'); ?></a>
+                        <a href="#intrebari-frecvente"><?php esc_html_e('FAQ', 'kepoli'); ?></a>
                         <a href="#legaturi-utile"><?php esc_html_e('Mai departe', 'kepoli'); ?></a>
                     </nav>
                 <?php elseif (count($article_headings) > 1) : ?>

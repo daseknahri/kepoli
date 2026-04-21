@@ -14,7 +14,7 @@ $featured_article = kepoli_latest_post_by_kind('article');
     <p><?php esc_html_e('Organizare, ingrediente, tehnici si idei pentru mese romanesti bine asezate.', 'kepoli'); ?></p>
     <div class="meta-strip" aria-label="<?php esc_attr_e('Rezumat articole', 'kepoli'); ?>">
         <span class="meta-strip__item"><?php echo esc_html(sprintf(_n('%d articol publicat', '%d articole publicate', $article_count, 'kepoli'), $article_count)); ?></span>
-        <span class="meta-strip__item"><?php esc_html_e('Context pentru retete, ingrediente si planificare', 'kepoli'); ?></span>
+        <span class="meta-strip__item"><?php esc_html_e('Context practic pentru retete, ingrediente si planificare', 'kepoli'); ?></span>
     </div>
     <?php kepoli_render_browse_links(); ?>
 </header>
@@ -49,7 +49,7 @@ $featured_article = kepoli_latest_post_by_kind('article');
             <p class="eyebrow"><?php esc_html_e('Toate ghidurile', 'kepoli'); ?></p>
             <h2><?php esc_html_e('Citeste dupa nevoie', 'kepoli'); ?></h2>
         </div>
-        <p><?php esc_html_e('Articole scurte si utile despre organizare, produse, tehnici si obiceiuri care fac gatitul de acasa mai usor si mai sigur.', 'kepoli'); ?></p>
+        <p><?php esc_html_e('Ghiduri practice despre organizare, produse, tehnici si obiceiuri care fac gatitul de acasa mai clar, mai sigur si mai usor de repetat.', 'kepoli'); ?></p>
     </div>
     <div class="post-grid">
         <?php

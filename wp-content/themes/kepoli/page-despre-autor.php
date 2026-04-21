@@ -17,6 +17,23 @@ get_header();
     </div>
 </section>
 <section class="section section--tight">
+    <div class="entry-content entry-content--page">
+        <?php
+        while (have_posts()) :
+            the_post();
+            the_content();
+        endwhile;
+        ?>
+    </div>
+</section>
+<section class="section section--tight">
+    <div class="section__header section__header--compact">
+        <div>
+            <p class="eyebrow"><?php esc_html_e('Publicat recent', 'kepoli'); ?></p>
+            <h2><?php esc_html_e('Retete si ghiduri de la Isalune', 'kepoli'); ?></h2>
+        </div>
+        <p><?php esc_html_e('Cele mai noi materiale Kepoli, cu accent pe retete romanesti, organizare si gatit clar pentru acasa.', 'kepoli'); ?></p>
+    </div>
     <div class="post-grid">
         <?php
         $author_posts = new WP_Query(['post_type' => 'post', 'posts_per_page' => 6]);

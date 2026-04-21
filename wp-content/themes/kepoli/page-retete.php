@@ -18,7 +18,7 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
     <?php kepoli_breadcrumbs(); ?>
     <p class="eyebrow"><?php esc_html_e('Retete', 'kepoli'); ?></p>
     <h1><?php esc_html_e('Retete romanesti', 'kepoli'); ?></h1>
-    <p><?php esc_html_e('Alege o categorie sau porneste de la cele mai noi retete Kepoli.', 'kepoli'); ?></p>
+    <p><?php esc_html_e('Alege o categorie sau porneste de la cele mai noi retete Kepoli, fiecare structurata cu pasi, sfaturi, pastrare si raspunsuri utile.', 'kepoli'); ?></p>
     <div class="meta-strip" aria-label="<?php esc_attr_e('Rezumat retete', 'kepoli'); ?>">
         <span class="meta-strip__item"><?php echo esc_html(sprintf(_n('%d reteta publicata', '%d retete publicate', $recipe_count, 'kepoli'), $recipe_count)); ?></span>
         <span class="meta-strip__item"><?php echo esc_html(sprintf(_n('%d categorie', '%d categorii', count($recipe_categories), 'kepoli'), count($recipe_categories))); ?></span>
@@ -32,7 +32,7 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
                 <p class="eyebrow"><?php esc_html_e('Navigare rapida', 'kepoli'); ?></p>
                 <h2><?php esc_html_e('Alege categoria potrivita', 'kepoli'); ?></h2>
             </div>
-            <p><?php esc_html_e('De la ciorbe si feluri principale la deserturi si conserve, fiecare categorie reuneste retete scrise pentru gatit clar si practic.', 'kepoli'); ?></p>
+            <p><?php esc_html_e('De la ciorbe si feluri principale la deserturi si conserve, fiecare categorie reuneste retete scrise pentru gatit clar, practic si usor de repetat acasa.', 'kepoli'); ?></p>
         </div>
         <div class="category-list">
             <?php foreach ($recipe_categories as $category) : ?>

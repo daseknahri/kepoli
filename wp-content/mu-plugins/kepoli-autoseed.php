@@ -9,7 +9,7 @@ if (!defined('ABSPATH')) {
 }
 
 add_action('init', static function (): void {
-    $target_version = '2026-04-21-related-cards';
+    $target_version = '2026-04-21-content-depth';
 
     if (get_option('kepoli_seed_version') === $target_version && wp_get_theme()->get_stylesheet() === 'kepoli') {
         return;
