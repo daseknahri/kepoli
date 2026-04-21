@@ -180,6 +180,9 @@ function kepoli_recipe_json_ld(): void
         return;
     }
 
+    $author_id = (int) get_post_field('post_author', get_the_ID());
+    $author_name = $author_id ? get_the_author_meta('display_name', $author_id) : get_bloginfo('name');
+
     $schema = [
         '@context' => 'https://schema.org',
         '@type' => 'Recipe',
@@ -187,7 +190,7 @@ function kepoli_recipe_json_ld(): void
         'description' => wp_strip_all_tags(get_the_excerpt()),
         'author' => [
             '@type' => 'Person',
-            'name' => get_the_author_meta('display_name'),
+            'name' => $author_name ?: 'Isalune Merovik',
         ],
         'datePublished' => get_the_date('c'),
         'recipeCategory' => $data['category'] ?? '',
