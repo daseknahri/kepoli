@@ -4,7 +4,7 @@ Theme URI: https://kepoli.com
 Author: Isalune Merovik
 Author URI: https://kepoli.com/despre-autor/
 Description: A lightweight Romanian food blog theme built for recipes, editorial reading, internal linking, and ad-ready spacing.
-Version: 1.0.0
+Version: 1.1.0
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.1
@@ -69,6 +69,20 @@ img {
   display: block;
   max-width: 100%;
   height: auto;
+}
+
+.kepoli-icon {
+  width: 1.1em;
+  height: 1.1em;
+  flex: 0 0 auto;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(200, 116, 63, 0.45);
+  outline-offset: 3px;
 }
 
 .screen-reader-text {
@@ -613,9 +627,22 @@ h3 {
 
 .post-card__link {
   margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-family: Arial, Helvetica, sans-serif;
   font-weight: 700;
   text-decoration: none;
+}
+
+.post-card__link .kepoli-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform 160ms ease;
+}
+
+.post-card__link:hover .kepoli-icon {
+  transform: translateX(3px);
 }
 
 .tone-default,
@@ -1019,13 +1046,33 @@ h3 {
 .entry-meta-grid__item {
   min-height: 72px;
   padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
   background: var(--surface);
   border: 1px solid var(--line);
 }
 
-.entry-meta-grid__item span {
+.entry-meta-grid__icon {
+  grid-row: 1 / 3;
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--paper-soft);
+  color: var(--olive-dark);
+}
+
+.entry-meta-grid__icon .kepoli-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.entry-meta-grid__item > span:not(.entry-meta-grid__icon) {
   display: block;
-  margin-bottom: 6px;
   color: var(--muted);
   font-family: Arial, Helvetica, sans-serif;
   font-size: 0.74rem;
@@ -1079,8 +1126,11 @@ h3 {
   border-radius: 999px;
   background: var(--paper-soft);
   color: var(--olive-dark);
-  font-size: 0.9rem;
-  line-height: 1;
+}
+
+.share-tools__icon .kepoli-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .entry-jumpnav {
@@ -1093,6 +1143,7 @@ h3 {
 .entry-jumpnav a {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   min-height: 36px;
   padding: 0 12px;
   border: 1px solid var(--line);
@@ -1100,6 +1151,14 @@ h3 {
   text-decoration: none;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.entry-jumpnav .kepoli-icon {
+  width: 15px;
+  height: 15px;
+  color: var(--copper);
 }
 
 .entry-outline {
@@ -1174,6 +1233,7 @@ h3 {
 
 .entry-content h2,
 .entry-content h3 {
+  scroll-margin-top: 96px;
   margin-top: 1.7em;
   margin-bottom: 0.55em;
 }
@@ -1640,6 +1700,11 @@ h3 {
   cursor: pointer;
 }
 
+.search-submit .kepoli-icon {
+  width: 18px;
+  height: 18px;
+}
+
 .site-footer {
   background: #252416;
   color: rgba(255, 253, 248, 0.78);
@@ -1841,6 +1906,24 @@ h3 {
     font-size: 1.08rem;
   }
 
+  .entry-jumpnav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0 0 4px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .entry-jumpnav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .entry-jumpnav a {
+    flex: 0 0 auto;
+    min-height: 42px;
+    scroll-snap-align: start;
+  }
+
   .share-tools__button {
     flex: 1 1 calc(50% - 8px);
     min-height: 44px;
@@ -1943,7 +2026,28 @@ h3 {
   }
 
   .entry-title {
-    font-size: 2.45rem;
+    font-size: 2.35rem;
+    line-height: 1.04;
+  }
+
+  .content-layout--single-post {
+    padding-top: 28px;
+    padding-bottom: 56px;
+  }
+
+  .breadcrumbs {
+    margin-bottom: 12px;
+    font-size: 0.78rem;
+  }
+
+  .entry-header {
+    margin-bottom: 18px;
+  }
+
+  .entry-excerpt {
+    margin-bottom: 14px;
+    font-size: 1.02rem;
+    line-height: 1.55;
   }
 
   .entry-meta {
@@ -1963,16 +2067,24 @@ h3 {
   }
 
   .share-tools {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
   .share-tools__button {
-    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 10px;
+    font-size: 0.8rem;
   }
 
   .entry-summary-board {
-    padding: 14px;
-    gap: 14px;
+    padding: 0;
+    gap: 12px;
+    background: transparent;
+    border: 0;
   }
 
   .entry-outline {
@@ -1980,12 +2092,50 @@ h3 {
   }
 
   .entry-meta-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
   .entry-meta-grid__item {
     min-height: auto;
+    padding: 10px;
+    grid-template-columns: 30px minmax(0, 1fr);
+    column-gap: 8px;
+  }
+
+  .entry-meta-grid__icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .entry-meta-grid__item strong {
+    font-size: 0.92rem;
+    overflow-wrap: anywhere;
+  }
+
+  .entry-jumpnav {
+    margin: 12px -12px 0;
+    padding: 0 12px 6px;
+  }
+
+  .entry-jumpnav a {
+    min-height: 40px;
+    padding: 0 11px;
+    font-size: 0.8rem;
+  }
+
+  .entry-content {
+    font-size: 1rem;
+    line-height: 1.68;
+  }
+
+  .entry-content > p:first-child {
+    font-size: 1.04rem;
+  }
+
+  .entry-content h2,
+  .entry-content h3 {
+    scroll-margin-top: 84px;
   }
 
   .related-card__body,
@@ -2018,6 +2168,20 @@ h3 {
   }
 
   .author-box {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 380px) {
+  .entry-title {
+    font-size: 2.05rem;
+  }
+
+  .entry-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .share-tools {
     grid-template-columns: 1fr;
   }
 }

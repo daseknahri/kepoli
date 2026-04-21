@@ -32,6 +32,35 @@ function kepoli_asset_uri(string $basename, string $fallback_extension = 'svg'):
     return $uri . "/assets/img/{$basename}.{$fallback_extension}";
 }
 
+function kepoli_icon(string $name): string
+{
+    $icons = [
+        'calendar' => '<path d="M7 3v3M17 3v3M4.5 9h15M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/><path d="M8 13h2M8 16h2M14 13h2M14 16h2"/>',
+        'clock' => '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/>',
+        'user' => '<circle cx="12" cy="8.5" r="3.2"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
+        'refresh' => '<path d="M19 7.5A8 8 0 0 0 5.6 6.2L4 8"/><path d="M4 4v4h4"/><path d="M5 16.5a8 8 0 0 0 13.4 1.3L20 16"/><path d="M20 20v-4h-4"/>',
+        'facebook' => '<path d="M14 8h2V4.8A11 11 0 0 0 13.2 4C10.4 4 9 5.7 9 8.8V11H6v3.6h3V21h3.7v-6.4h3L16.2 11h-3.5V9.1c0-.8.3-1.1 1.3-1.1Z"/>',
+        'whatsapp' => '<path d="M5.2 19 6 16.1A7.2 7.2 0 1 1 8.8 18Z"/><path d="M9.2 8.6c-.2-.5-.4-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.4-1 1-1 2.3 0 1.4 1 2.7 1.1 2.9.2.2 2 3.2 5 4.2 2.5.8 3 .4 3.5.4s1.7-.7 1.9-1.4.2-1.2.1-1.4c-.1-.1-.3-.2-.7-.4l-2-.9c-.3-.1-.6-.2-.8.2l-.6.8c-.2.3-.4.3-.7.1-1-.4-1.9-1-2.6-1.8-.6-.7-1-1.3-1.1-1.6-.1-.3 0-.5.2-.7l.5-.6c.2-.2.2-.4.3-.6.1-.2 0-.4 0-.6Z"/>',
+        'email' => '<path d="M4.5 6.5h15v11h-15Z"/><path d="m5 7 7 6 7-6"/>',
+        'link' => '<path d="M10.5 13.5a3 3 0 0 0 4.2 0l3-3a3 3 0 0 0-4.2-4.2l-1.1 1.1"/><path d="M13.5 10.5a3 3 0 0 0-4.2 0l-3 3a3 3 0 0 0 4.2 4.2l1.1-1.1"/>',
+        'print' => '<path d="M7 8V4h10v4"/><path d="M7 17H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7Z"/><path d="M17.5 12.5h.01"/>',
+        'ingredients' => '<path d="M7 10h10l-1 10H8Z"/><path d="M9 10V8a3 3 0 0 1 6 0v2"/><path d="M9.5 14h5M9.5 17h4"/>',
+        'steps' => '<path d="M8 6h12M8 12h12M8 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>',
+        'prep' => '<path d="M4 20h16"/><path d="M6 20V9a6 6 0 0 1 12 0v11"/><path d="M8 12h8"/><path d="M9 5.2A5.8 5.8 0 0 1 12 4a5.8 5.8 0 0 1 3 1.2"/>',
+        'tips' => '<path d="M9 18h6"/><path d="M10 21h4"/><path d="M8.5 14.5a5.5 5.5 0 1 1 7 0c-.8.6-1.2 1.3-1.3 2.2H9.8c-.1-.9-.5-1.6-1.3-2.2Z"/>',
+        'storage' => '<path d="M6 7h12v14H6Z"/><path d="M8 7V4h8v3"/><path d="M9 11h6M9 15h6"/>',
+        'question' => '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.7 2.7 0 0 1 5.1 1.2c0 1.8-1.8 2.2-2.4 3.3"/><path d="M12 17h.01"/>',
+        'arrow-right' => '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
+        'search' => '<circle cx="10.7" cy="10.7" r="5.7"/><path d="m15 15 4.2 4.2"/>',
+    ];
+
+    if (!isset($icons[$name])) {
+        return '';
+    }
+
+    return '<svg class="kepoli-icon kepoli-icon--' . esc_attr($name) . '" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' . $icons[$name] . '</svg>';
+}
+
 function kepoli_author_page_url(): string
 {
     $page = get_page_by_path('despre-autor', OBJECT, 'page');

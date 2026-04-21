@@ -28,13 +28,13 @@
                 ?>
             </nav>
             <a class="search-link search-link--panel" href="<?php echo esc_url(home_url('/?s=')); ?>" aria-label="<?php esc_attr_e('Cauta', 'kepoli'); ?>">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M10.7 4a6.7 6.7 0 0 1 5.28 10.82l3.6 3.6-1.42 1.42-3.6-3.6A6.7 6.7 0 1 1 10.7 4m0 2a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4"/></svg>
+                <?php echo kepoli_icon('search'); ?>
                 <span><?php esc_html_e('Cauta', 'kepoli'); ?></span>
             </a>
         </div>
         <div class="site-header__cluster">
             <a class="search-link search-link--desktop" href="<?php echo esc_url(home_url('/?s=')); ?>" aria-label="<?php esc_attr_e('Cauta', 'kepoli'); ?>">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M10.7 4a6.7 6.7 0 0 1 5.28 10.82l3.6 3.6-1.42 1.42-3.6-3.6A6.7 6.7 0 1 1 10.7 4m0 2a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4"/></svg>
+                <?php echo kepoli_icon('search'); ?>
             </a>
             <button class="site-nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav-panel" data-nav-toggle>
                 <span></span>
