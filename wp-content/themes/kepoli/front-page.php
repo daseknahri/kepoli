@@ -4,7 +4,7 @@
  */
 get_header();
 
-$hero_image = kepoli_asset_uri('writer-photo', 'svg');
+$hero_image = kepoli_asset_uri('hero-homepage', 'png');
 $wordmark = kepoli_asset_uri('kepoli-wordmark');
 $recipe_count = kepoli_published_kind_count('recipe');
 $article_count = kepoli_published_kind_count('article');

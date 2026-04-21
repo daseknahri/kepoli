@@ -60,6 +60,18 @@ function kepoli_current_description(): string
 
 function kepoli_social_image_url(): string
 {
+    if (is_singular() && has_post_thumbnail(get_the_ID())) {
+        $thumb = get_the_post_thumbnail_url(get_the_ID(), 'large');
+        if (is_string($thumb) && $thumb !== '') {
+            return $thumb;
+        }
+    }
+
+    $social_cover = get_template_directory() . '/assets/img/kepoli-social-cover.png';
+    if (file_exists($social_cover)) {
+        return kepoli_asset_uri('kepoli-social-cover', 'png');
+    }
+
     return kepoli_asset_uri('writer-photo', 'svg');
 }
 
