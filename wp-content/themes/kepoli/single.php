@@ -18,48 +18,62 @@ get_header();
         'print' => 'P',
     ];
     ?>
-    <article <?php post_class('content-layout'); ?> data-reading-progress-source>
+    <article <?php post_class('content-layout content-layout--single-post ' . ($is_recipe ? 'content-layout--recipe' : 'content-layout--article')); ?> data-reading-progress-source>
         <div class="entry">
             <header class="entry-header">
                 <?php kepoli_breadcrumbs(); ?>
-                <div class="entry-meta">
-                    <span><?php echo esc_html(get_the_date()); ?></span>
-                    <span><?php echo esc_html(kepoli_read_time()); ?></span>
-                    <span><?php echo esc_html(get_the_author()); ?></span>
-                </div>
                 <div class="entry-toolbar">
                     <span class="entry-toolbar__pill <?php echo esc_attr(kepoli_post_tone_class()); ?>"><?php echo esc_html(kepoli_post_kind_label()); ?></span>
                     <?php if ($category) : ?>
                         <a class="entry-toolbar__pill entry-toolbar__pill--link" href="<?php echo esc_url(get_category_link($category)); ?>"><?php echo esc_html($category->name); ?></a>
-                    <?php endif; ?>
-                    <?php if ($updated_label !== '') : ?>
-                        <span class="entry-toolbar__pill entry-toolbar__pill--muted"><?php echo esc_html($updated_label); ?></span>
                     <?php endif; ?>
                 </div>
                 <h1 class="entry-title"><?php the_title(); ?></h1>
                 <?php if (has_excerpt()) : ?>
                     <p class="entry-excerpt"><?php echo esc_html(get_the_excerpt()); ?></p>
                 <?php endif; ?>
-                <div class="share-tools" aria-label="<?php esc_attr_e('Actiuni articol', 'kepoli'); ?>">
-                    <?php foreach ($share_links as $share) : ?>
-                        <?php $icon = $share_icons[$share['type']] ?? '+'; ?>
-                        <?php if ($share['type'] === 'copy') : ?>
-                            <button class="share-tools__button" type="button" data-copy-url="<?php echo esc_attr($share['url']); ?>" data-copy-default="<?php echo esc_attr($share['label']); ?>" data-copy-success="<?php esc_attr_e('Link copiat', 'kepoli'); ?>">
-                                <span class="share-tools__icon" aria-hidden="true"><?php echo esc_html($icon); ?></span>
-                                <span><?php echo esc_html($share['label']); ?></span>
-                            </button>
-                        <?php elseif ($share['type'] === 'print') : ?>
-                            <button class="share-tools__button" type="button" data-print-page>
-                                <span class="share-tools__icon" aria-hidden="true"><?php echo esc_html($icon); ?></span>
-                                <span><?php echo esc_html($share['label']); ?></span>
-                            </button>
-                        <?php else : ?>
-                            <a class="share-tools__button" href="<?php echo esc_url($share['url']); ?>" target="_blank" rel="noopener nofollow">
-                                <span class="share-tools__icon" aria-hidden="true"><?php echo esc_html($icon); ?></span>
-                                <span><?php echo esc_html($share['label']); ?></span>
-                            </a>
+                <div class="entry-summary-board">
+                    <div class="entry-meta-grid" aria-label="<?php esc_attr_e('Informatii articol', 'kepoli'); ?>">
+                        <div class="entry-meta-grid__item">
+                            <span><?php esc_html_e('Publicat', 'kepoli'); ?></span>
+                            <strong><?php echo esc_html(get_the_date()); ?></strong>
+                        </div>
+                        <div class="entry-meta-grid__item">
+                            <span><?php esc_html_e('Lectura', 'kepoli'); ?></span>
+                            <strong><?php echo esc_html(kepoli_read_time()); ?></strong>
+                        </div>
+                        <div class="entry-meta-grid__item">
+                            <span><?php esc_html_e('Autor', 'kepoli'); ?></span>
+                            <strong><?php echo esc_html(get_the_author()); ?></strong>
+                        </div>
+                        <?php if ($updated_label !== '') : ?>
+                            <div class="entry-meta-grid__item">
+                                <span><?php esc_html_e('Actualizat', 'kepoli'); ?></span>
+                                <strong><?php echo esc_html($updated_label); ?></strong>
+                            </div>
                         <?php endif; ?>
-                    <?php endforeach; ?>
+                    </div>
+                    <div class="share-tools" aria-label="<?php esc_attr_e('Actiuni articol', 'kepoli'); ?>">
+                        <?php foreach ($share_links as $share) : ?>
+                            <?php $icon = $share_icons[$share['type']] ?? '+'; ?>
+                            <?php if ($share['type'] === 'copy') : ?>
+                                <button class="share-tools__button" type="button" data-copy-url="<?php echo esc_attr($share['url']); ?>" data-copy-default="<?php echo esc_attr($share['label']); ?>" data-copy-success="<?php esc_attr_e('Link copiat', 'kepoli'); ?>">
+                                    <span class="share-tools__icon" aria-hidden="true"><?php echo esc_html($icon); ?></span>
+                                    <span><?php echo esc_html($share['label']); ?></span>
+                                </button>
+                            <?php elseif ($share['type'] === 'print') : ?>
+                                <button class="share-tools__button" type="button" data-print-page>
+                                    <span class="share-tools__icon" aria-hidden="true"><?php echo esc_html($icon); ?></span>
+                                    <span><?php echo esc_html($share['label']); ?></span>
+                                </button>
+                            <?php else : ?>
+                                <a class="share-tools__button" href="<?php echo esc_url($share['url']); ?>" target="_blank" rel="noopener nofollow">
+                                    <span class="share-tools__icon" aria-hidden="true"><?php echo esc_html($icon); ?></span>
+                                    <span><?php echo esc_html($share['label']); ?></span>
+                                </a>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
                 <?php if ($is_recipe) : ?>
                     <nav class="entry-jumpnav" aria-label="<?php esc_attr_e('Navigatie reteta', 'kepoli'); ?>">

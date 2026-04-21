@@ -446,20 +446,15 @@ function kepoli_ad_slot(string $slot, string $class = ''): string
     $slot_id = kepoli_env($slot_key);
     $classes = trim('ad-slot ad-slot--' . sanitize_html_class(str_replace('_', '-', $slot)) . ' ' . $class);
 
-    if (kepoli_ads_enabled() && $client !== '' && $slot_id !== '') {
-        return sprintf(
-            '<div class="%1$s"><ins class="adsbygoogle" style="display:block" data-ad-client="%2$s" data-ad-slot="%3$s" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></div>',
-            esc_attr($classes . ' ad-slot--live'),
-            esc_attr($client),
-            esc_attr($slot_id)
-        );
+    if (!kepoli_ads_enabled() || $client === '' || $slot_id === '') {
+        return '';
     }
 
     return sprintf(
-        '<div class="%s" aria-label="%s"><span>%s</span></div>',
-        esc_attr($classes . ' ad-slot--placeholder'),
-        esc_attr__('Advertising space', 'kepoli'),
-        esc_html__('Spatiu publicitar', 'kepoli')
+        '<div class="%1$s"><ins class="adsbygoogle" style="display:block" data-ad-client="%2$s" data-ad-slot="%3$s" data-ad-format="auto" data-full-width-responsive="true"></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></div>',
+        esc_attr($classes . ' ad-slot--live'),
+        esc_attr($client),
+        esc_attr($slot_id)
     );
 }
 
