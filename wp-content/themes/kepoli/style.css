@@ -4,7 +4,7 @@ Theme URI: https://kepoli.com
 Author: Isalune Merovik
 Author URI: https://kepoli.com/despre-autor/
 Description: A lightweight Romanian food blog theme built for recipes, editorial reading, internal linking, and ad-ready spacing.
-Version: 1.1.4
+Version: 1.1.5
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.1
@@ -2104,6 +2104,73 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  .post-grid {
+    gap: 10px;
+  }
+
+  .post-card {
+    min-height: 116px;
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    border-top: 0;
+    border-left: 2px solid var(--tone-strong, var(--olive));
+  }
+
+  .post-card__visual {
+    min-height: 100%;
+    aspect-ratio: auto;
+  }
+
+  .post-card__visual .post-media {
+    min-height: 100%;
+    height: 100%;
+  }
+
+  .post-card__badges {
+    left: 8px;
+    top: 8px;
+    gap: 4px;
+  }
+
+  .post-card__badge {
+    min-height: 22px;
+    padding: 0 7px;
+    font-size: 0.62rem;
+  }
+
+  .post-card__badge--ghost {
+    display: none;
+  }
+
+  .post-card h3 {
+    margin: 3px 0 6px;
+    font-size: 1.02rem;
+  }
+
+  .post-card p {
+    display: none;
+  }
+
+  .post-card__link {
+    margin-top: 8px;
+    font-size: 0.82rem;
+  }
+
+  .post-card__visual .post-media__mark {
+    right: 8px;
+    bottom: 8px;
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+  }
+
+  .post-card__visual .post-media__icon {
+    right: 10px;
+    bottom: 8px;
+    width: 42px;
+    height: 42px;
+  }
+
   .compact-post-list {
     padding: 14px 0;
   }
@@ -2281,6 +2348,11 @@ h3 {
     padding: 12px 14px;
   }
 
+  .post-card__body {
+    min-height: 0;
+    padding: 12px 14px;
+  }
+
   .post-navigation-pro__body strong {
     font-size: 1rem;
   }
@@ -2316,6 +2388,10 @@ h3 {
 @media (max-width: 380px) {
   .entry-title {
     font-size: 2.05rem;
+  }
+
+  .post-card {
+    grid-template-columns: 92px minmax(0, 1fr);
   }
 
   .entry-meta-grid {
