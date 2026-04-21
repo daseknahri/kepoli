@@ -347,7 +347,9 @@ foreach ($posts as $index => $post) {
     }
     wp_set_post_terms($post_id, $post['tags'] ?? [], 'post_tag', false);
     update_post_meta($post_id, '_kepoli_post_kind', $post['kind']);
-    update_post_meta($post_id, '_kepoli_related_slugs', $post['related'] ?? []);
+    update_post_meta($post_id, '_kepoli_related_recipe_slugs', $post['related'] ?? []);
+    update_post_meta($post_id, '_kepoli_related_article_slugs', $post['related_articles'] ?? []);
+    update_post_meta($post_id, '_kepoli_related_slugs', array_values(array_unique(array_merge($post['related'] ?? [], $post['related_articles'] ?? []))));
     update_post_meta($post_id, '_kepoli_meta_description', $post['meta_description'] ?? $post['excerpt']);
     update_post_meta($post_id, '_kepoli_seo_title', $post['seo_title'] ?? $post['title']);
 }
@@ -393,7 +395,7 @@ foreach (['despre-kepoli', 'despre-autor', 'contact', 'politica-de-confidentiali
 
 update_option('default_category', $category_ids['ciorbe-si-supe'] ?? 1);
 update_option('posts_per_page', 9);
-update_option('kepoli_seed_version', '2026-04-21-consent-guardrails');
+update_option('kepoli_seed_version', '2026-04-21-related-cards');
 flush_rewrite_rules(false);
 
 echo "Seeded " . count($posts) . " posts and " . count($pages) . " pages.\n";

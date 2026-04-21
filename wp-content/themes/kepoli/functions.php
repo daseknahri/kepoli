@@ -155,15 +155,77 @@ function kepoli_render_browse_links(string $class = 'browse-links'): void
     echo '</div>';
 }
 
-function kepoli_render_topic_rail(): void
+function kepoli_post_media_mode(int $post_id = 0): string
 {
-    echo '<div class="topic-rail"><div class="topic-rail__inner">';
-    foreach (kepoli_browse_items() as $item) {
-        echo '<a class="topic-pill ' . esc_attr($item['class']) . '" href="' . esc_url($item['url']) . '">';
-        echo '<span>' . esc_html($item['label']) . '</span>';
-        echo '</a>';
+    $post_id = $post_id ?: get_the_ID();
+
+    if (has_post_thumbnail($post_id)) {
+        return 'photo';
     }
-    echo '</div></div>';
+
+    return kepoli_post_kind($post_id) === 'article' ? 'photo' : 'mark';
+}
+
+function kepoli_post_media_url(int $post_id = 0, string $size = 'large'): string
+{
+    $post_id = $post_id ?: get_the_ID();
+
+    if (has_post_thumbnail($post_id)) {
+        $thumb = get_the_post_thumbnail_url($post_id, $size);
+        if (is_string($thumb) && $thumb !== '') {
+            return $thumb;
+        }
+    }
+
+    if (kepoli_post_kind($post_id) === 'article') {
+        return kepoli_asset_uri('writer-photo', 'svg');
+    }
+
+    return kepoli_asset_uri('kepoli-icon');
+}
+
+function kepoli_post_media_markup(int $post_id = 0, string $context = 'card'): string
+{
+    $post_id = $post_id ?: get_the_ID();
+    $mode = kepoli_post_media_mode($post_id);
+    $media_class = 'post-media post-media--' . sanitize_html_class($context) . ' post-media--' . sanitize_html_class($mode) . ' ' . kepoli_post_tone_class($post_id);
+    $image = kepoli_post_media_url($post_id, $context === 'related' ? 'large' : 'medium_large');
+
+    if ($mode === 'photo') {
+        return sprintf(
+            '<div class="%1$s"><img class="post-media__image" src="%2$s" alt=""><span class="post-media__shade"></span><img class="post-media__mark" src="%3$s" alt=""></div>',
+            esc_attr($media_class),
+            esc_url($image),
+            esc_url(kepoli_asset_uri('kepoli-icon'))
+        );
+    }
+
+    return sprintf(
+        '<div class="%1$s"><span class="post-media__fill"></span><img class="post-media__icon" src="%2$s" alt=""></div>',
+        esc_attr($media_class),
+        esc_url($image)
+    );
+}
+
+function kepoli_related_posts_by_kind(int $post_id = 0, string $kind = 'recipe'): array
+{
+    $post_id = $post_id ?: get_the_ID();
+    $meta_key = $kind === 'article' ? '_kepoli_related_article_slugs' : '_kepoli_related_recipe_slugs';
+    $slugs = get_post_meta($post_id, $meta_key, true);
+    $slugs = is_array($slugs) ? $slugs : [];
+
+    if (!$slugs) {
+        $fallback = get_post_meta($post_id, '_kepoli_related_slugs', true);
+        $fallback = is_array($fallback) ? $fallback : [];
+        foreach ($fallback as $slug) {
+            $candidate = get_page_by_path($slug, OBJECT, 'post');
+            if ($candidate && get_post_meta($candidate->ID, '_kepoli_post_kind', true) === $kind) {
+                $slugs[] = $slug;
+            }
+        }
+    }
+
+    return kepoli_get_posts_by_slugs(array_slice($slugs, 0, 3));
 }
 
 function kepoli_setup(): void

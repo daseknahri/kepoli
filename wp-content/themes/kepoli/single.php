@@ -49,18 +49,35 @@ get_header();
             </section>
             <?php echo kepoli_ad_slot('below_content'); ?>
             <?php
-            $related_slugs = get_post_meta(get_the_ID(), '_kepoli_related_slugs', true);
-            $related_slugs = is_array($related_slugs) ? $related_slugs : [];
-            $related_posts = kepoli_get_posts_by_slugs($related_slugs);
+            $is_recipe = kepoli_post_kind() === 'recipe';
+            $related_posts = kepoli_related_posts_by_kind(get_the_ID(), $is_recipe ? 'article' : 'recipe');
             if ($related_posts) :
                 ?>
-                <section class="related-posts">
-                    <h2><?php esc_html_e('Mai multe de gatit', 'kepoli'); ?></h2>
-                    <ul>
+                <section class="related-posts related-posts--cards">
+                    <div class="related-posts__heading">
+                        <p class="eyebrow"><?php echo $is_recipe ? esc_html__('Articole recomandate', 'kepoli') : esc_html__('Retete recomandate', 'kepoli'); ?></p>
+                        <h2><?php echo $is_recipe ? esc_html__('Citeste mai departe', 'kepoli') : esc_html__('Ce poti gati dupa acest articol', 'kepoli'); ?></h2>
+                        <p><?php echo $is_recipe ? esc_html__('Ghiduri si articole care completeaza reteta de mai sus si te ajuta sa alegi, organizezi sau servesti mai bine preparatul.', 'kepoli') : esc_html__('Retete legate de subiectul articolului, alese pentru a continua lectura cu ceva concret de pus pe masa.', 'kepoli'); ?></p>
+                    </div>
+                    <div class="related-grid">
                         <?php foreach ($related_posts as $related) : ?>
-                            <li><a href="<?php echo esc_url(get_permalink($related)); ?>"><?php echo esc_html(get_the_title($related)); ?></a></li>
+                            <article <?php post_class('related-card ' . kepoli_post_tone_class($related->ID), $related->ID); ?>>
+                                <a class="related-card__media" href="<?php echo esc_url(get_permalink($related)); ?>">
+                                    <?php echo kepoli_post_media_markup($related->ID, 'related'); ?>
+                                </a>
+                                <div class="related-card__body">
+                                    <div class="post-card__meta">
+                                        <?php echo esc_html(get_the_date('j M Y', $related)); ?> / <?php echo esc_html(kepoli_read_time($related->ID)); ?>
+                                    </div>
+                                    <h3><a href="<?php echo esc_url(get_permalink($related)); ?>"><?php echo esc_html(get_the_title($related)); ?></a></h3>
+                                    <p><?php echo esc_html(wp_trim_words(get_the_excerpt($related), 24, '...')); ?></p>
+                                    <a class="post-card__link" href="<?php echo esc_url(get_permalink($related)); ?>">
+                                        <?php echo get_post_meta($related->ID, '_kepoli_post_kind', true) === 'article' ? esc_html__('Citeste articolul', 'kepoli') : esc_html__('Citeste reteta', 'kepoli'); ?>
+                                    </a>
+                                </div>
+                            </article>
                         <?php endforeach; ?>
-                    </ul>
+                    </div>
                 </section>
             <?php endif; ?>
         </div>

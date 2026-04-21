@@ -15,7 +15,7 @@ $kind_label = kepoli_post_kind_label();
                 <span class="post-card__badge post-card__badge--ghost"><?php echo esc_html($category->name); ?></span>
             <?php endif; ?>
         </div>
-        <img src="<?php echo esc_url(kepoli_asset_uri('kepoli-icon')); ?>" alt="">
+        <?php echo kepoli_post_media_markup(get_the_ID(), 'card'); ?>
     </a>
     <div class="post-card__body">
         <div class="post-card__meta">
