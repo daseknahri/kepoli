@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Kepoli icon</title>
+  <rect width="512" height="512" rx="72" fill="#fbf7ef"/>
+  <path d="M120 382c42-94 39-175-10-244 70 29 112 78 125 147" fill="none" stroke="#c8743f" stroke-width="28" stroke-linecap="round"/>
+  <path d="M99 130c36 7 60 30 70 68-41-1-65-24-70-68Zm78-54c30 27 39 62 23 104-35-25-43-60-23-104Zm79 66c-5 39-30 63-76 72 3-43 29-67 76-72Zm-161 98c47-8 84 5 111 40-52 11-89-2-111-40Z" fill="#c8743f"/>
+  <path d="M215 316 362 164c46-46 101-45 129-18-74 43-137 100-196 174l-47 47-33-51Z" fill="#4f5525"/>
+  <path d="M276 288c55-73 118-127 190-163" fill="none" stroke="#fbf7ef" stroke-width="10" stroke-linecap="round"/>
+  <path d="M298 308c43-57 94-101 154-132" fill="none" stroke="#fbf7ef" stroke-width="8" stroke-linecap="round"/>
+  <path d="M188 334 88 434a34 34 0 0 0 48 48l100-100-48-48Z" fill="#4f5525"/>
+  <circle cx="114" cy="456" r="12" fill="#fbf7ef"/>
+</svg>

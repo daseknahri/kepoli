@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Kepoli kitchen portrait placeholder</title>
+  <desc id="desc">Warm kitchen-inspired placeholder used until the provided author photo is saved as writer-photo.jpg.</desc>
+  <defs>
+    <linearGradient id="wall" x1="0" x2="1">
+      <stop offset="0" stop-color="#f7f2e7"/>
+      <stop offset=".55" stop-color="#ddd1bb"/>
+      <stop offset="1" stop-color="#b7a888"/>
+    </linearGradient>
+    <linearGradient id="apron" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#65703a"/>
+      <stop offset="1" stop-color="#3f4a25"/>
+    </linearGradient>
+  </defs>
+  <rect width="1800" height="1000" fill="url(#wall)"/>
+  <rect x="0" y="0" width="370" height="1000" fill="#fffdf8" opacity=".75"/>
+  <rect x="430" y="150" width="1230" height="58" rx="6" fill="#fffdf8" opacity=".86"/>
+  <rect x="505" y="210" width="90" height="90" rx="12" fill="#c9b28f" opacity=".72"/>
+  <rect x="635" y="210" width="160" height="82" rx="12" fill="#b99d78" opacity=".62"/>
+  <rect x="1024" y="194" width="210" height="98" rx="24" fill="#c8743f" opacity=".76"/>
+  <rect x="1360" y="180" width="78" height="130" rx="18" fill="#efe0bd" opacity=".82"/>
+  <rect x="480" y="705" width="1120" height="110" rx="18" fill="#9a7a55" opacity=".8"/>
+  <circle cx="880" cy="410" r="142" fill="#f0cda8"/>
+  <path d="M742 380c22-134 225-171 314-70 38 44 42 107 14 154-60-56-182-86-328-84Z" fill="#4f3527"/>
+  <path d="M640 840c42-235 122-342 240-342s198 107 240 342H640Z" fill="url(#apron)"/>
+  <path d="M730 538c74 42 224 42 300 0" fill="none" stroke="#fffdf8" stroke-width="34" stroke-linecap="round"/>
+  <path d="M622 860c-92-88-148-130-204-142" fill="none" stroke="#f0cda8" stroke-width="50" stroke-linecap="round"/>
+  <path d="M1118 860c90-86 142-130 198-150" fill="none" stroke="#f0cda8" stroke-width="50" stroke-linecap="round"/>
+  <path d="M703 840c84-34 180-38 282-10" fill="none" stroke="#e7e1d6" stroke-width="16" stroke-linecap="round"/>
+  <path d="M1230 526c66-76 148-104 250-83-58 22-103 70-132 144 52-42 108-53 168-34-74 34-111 91-110 171-62-54-96-120-102-198-36 45-61 90-74 136-18-46-18-91 0-136Z" fill="#768547" opacity=".78"/>
+  <circle cx="830" cy="420" r="12" fill="#3b2b21"/>
+  <circle cx="932" cy="420" r="12" fill="#3b2b21"/>
+  <path d="M830 480c34 28 73 28 105 0" fill="none" stroke="#a85c4a" stroke-width="9" stroke-linecap="round"/>
+</svg>

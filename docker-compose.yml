@@ -1,0 +1,92 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${WORDPRESS_DB_NAME:?WORDPRESS_DB_NAME is required}
+      MYSQL_USER: ${WORDPRESS_DB_USER:?WORDPRESS_DB_USER is required}
+      MYSQL_PASSWORD: ${WORDPRESS_DB_PASSWORD:?WORDPRESS_DB_PASSWORD is required}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
+    volumes:
+      - kepoli_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  wordpress:
+    image: wordpress:php8.3-apache
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: mariadb:3306
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:?WORDPRESS_DB_NAME is required}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER:?WORDPRESS_DB_USER is required}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:?WORDPRESS_DB_PASSWORD is required}
+      SITE_URL: ${SITE_URL:-https://kepoli.com}
+      SITE_EMAIL: ${SITE_EMAIL:-contact@kepoli.com}
+      WRITER_EMAIL: ${WRITER_EMAIL:-isalunemerovik@gmail.com}
+      WP_LOCALE: ${WP_LOCALE:-ro_RO}
+      ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-}
+      ADSENSE_PUB_ID: ${ADSENSE_PUB_ID:-}
+      ADSENSE_SLOT_HEADER: ${ADSENSE_SLOT_HEADER:-}
+      ADSENSE_SLOT_AFTER_INTRO: ${ADSENSE_SLOT_AFTER_INTRO:-}
+      ADSENSE_SLOT_MID_CONTENT: ${ADSENSE_SLOT_MID_CONTENT:-}
+      ADSENSE_SLOT_SIDEBAR: ${ADSENSE_SLOT_SIDEBAR:-}
+      ADSENSE_SLOT_BELOW_CONTENT: ${ADSENSE_SLOT_BELOW_CONTENT:-}
+      GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
+      SEARCH_CONSOLE_VERIFICATION: ${SEARCH_CONSOLE_VERIFICATION:-}
+    volumes:
+      - kepoli_wordpress:/var/www/html
+      - kepoli_uploads:/var/www/html/wp-content/uploads
+      - ./wp-content/themes/kepoli:/var/www/html/wp-content/themes/kepoli:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+    ports:
+      - "8080:80"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost/wp-login.php >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  wp-init:
+    image: wordpress:cli-php8.3
+    restart: "no"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      wordpress:
+        condition: service_started
+    user: "33:33"
+    environment:
+      WORDPRESS_DB_HOST: mariadb:3306
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:?WORDPRESS_DB_NAME is required}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER:?WORDPRESS_DB_USER is required}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD:?WORDPRESS_DB_PASSWORD is required}
+      SITE_URL: ${SITE_URL:-https://kepoli.com}
+      SITE_EMAIL: ${SITE_EMAIL:-contact@kepoli.com}
+      WRITER_EMAIL: ${WRITER_EMAIL:-isalunemerovik@gmail.com}
+      WP_LOCALE: ${WP_LOCALE:-ro_RO}
+      WP_ADMIN_USER: ${WP_ADMIN_USER:?WP_ADMIN_USER is required}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD:?WP_ADMIN_PASSWORD is required}
+      WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL:?WP_ADMIN_EMAIL is required}
+      ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-}
+      ADSENSE_PUB_ID: ${ADSENSE_PUB_ID:-}
+      GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
+      SEARCH_CONSOLE_VERIFICATION: ${SEARCH_CONSOLE_VERIFICATION:-}
+    volumes:
+      - kepoli_wordpress:/var/www/html
+      - kepoli_uploads:/var/www/html/wp-content/uploads
+      - ./wp-content/themes/kepoli:/var/www/html/wp-content/themes/kepoli:ro
+      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ./seed:/seed:ro
+      - ./content:/content:ro
+    entrypoint: ["/bin/sh", "/seed/bin/bootstrap.sh"]
+
+volumes:
+  kepoli_db:
+  kepoli_wordpress:
+  kepoli_uploads:

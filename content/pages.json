@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "acasa",
+    "title": "Acasa",
+    "content": "<p>Bine ai venit la Kepoli, un blog culinar dedicat retetelor romanesti, articolelor de bucatarie si ideilor simple pentru mesele de acasa.</p>"
+  },
+  {
+    "slug": "retete",
+    "title": "Retete",
+    "content": "<p>Aici gasesti retete romanesti organizate pe categorii: ciorbe si supe, feluri principale, patiserie si deserturi, conserve si garnituri.</p>"
+  },
+  {
+    "slug": "articole",
+    "title": "Articole",
+    "content": "<p>Ghiduri practice despre ingrediente, organizare, tehnici si meniuri romanesti.</p>"
+  },
+  {
+    "slug": "despre-kepoli",
+    "title": "Despre Kepoli",
+    "content": "<p>Kepoli este un blog culinar romanesc construit pentru retete clare, ingrediente accesibile si articole utile pentru bucataria de acasa.</p><p>Publicam retete traditionale, variante practice pentru zile aglomerate si ghiduri care ajuta cititorii sa gateasca mai linistit.</p>"
+  },
+  {
+    "slug": "despre-autor",
+    "title": "Despre autor",
+    "content": "<p>Isalune Merovik scrie retete si articole alimentare pentru Kepoli, cu accent pe gatit acasa, pasi clari si ingrediente usor de gasit.</p><p>Pentru colaborari editoriale sau corecturi legate de continut, scrie la <a href=\"mailto:isalunemerovik@gmail.com\">isalunemerovik@gmail.com</a>.</p>"
+  },
+  {
+    "slug": "contact",
+    "title": "Contact",
+    "content": "<p>Pentru mesaje despre site, propuneri, corecturi sau colaborari, scrie la <a href=\"mailto:contact@kepoli.com\">contact@kepoli.com</a>.</p><p>Pentru mesaje editoriale catre autoare, foloseste <a href=\"mailto:isalunemerovik@gmail.com\">isalunemerovik@gmail.com</a>.</p>"
+  },
+  {
+    "slug": "politica-de-confidentialitate",
+    "title": "Politica de confidentialitate",
+    "content": "<p>Kepoli respecta confidentialitatea vizitatorilor. Putem colecta date tehnice obisnuite, cum ar fi adresa IP, browserul, paginile vizitate si date agregate de analiza, pentru functionarea, securitatea si imbunatatirea site-ului.</p><p>Daca activezi servicii Google precum Google Analytics, Google Search Console, Google Site Kit sau Google AdSense, Google poate utiliza cookie-uri si identificatori pentru masurare, personalizare si livrarea anunturilor. Furnizorii terti, inclusiv Google, pot folosi cookie-uri pentru a difuza anunturi pe baza vizitelor anterioare ale utilizatorilor pe acest site sau pe alte site-uri.</p><p>Vizitatorii pot gestiona cookie-urile din setarile browserului si, unde este aplicabil, prin mesajul de consimtamant afisat pe site. Pentru trafic din Spatiul Economic European, Regatul Unit si Elvetia, Kepoli trebuie sa foloseasca o platforma de gestionare a consimtamantului certificata de Google inainte de afisarea anunturilor personalizate.</p><p>Nu vindem date personale. Pentru intrebari legate de confidentialitate, scrie la <a href=\"mailto:contact@kepoli.com\">contact@kepoli.com</a>.</p>"
+  },
+  {
+    "slug": "politica-de-cookies",
+    "title": "Politica de cookies",
+    "content": "<p>Cookie-urile sunt fisiere mici salvate in browser pentru functionarea site-ului, masurarea traficului si, daca este activat AdSense, afisarea sau masurarea anunturilor.</p><p>Kepoli poate folosi cookie-uri necesare pentru WordPress, cookie-uri de analiza prin servicii Google si cookie-uri publicitare dupa configurarea AdSense. Poti bloca sau sterge cookie-urile din browser, insa unele functii ale site-ului pot functiona diferit.</p><p>Daca esti intr-o regiune unde legea cere consimtamant, optiunile de cookie vor fi oferite printr-un mesaj de consimtamant compatibil.</p>"
+  },
+  {
+    "slug": "termeni-si-conditii",
+    "title": "Termeni si conditii",
+    "content": "<p>Prin folosirea site-ului Kepoli accepti ca informatiile publicate sunt oferite in scop informativ si editorial. Continutul poate fi actualizat, corectat sau eliminat fara notificare prealabila.</p><p>Textele, structura retetelor, fotografiile si elementele grafice ale site-ului apartin Kepoli sau sunt folosite cu permisiune, daca nu este indicat altfel. Nu copia continutul integral fara acord scris.</p><p>Nu raspundem pentru rezultate culinare diferite cauzate de ingrediente, echipamente, temperaturi, alergii sau adaptari personale.</p>"
+  },
+  {
+    "slug": "disclaimer-culinar",
+    "title": "Disclaimer culinar",
+    "content": "<p>Retetele Kepoli sunt scrise pentru uz casnic si pot necesita ajustari in functie de ingrediente, cuptor, aragaz, vase si gusturi personale.</p><p>Verifica mereu alergeni, etichete, prospetimea ingredientelor si temperatura alimentelor sensibile. Informatiile de pe site nu inlocuiesc sfatul unui medic, nutritionist sau specialist in siguranta alimentara.</p>"
+  }
+]
