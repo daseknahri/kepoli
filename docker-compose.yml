@@ -30,8 +30,8 @@ services:
       SITE_EMAIL: ${SITE_EMAIL:-contact@kepoli.com}
       WRITER_EMAIL: ${WRITER_EMAIL:-isalunemerovik@gmail.com}
       WP_LOCALE: ${WP_LOCALE:-ro_RO}
-      ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-}
-      ADSENSE_PUB_ID: ${ADSENSE_PUB_ID:-}
+      ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-ca-pub-8166411196603757}
+      ADSENSE_PUB_ID: ${ADSENSE_PUB_ID:-pub-8166411196603757}
       ADSENSE_SLOT_HEADER: ${ADSENSE_SLOT_HEADER:-}
       ADSENSE_SLOT_AFTER_INTRO: ${ADSENSE_SLOT_AFTER_INTRO:-}
       ADSENSE_SLOT_MID_CONTENT: ${ADSENSE_SLOT_MID_CONTENT:-}
@@ -44,6 +44,8 @@ services:
       - kepoli_uploads:/var/www/html/wp-content/uploads
       - ./wp-content/themes/kepoli:/var/www/html/wp-content/themes/kepoli:ro
       - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
+      - ./seed:/seed:ro
+      - ./content:/content:ro
     expose:
       - "80"
     healthcheck:
@@ -73,8 +75,8 @@ services:
       WP_ADMIN_USER: ${WP_ADMIN_USER:?WP_ADMIN_USER is required}
       WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD:?WP_ADMIN_PASSWORD is required}
       WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL:?WP_ADMIN_EMAIL is required}
-      ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-}
-      ADSENSE_PUB_ID: ${ADSENSE_PUB_ID:-}
+      ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-ca-pub-8166411196603757}
+      ADSENSE_PUB_ID: ${ADSENSE_PUB_ID:-pub-8166411196603757}
       GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
       SEARCH_CONSOLE_VERIFICATION: ${SEARCH_CONSOLE_VERIFICATION:-}
     volumes:

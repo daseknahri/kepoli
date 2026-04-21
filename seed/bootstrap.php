@@ -259,6 +259,24 @@ function kepoli_seed_menu_category(int $menu_id, string $title, int $category_id
     ]);
 }
 
+if (wp_get_theme()->get_stylesheet() !== 'kepoli' && wp_get_theme('kepoli')->exists()) {
+    switch_theme('kepoli');
+}
+
+update_option('blogname', 'Kepoli');
+update_option('blogdescription', 'Retete romanesti si articole de bucatarie pentru acasa');
+update_option('admin_email', kepoli_seed_env('SITE_EMAIL', 'contact@kepoli.com'));
+update_option('blog_public', '1');
+update_option('timezone_string', 'Europe/Bucharest');
+update_option('date_format', 'j F Y');
+update_option('time_format', 'H:i');
+update_option('posts_per_page', 9);
+
+global $wp_rewrite;
+if ($wp_rewrite instanceof WP_Rewrite) {
+    $wp_rewrite->set_permalink_structure('/%category%/%postname%/');
+}
+
 $author_id = kepoli_seed_ensure_author();
 $categories = kepoli_seed_json('/content/categories.json');
 $pages = kepoli_seed_json('/content/pages.json');
@@ -363,5 +381,7 @@ foreach (['contact', 'politica-de-confidentialitate', 'politica-de-cookies', 'te
 
 update_option('default_category', $category_ids['ciorbe-si-supe'] ?? 1);
 update_option('posts_per_page', 9);
+update_option('kepoli_seed_version', '2026-04-21-adsense-autoseed');
+flush_rewrite_rules(false);
 
 echo "Seeded " . count($posts) . " posts and " . count($pages) . " pages.\n";
