@@ -134,8 +134,10 @@ function kepoli_seed_ensure_author(): int
     wp_update_user([
         'ID' => $user->ID,
         'display_name' => 'Isalune Merovik',
+        'nickname' => 'Isalune Merovik',
         'first_name' => 'Isalune',
         'last_name' => 'Merovik',
+        'user_url' => home_url('/despre-autor/'),
         'description' => 'Autoare Kepoli. Scrie retete romanesti, articole culinare si ghiduri practice pentru gatit acasa.',
         'role' => 'administrator',
     ]);
@@ -385,13 +387,13 @@ kepoli_seed_menu_page($primary_menu, 'Articole', $page_ids['articole']);
 kepoli_seed_menu_page($primary_menu, 'Despre', $page_ids['despre-kepoli']);
 
 $footer_menu = kepoli_seed_reset_menu('Footer', 'footer');
-foreach (['contact', 'politica-de-confidentialitate', 'politica-de-cookies', 'termeni-si-conditii', 'disclaimer-culinar'] as $slug) {
+foreach (['despre-kepoli', 'despre-autor', 'contact', 'politica-de-confidentialitate', 'politica-de-cookies', 'termeni-si-conditii', 'disclaimer-culinar'] as $slug) {
     kepoli_seed_menu_page($footer_menu, $pages[array_search($slug, array_column($pages, 'slug'), true)]['title'], $page_ids[$slug]);
 }
 
 update_option('default_category', $category_ids['ciorbe-si-supe'] ?? 1);
 update_option('posts_per_page', 9);
-update_option('kepoli_seed_version', '2026-04-21-discussion-defaults');
+update_option('kepoli_seed_version', '2026-04-21-identity-polish');
 flush_rewrite_rules(false);
 
 echo "Seeded " . count($posts) . " posts and " . count($pages) . " pages.\n";

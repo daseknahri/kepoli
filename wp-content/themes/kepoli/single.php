@@ -20,6 +20,18 @@ get_header();
             <div class="entry-content">
                 <?php the_content(); ?>
             </div>
+            <section class="author-box author-box--expanded">
+                <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'svg')); ?>" alt="<?php esc_attr_e('Isalune Merovik', 'kepoli'); ?>">
+                <div>
+                    <p class="eyebrow"><?php esc_html_e('Autoare', 'kepoli'); ?></p>
+                    <h2><?php esc_html_e('Isalune Merovik', 'kepoli'); ?></h2>
+                    <p><?php esc_html_e('Scrie retete romanesti, ghiduri pentru bucatarie si explicatii practice pentru gatit acasa, cu accent pe claritate, gust si ingrediente accesibile.', 'kepoli'); ?></p>
+                    <div class="author-box__links">
+                        <a href="<?php echo esc_url(kepoli_author_page_url()); ?>"><?php esc_html_e('Despre autoare', 'kepoli'); ?></a>
+                        <a href="mailto:isalunemerovik@gmail.com">isalunemerovik@gmail.com</a>
+                    </div>
+                </div>
+            </section>
             <?php echo kepoli_ad_slot('below_content'); ?>
             <?php
             $related_slugs = get_post_meta(get_the_ID(), '_kepoli_related_slugs', true);

@@ -26,6 +26,47 @@ function kepoli_asset_uri(string $basename, string $fallback_extension = 'svg'):
     return $uri . "/assets/img/{$basename}.{$fallback_extension}";
 }
 
+function kepoli_author_page_url(): string
+{
+    $page = get_page_by_path('despre-autor', OBJECT, 'page');
+    return $page ? get_permalink($page) : home_url('/despre-autor/');
+}
+
+function kepoli_brand_description(): string
+{
+    return 'Kepoli publica retete romanesti, articole culinare si ghiduri practice pentru gatit acasa.';
+}
+
+function kepoli_current_description(): string
+{
+    $description = get_bloginfo('description');
+    if (is_singular()) {
+        $meta = get_post_meta(get_the_ID(), '_kepoli_meta_description', true);
+        $description = $meta ?: wp_strip_all_tags(get_the_excerpt());
+    } elseif (is_category()) {
+        $description = category_description() ?: single_cat_title('', false);
+    } elseif (is_front_page()) {
+        $description = kepoli_brand_description();
+    }
+
+    return trim(wp_strip_all_tags((string) $description));
+}
+
+function kepoli_social_image_url(): string
+{
+    return kepoli_asset_uri('writer-photo', 'svg');
+}
+
+function kepoli_current_url(): string
+{
+    if (is_singular()) {
+        return get_permalink();
+    }
+
+    $request_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash((string) $_SERVER['REQUEST_URI']) : '/';
+    return home_url($request_uri);
+}
+
 function kepoli_setup(): void
 {
     add_theme_support('title-tag');
@@ -62,15 +103,7 @@ add_action('widgets_init', 'kepoli_register_sidebars');
 
 function kepoli_meta_description(): void
 {
-    $description = get_bloginfo('description');
-    if (is_singular()) {
-        $meta = get_post_meta(get_the_ID(), '_kepoli_meta_description', true);
-        $description = $meta ?: wp_strip_all_tags(get_the_excerpt());
-    } elseif (is_category()) {
-        $description = category_description() ?: single_cat_title('', false);
-    }
-
-    $description = trim(wp_strip_all_tags((string) $description));
+    $description = kepoli_current_description();
     if ($description !== '') {
         printf("<meta name=\"description\" content=\"%s\">\n", esc_attr(wp_trim_words($description, 28, '')));
     }
@@ -83,6 +116,28 @@ function kepoli_meta_description(): void
     printf("<link rel=\"icon\" href=\"%s\" type=\"image/svg+xml\">\n", esc_url(kepoli_asset_uri('kepoli-icon')));
 }
 add_action('wp_head', 'kepoli_meta_description', 2);
+
+function kepoli_social_meta(): void
+{
+    $title = wp_get_document_title();
+    $description = wp_trim_words(kepoli_current_description(), 28, '');
+    $url = kepoli_current_url();
+    $type = is_singular('post') ? 'article' : 'website';
+    $image = kepoli_social_image_url();
+
+    printf("<meta property=\"og:locale\" content=\"%s\">\n", esc_attr(str_replace('-', '_', get_bloginfo('language'))));
+    printf("<meta property=\"og:site_name\" content=\"%s\">\n", esc_attr(get_bloginfo('name')));
+    printf("<meta property=\"og:title\" content=\"%s\">\n", esc_attr($title));
+    printf("<meta property=\"og:description\" content=\"%s\">\n", esc_attr($description));
+    printf("<meta property=\"og:url\" content=\"%s\">\n", esc_url($url));
+    printf("<meta property=\"og:type\" content=\"%s\">\n", esc_attr($type));
+    printf("<meta property=\"og:image\" content=\"%s\">\n", esc_url($image));
+    printf("<meta name=\"twitter:card\" content=\"summary_large_image\">\n");
+    printf("<meta name=\"twitter:title\" content=\"%s\">\n", esc_attr($title));
+    printf("<meta name=\"twitter:description\" content=\"%s\">\n", esc_attr($description));
+    printf("<meta name=\"twitter:image\" content=\"%s\">\n", esc_url($image));
+}
+add_action('wp_head', 'kepoli_social_meta', 3);
 
 function kepoli_adsense_head(): void
 {
@@ -188,9 +243,19 @@ function kepoli_recipe_json_ld(): void
         '@type' => 'Recipe',
         'name' => get_the_title(),
         'description' => wp_strip_all_tags(get_the_excerpt()),
+        'image' => [kepoli_social_image_url()],
+        'mainEntityOfPage' => get_permalink(),
         'author' => [
             '@type' => 'Person',
             'name' => $author_name ?: 'Isalune Merovik',
+        ],
+        'publisher' => [
+            '@type' => 'Organization',
+            'name' => 'Kepoli',
+            'logo' => [
+                '@type' => 'ImageObject',
+                'url' => kepoli_asset_uri('kepoli-icon'),
+            ],
         ],
         'datePublished' => get_the_date('c'),
         'recipeCategory' => $data['category'] ?? '',
@@ -208,6 +273,96 @@ function kepoli_recipe_json_ld(): void
     echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
 }
 add_action('wp_head', 'kepoli_recipe_json_ld', 20);
+
+function kepoli_article_json_ld(): void
+{
+    if (!is_singular('post') || kepoli_post_kind() === 'recipe') {
+        return;
+    }
+
+    $author_id = (int) get_post_field('post_author', get_the_ID());
+    $author_name = $author_id ? get_the_author_meta('display_name', $author_id) : 'Isalune Merovik';
+
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Article',
+        'headline' => get_the_title(),
+        'description' => kepoli_current_description(),
+        'mainEntityOfPage' => get_permalink(),
+        'image' => [kepoli_social_image_url()],
+        'datePublished' => get_the_date('c'),
+        'dateModified' => get_the_modified_date('c'),
+        'author' => [
+            '@type' => 'Person',
+            'name' => $author_name,
+            'url' => kepoli_author_page_url(),
+        ],
+        'publisher' => [
+            '@type' => 'Organization',
+            'name' => 'Kepoli',
+            'logo' => [
+                '@type' => 'ImageObject',
+                'url' => kepoli_asset_uri('kepoli-icon'),
+            ],
+        ],
+    ];
+
+    echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
+}
+add_action('wp_head', 'kepoli_article_json_ld', 21);
+
+function kepoli_site_json_ld(): void
+{
+    if (is_admin()) {
+        return;
+    }
+
+    $graph = [
+        '@context' => 'https://schema.org',
+        '@graph' => [
+            [
+            '@type' => 'Organization',
+            '@id' => home_url('/#organization'),
+            'name' => 'Kepoli',
+            'url' => home_url('/'),
+            'email' => kepoli_env('SITE_EMAIL', 'contact@kepoli.com'),
+            'description' => kepoli_brand_description(),
+            'logo' => [
+                '@type' => 'ImageObject',
+                'url' => kepoli_asset_uri('kepoli-wordmark'),
+            ],
+            ],
+            [
+            '@type' => 'WebSite',
+            '@id' => home_url('/#website'),
+            'url' => home_url('/'),
+            'name' => 'Kepoli',
+            'description' => kepoli_brand_description(),
+            'inLanguage' => 'ro-RO',
+            'publisher' => ['@id' => home_url('/#organization')],
+            'potentialAction' => [
+                '@type' => 'SearchAction',
+                'target' => home_url('/?s={search_term_string}'),
+                'query-input' => 'required name=search_term_string',
+            ],
+            ],
+            [
+            '@type' => 'Person',
+            '@id' => kepoli_author_page_url() . '#person',
+            'name' => 'Isalune Merovik',
+            'url' => kepoli_author_page_url(),
+            'email' => kepoli_env('WRITER_EMAIL', 'isalunemerovik@gmail.com'),
+            'image' => kepoli_social_image_url(),
+            'worksFor' => ['@id' => home_url('/#organization')],
+            'jobTitle' => 'Autor culinar',
+            'description' => 'Autoare Kepoli. Scrie retete romanesti, articole culinare si ghiduri practice pentru gatit acasa.',
+            ],
+        ],
+    ];
+
+    echo '<script type="application/ld+json">' . wp_json_encode($graph, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
+}
+add_action('wp_head', 'kepoli_site_json_ld', 19);
 
 function kepoli_breadcrumbs(): void
 {

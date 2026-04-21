@@ -3,6 +3,7 @@
     <div>
         <h2><?php esc_html_e('Isalune Merovik', 'kepoli'); ?></h2>
         <p><?php esc_html_e('Retete romanesti testate pentru gatit acasa, cu pasi clari si ingrediente accesibile.', 'kepoli'); ?></p>
+        <p><a href="<?php echo esc_url(kepoli_author_page_url()); ?>"><?php esc_html_e('Despre autoare', 'kepoli'); ?></a></p>
     </div>
 </section>
 
