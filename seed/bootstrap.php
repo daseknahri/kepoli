@@ -135,7 +135,7 @@ function kepoli_seed_ensure_author(): int
         'first_name' => 'Isalune',
         'last_name' => 'Merovik',
         'description' => 'Autoare Kepoli. Scrie retete romanesti, articole culinare si ghiduri practice pentru gatit acasa.',
-        'role' => 'author',
+        'role' => 'administrator',
     ]);
 
     return (int) $user->ID;
@@ -381,7 +381,7 @@ foreach (['contact', 'politica-de-confidentialitate', 'politica-de-cookies', 'te
 
 update_option('default_category', $category_ids['ciorbe-si-supe'] ?? 1);
 update_option('posts_per_page', 9);
-update_option('kepoli_seed_version', '2026-04-21-adsense-autoseed');
+update_option('kepoli_seed_version', '2026-04-21-admin-user');
 flush_rewrite_rules(false);
 
 echo "Seeded " . count($posts) . " posts and " . count($pages) . " pages.\n";
