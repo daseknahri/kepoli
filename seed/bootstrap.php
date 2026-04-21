@@ -393,7 +393,7 @@ foreach (['despre-kepoli', 'despre-autor', 'contact', 'politica-de-confidentiali
 
 update_option('default_category', $category_ids['ciorbe-si-supe'] ?? 1);
 update_option('posts_per_page', 9);
-update_option('kepoli_seed_version', '2026-04-21-identity-polish');
+update_option('kepoli_seed_version', '2026-04-21-official-pages-copy');
 flush_rewrite_rules(false);
 
 echo "Seeded " . count($posts) . " posts and " . count($pages) . " pages.\n";
