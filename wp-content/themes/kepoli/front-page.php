@@ -5,9 +5,6 @@
 get_header();
 
 $hero_image = kepoli_asset_uri('hero-homepage', 'png');
-$wordmark = kepoli_asset_uri('kepoli-wordmark');
-$recipe_count = kepoli_published_kind_count('recipe');
-$article_count = kepoli_published_kind_count('article');
 $categories = get_categories([
     'hide_empty' => true,
     'exclude' => [1],
@@ -34,17 +31,12 @@ $article_list = new WP_Query([
 ?>
 <section class="home-hero" style="--hero-image: url('<?php echo esc_url($hero_image); ?>');">
     <div class="home-hero__inner">
-        <img class="home-hero__brand" src="<?php echo esc_url($wordmark); ?>" alt="Kepoli">
+        <p class="eyebrow"><?php esc_html_e('Kepoli', 'kepoli'); ?></p>
         <h1><?php esc_html_e('Retete romanesti cu gust de acasa.', 'kepoli'); ?></h1>
-        <p><?php esc_html_e('Ciorbe, feluri principale, deserturi si ghiduri simple pentru bucataria de fiecare zi.', 'kepoli'); ?></p>
+        <p><?php esc_html_e('Retete, ghiduri si idei de sezon scrise simplu, pentru mese bune si navigare clara.', 'kepoli'); ?></p>
         <div class="button-row">
             <a class="button" href="<?php echo esc_url(home_url('/retete/')); ?>"><?php esc_html_e('Vezi retetele', 'kepoli'); ?></a>
-            <a class="button button--ghost" href="<?php echo esc_url(home_url('/despre-autor/')); ?>"><?php esc_html_e('Despre autoare', 'kepoli'); ?></a>
-        </div>
-        <div class="home-hero__meta" aria-label="<?php esc_attr_e('Rezumat continut Kepoli', 'kepoli'); ?>">
-            <span><?php echo esc_html(sprintf(_n('%d reteta', '%d retete', $recipe_count, 'kepoli'), $recipe_count)); ?></span>
-            <span><?php echo esc_html(sprintf(_n('%d articol', '%d articole', $article_count, 'kepoli'), $article_count)); ?></span>
-            <span><?php echo esc_html(sprintf(_n('%d categorie', '%d categorii', count($categories), 'kepoli'), count($categories))); ?></span>
+            <a class="button button--ghost" href="<?php echo esc_url(home_url('/articole/')); ?>"><?php esc_html_e('Citeste articole', 'kepoli'); ?></a>
         </div>
     </div>
 </section>
@@ -55,7 +47,7 @@ $article_list = new WP_Query([
             <p class="eyebrow"><?php esc_html_e('Retete publicate', 'kepoli'); ?></p>
             <h2><?php esc_html_e('De gatit saptamana aceasta', 'kepoli'); ?></h2>
         </div>
-        <p><?php esc_html_e('Retete romanesti asezate clar, cu ingrediente la indemana si pasi usor de urmat.', 'kepoli'); ?></p>
+        <p><?php esc_html_e('Retete clare, usor de scanat si simple de pus in practica.', 'kepoli'); ?></p>
     </div>
     <div class="home-cluster">
         <?php if ($featured_recipe) : ?>
@@ -100,18 +92,17 @@ $article_list = new WP_Query([
 
 <section class="category-band">
     <div class="section">
-        <div class="section__header">
+        <div class="section__header section__header--simple">
             <div>
                 <p class="eyebrow"><?php esc_html_e('Categorii', 'kepoli'); ?></p>
                 <h2><?php esc_html_e('Alege dupa pofta', 'kepoli'); ?></h2>
             </div>
-            <p><?php esc_html_e('Intrari rapide catre categoriile cele mai cautate, pentru cand stii deja ce fel de masa vrei sa pregatesti.', 'kepoli'); ?></p>
         </div>
-        <div class="category-list">
+        <div class="category-list category-list--compact">
             <?php foreach ($categories as $category) : ?>
                 <a href="<?php echo esc_url(get_category_link($category)); ?>">
-                    <strong><?php echo esc_html($category->name); ?></strong>
-                    <span><?php echo esc_html(sprintf(_n('%d articol', '%d articole', $category->count, 'kepoli'), $category->count)); ?></span>
+                    <span><?php echo esc_html($category->name); ?></span>
+                    <strong><?php echo esc_html(sprintf(_n('%d articol', '%d articole', $category->count, 'kepoli'), $category->count)); ?></strong>
                 </a>
             <?php endforeach; ?>
         </div>
@@ -124,7 +115,7 @@ $article_list = new WP_Query([
             <p class="eyebrow"><?php esc_html_e('Articole', 'kepoli'); ?></p>
             <h2><?php esc_html_e('Ghiduri pentru bucatarie', 'kepoli'); ?></h2>
         </div>
-        <p><?php esc_html_e('Idei de organizare, ingrediente, tehnici si meniuri care sustin retetele de zi cu zi.', 'kepoli'); ?></p>
+        <p><?php esc_html_e('Context scurt si util pentru ingrediente, tehnici si planificare.', 'kepoli'); ?></p>
     </div>
     <div class="home-cluster home-cluster--reverse">
         <?php if ($featured_article) : ?>
@@ -169,11 +160,11 @@ $article_list = new WP_Query([
 
 <section class="section section--tight">
     <div class="author-strip">
-        <div class="author-strip__photo" style="--author-image: url('<?php echo esc_url($hero_image); ?>');"></div>
+        <div class="author-strip__photo" style="--author-image: url('<?php echo esc_url($hero_image); ?>'); ?>"></div>
         <div class="author-strip__copy">
             <p class="eyebrow"><?php esc_html_e('Autoare', 'kepoli'); ?></p>
             <h2><?php esc_html_e('Isalune Merovik', 'kepoli'); ?></h2>
-            <p><?php esc_html_e('Scriu retete romanesti intr-un stil calm si practic: ce cumperi, cum pregatesti, cum ajustezi gustul si cum pastrezi mancarea fara risipa.', 'kepoli'); ?></p>
+            <p><?php esc_html_e('Scriu retete romanesti si ghiduri practice pentru gatit calm, clar si usor de urmat acasa.', 'kepoli'); ?></p>
             <a class="button" href="<?php echo esc_url(home_url('/despre-autor/')); ?>"><?php esc_html_e('Citeste povestea', 'kepoli'); ?></a>
         </div>
     </div>

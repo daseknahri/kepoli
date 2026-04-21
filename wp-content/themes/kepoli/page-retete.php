@@ -18,27 +18,25 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
     <?php kepoli_breadcrumbs(); ?>
     <p class="eyebrow"><?php esc_html_e('Retete', 'kepoli'); ?></p>
     <h1><?php esc_html_e('Retete romanesti', 'kepoli'); ?></h1>
-    <p><?php esc_html_e('Alege o categorie sau porneste de la cele mai noi retete Kepoli, fiecare structurata cu pasi, sfaturi, pastrare si raspunsuri utile.', 'kepoli'); ?></p>
+    <p><?php esc_html_e('Alege o categorie sau porneste de la cele mai noi retete Kepoli.', 'kepoli'); ?></p>
     <div class="meta-strip" aria-label="<?php esc_attr_e('Rezumat retete', 'kepoli'); ?>">
         <span class="meta-strip__item"><?php echo esc_html(sprintf(_n('%d reteta publicata', '%d retete publicate', $recipe_count, 'kepoli'), $recipe_count)); ?></span>
         <span class="meta-strip__item"><?php echo esc_html(sprintf(_n('%d categorie', '%d categorii', count($recipe_categories), 'kepoli'), count($recipe_categories))); ?></span>
-        <span class="meta-strip__item"><?php esc_html_e('Gatire de zi cu zi, explicata simplu', 'kepoli'); ?></span>
     </div>
 </header>
 <section class="category-band">
     <div class="section">
-        <div class="section__header section__header--compact">
+        <div class="section__header section__header--compact section__header--simple">
             <div>
                 <p class="eyebrow"><?php esc_html_e('Navigare rapida', 'kepoli'); ?></p>
                 <h2><?php esc_html_e('Alege categoria potrivita', 'kepoli'); ?></h2>
             </div>
-            <p><?php esc_html_e('De la ciorbe si feluri principale la deserturi si conserve, fiecare categorie reuneste retete scrise pentru gatit clar, practic si usor de repetat acasa.', 'kepoli'); ?></p>
         </div>
-        <div class="category-list">
+        <div class="category-list category-list--compact">
             <?php foreach ($recipe_categories as $category) : ?>
                 <a href="<?php echo esc_url(get_category_link($category)); ?>">
-                    <strong><?php echo esc_html($category->name); ?></strong>
-                    <span><?php echo esc_html(sprintf(_n('%d reteta', '%d retete', $category->count, 'kepoli'), $category->count)); ?></span>
+                    <span><?php echo esc_html($category->name); ?></span>
+                    <strong><?php echo esc_html(sprintf(_n('%d reteta', '%d retete', $category->count, 'kepoli'), $category->count)); ?></strong>
                 </a>
             <?php endforeach; ?>
         </div>
@@ -75,7 +73,7 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
             <p class="eyebrow"><?php esc_html_e('Toate retetele', 'kepoli'); ?></p>
             <h2><?php esc_html_e('Biblioteca Kepoli', 'kepoli'); ?></h2>
         </div>
-        <p><?php esc_html_e('O colectie curata de retete romanesti, gandite pentru mese de familie, seri obisnuite si weekenduri in care vrei ceva bun pe masa.', 'kepoli'); ?></p>
+        <p><?php esc_html_e('Toate retetele intr-o lista simpla, usor de rasfoit.', 'kepoli'); ?></p>
     </div>
     <div class="post-grid">
         <?php

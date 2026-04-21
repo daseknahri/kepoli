@@ -8,12 +8,12 @@
 </section>
 
 <section class="sidebar-section">
-    <h3><?php esc_html_e('Din aceeasi bucatarie', 'kepoli'); ?></h3>
+    <h3><?php esc_html_e('Recente', 'kepoli'); ?></h3>
     <ul class="more-list more-list--posts">
         <?php
         $latest = new WP_Query([
             'post_type' => 'post',
-            'posts_per_page' => 5,
+            'posts_per_page' => 4,
             'post__not_in' => is_singular('post') ? [get_the_ID()] : [],
         ]);
         while ($latest->have_posts()) :
@@ -33,9 +33,9 @@
 </section>
 
 <section class="sidebar-section">
-    <h3><?php esc_html_e('Exploreaza categoriile', 'kepoli'); ?></h3>
+    <h3><?php esc_html_e('Categorii', 'kepoli'); ?></h3>
     <ul class="more-list more-list--stacked">
-        <?php foreach (get_categories(['hide_empty' => true, 'exclude' => [1], 'orderby' => 'count', 'order' => 'DESC']) as $category) : ?>
+        <?php foreach (array_slice(get_categories(['hide_empty' => true, 'exclude' => [1], 'orderby' => 'count', 'order' => 'DESC']), 0, 6) as $category) : ?>
             <li>
                 <a href="<?php echo esc_url(get_category_link($category)); ?>">
                     <span><?php echo esc_html($category->name); ?></span>
@@ -47,7 +47,7 @@
 </section>
 
 <section class="sidebar-section">
-    <h3><?php esc_html_e('Pagini utile', 'kepoli'); ?></h3>
+    <h3><?php esc_html_e('Kepoli', 'kepoli'); ?></h3>
     <ul class="more-list more-list--stacked">
         <li><a href="<?php echo esc_url(home_url('/despre-kepoli/')); ?>"><?php esc_html_e('Despre Kepoli', 'kepoli'); ?></a></li>
         <li><a href="<?php echo esc_url(home_url('/despre-autor/')); ?>"><?php esc_html_e('Despre autor', 'kepoli'); ?></a></li>

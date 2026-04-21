@@ -82,6 +82,7 @@
       const defaultLabel = button.getAttribute('data-copy-default') || 'Copy';
       const successLabel = button.getAttribute('data-copy-success') || 'Copied';
       const label = button.querySelector('span:last-child');
+      const defaultTitle = button.getAttribute('title') || defaultLabel;
 
       try {
         if (navigator.clipboard && window.isSecureContext) {
@@ -97,10 +98,16 @@
 
         if (label) {
           label.textContent = successLabel;
-          window.setTimeout(() => {
-            label.textContent = defaultLabel;
-          }, 1800);
         }
+
+        button.setAttribute('title', successLabel);
+        window.setTimeout(() => {
+          if (label) {
+            label.textContent = defaultLabel;
+          }
+
+          button.setAttribute('title', defaultTitle);
+        }, 1800);
       } catch (error) {
         console.error(error);
       }
