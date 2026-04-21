@@ -105,6 +105,14 @@ get_header();
             <div class="entry-content">
                 <?php the_content(); ?>
             </div>
+            <?php
+            wp_link_pages([
+                'before' => '<nav class="post-page-links" aria-label="' . esc_attr__('Navigatie pagini articol', 'kepoli') . '"><span class="post-page-links__label">' . esc_html__('Partile articolului', 'kepoli') . '</span><div class="post-page-links__items">',
+                'after' => '</div></nav>',
+                'link_before' => '<span>',
+                'link_after' => '</span>',
+            ]);
+            ?>
             <section class="author-box author-box--expanded">
                 <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'svg')); ?>" alt="<?php esc_attr_e('Isalune Merovik', 'kepoli'); ?>">
                 <div>

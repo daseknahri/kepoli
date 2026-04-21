@@ -8,7 +8,25 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+function kepoli_autoseed_activate_plugin(string $plugin): void
+{
+    $plugin_path = WP_PLUGIN_DIR . '/' . $plugin;
+    if (!file_exists($plugin_path)) {
+        return;
+    }
+
+    if (!function_exists('is_plugin_active') || !function_exists('activate_plugin')) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+
+    if (!is_plugin_active($plugin)) {
+        activate_plugin($plugin, '', false, true);
+    }
+}
+
 add_action('init', static function (): void {
+    kepoli_autoseed_activate_plugin('kepoli-author-tools/kepoli-author-tools.php');
+
     $target_version = '2026-04-21-content-depth';
 
     if (get_option('kepoli_seed_version') === $target_version && wp_get_theme()->get_stylesheet() === 'kepoli') {

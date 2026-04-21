@@ -509,9 +509,27 @@ function kepoli_seed_menu_category(int $menu_id, string $title, int $category_id
     ]);
 }
 
+function kepoli_seed_activate_plugin(string $plugin): void
+{
+    $plugin_path = WP_PLUGIN_DIR . '/' . $plugin;
+    if (!file_exists($plugin_path)) {
+        return;
+    }
+
+    if (!function_exists('is_plugin_active') || !function_exists('activate_plugin')) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+
+    if (!is_plugin_active($plugin)) {
+        activate_plugin($plugin, '', false, true);
+    }
+}
+
 if (wp_get_theme()->get_stylesheet() !== 'kepoli' && wp_get_theme('kepoli')->exists()) {
     switch_theme('kepoli');
 }
+
+kepoli_seed_activate_plugin('kepoli-author-tools/kepoli-author-tools.php');
 
 update_option('blogname', 'Kepoli');
 update_option('blogdescription', 'Retete romanesti si articole de bucatarie pentru acasa');

@@ -4,7 +4,7 @@ Theme URI: https://kepoli.com
 Author: Isalune Merovik
 Author URI: https://kepoli.com/despre-autor/
 Description: A lightweight Romanian food blog theme built for recipes, editorial reading, internal linking, and ad-ready spacing.
-Version: 1.1.5
+Version: 1.1.6
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.1
@@ -1279,6 +1279,51 @@ h3 {
   margin-top: 0.35em;
 }
 
+.post-page-links {
+  margin: 26px 0 10px;
+  padding: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.post-page-links__label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.post-page-links__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.post-page-links a,
+.post-page-links .post-page-numbers {
+  min-width: 38px;
+  min-height: 38px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.72);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.post-page-links .current {
+  border-color: var(--olive-dark);
+  background: var(--olive-dark);
+  color: #fffdf8;
+}
+
 .kepoli-recipe-box,
 .related-posts,
 .author-box,
@@ -2299,6 +2344,11 @@ h3 {
   .entry-content h2,
   .entry-content h3 {
     scroll-margin-top: 84px;
+  }
+
+  .post-page-links {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .related-grid {

@@ -8,6 +8,7 @@ Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and food arti
 - A custom `kepoli` theme focused on reading, recipes, internal links, and ad-safe layouts.
 - An optional one-shot `wp-init` seed profile for manual reseeding.
 - A small MU plugin that self-runs the same seed once if a platform starts WordPress but skips the one-shot seed service, and keeps the writer account as an administrator.
+- A small authoring plugin that keeps post writing simple and adds toolbar buttons for splitting long posts into two or three WordPress pages.
 - Google Site Kit installation for later AdSense, Search Console, and Analytics connection from WordPress admin.
 - Comment and ping defaults tuned for a content-first launch, with seeded pages/posts closed to reduce spam overhead.
 
@@ -53,6 +54,10 @@ Before submitting to AdSense:
 - Configure Google Privacy & Messaging or another Google-certified CMP for Romania, EEA, UK, and Switzerland traffic before personalized ads.
 - Keep `ADSENSE_ENABLE=0` until the consent layer is live and tested.
 - Add your real AdSense client, publisher, and slot IDs in Coolify.
+
+## Author Writing
+
+The `kepoli-author-tools` plugin switches posts to the classic editor for a simpler title/content workflow. It adds `Pauza`, `2 parti`, and `3 parti` toolbar buttons for native WordPress post pagination. See `docs/author-workflow.md` for the exact writing flow.
 
 ## Media
 

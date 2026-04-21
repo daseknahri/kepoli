@@ -74,6 +74,7 @@ wp option update permalink_structure "/%category%/%postname%/"
 wp rewrite structure "/%category%/%postname%/" --hard
 
 wp theme activate kepoli
+wp plugin activate kepoli-author-tools || true
 wp plugin install google-site-kit --activate || true
 wp plugin deactivate akismet hello >/dev/null 2>&1 || true
 
