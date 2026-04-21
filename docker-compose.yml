@@ -54,6 +54,8 @@ services:
       retries: 10
 
   wp-init:
+    profiles:
+      - seed
     build:
       context: .
       dockerfile: docker/wp-cli/Dockerfile

@@ -6,7 +6,7 @@ Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and food arti
 
 - WordPress with MariaDB, deployed by Docker Compose with small Kepoli-specific images built from this repo.
 - A custom `kepoli` theme focused on reading, recipes, internal links, and ad-safe layouts.
-- A one-shot `wp-init` service that installs/configures WordPress and seeds 30 published posts plus required AdSense-readiness pages.
+- An optional one-shot `wp-init` seed profile for manual reseeding.
 - A small MU plugin that self-runs the same seed once if a platform starts WordPress but skips the one-shot seed service.
 - Google Site Kit installation for later AdSense, Search Console, and Analytics connection from WordPress admin.
 
@@ -17,12 +17,12 @@ Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and food arti
 
 ```powershell
 docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
-docker compose -f docker-compose.yml -f docker-compose.local.yml run --rm wp-init
+docker compose -f docker-compose.yml -f docker-compose.local.yml --profile seed run --rm wp-init
 ```
 
 3. Open `http://localhost:8080`.
 
-The seed is idempotent: rerunning `docker compose -f docker-compose.yml -f docker-compose.local.yml run --rm wp-init` updates content by slug instead of duplicating it. If the app starts before `wp-init`, the WordPress service also self-seeds once from the mounted `seed` and `content` folders.
+The seed is idempotent: rerunning `docker compose -f docker-compose.yml -f docker-compose.local.yml --profile seed run --rm wp-init` updates content by slug instead of duplicating it. For normal starts and Coolify deploys, the WordPress service self-seeds once from the baked-in `seed` and `content` folders.
 
 ## Coolify
 
@@ -31,13 +31,15 @@ The seed is idempotent: rerunning `docker compose -f docker-compose.yml -f docke
 3. Add the environment variables from `.env.example`.
 4. Assign `https://kepoli.com` to the `wordpress` service on port `80`.
 5. Enable GitHub auto-deploy on push.
-6. After each deploy, run the one-shot `wp-init` service or configure a post-deploy command equivalent to:
+6. Do not enable the `seed` profile for normal Coolify deploys. WordPress self-seeds automatically from the app image.
+
+If you need to manually reseed after launch, run:
 
 ```sh
-docker compose run --rm wp-init
+docker compose --profile seed run --rm wp-init
 ```
 
-Use only `docker-compose.yml` in Coolify. Do not add `docker-compose.local.yml`; that file publishes `localhost:8080` for local development only. Coolify should build the included `kepoli-wordpress` and `kepoli-wp-cli` images from the repo so the theme, MU plugins, seed scripts, and content are copied into the containers.
+Use only `docker-compose.yml` in Coolify. Do not add `docker-compose.local.yml`; that file publishes `localhost:8080` for local development only. Coolify should build the included `kepoli-wordpress` image from the repo so the theme, MU plugins, seed scripts, and content are copied into the running WordPress container.
 
 ## AdSense Notes
 
