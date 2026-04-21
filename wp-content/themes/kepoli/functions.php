@@ -284,6 +284,46 @@ function kepoli_share_links(int $post_id = 0): array
     return $links;
 }
 
+function kepoli_published_kind_count(string $kind = ''): int
+{
+    global $wpdb;
+
+    $meta_key = '_kepoli_post_kind';
+
+    if ($kind === '') {
+        return (int) $wpdb->get_var(
+            "SELECT COUNT(ID) FROM {$wpdb->posts} WHERE post_type = 'post' AND post_status = 'publish'"
+        );
+    }
+
+    return (int) $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COUNT(p.ID)
+            FROM {$wpdb->posts} p
+            INNER JOIN {$wpdb->postmeta} pm ON pm.post_id = p.ID
+            WHERE p.post_type = 'post'
+              AND p.post_status = 'publish'
+              AND pm.meta_key = %s
+              AND pm.meta_value = %s",
+            $meta_key,
+            $kind
+        )
+    );
+}
+
+function kepoli_latest_post_by_kind(string $kind): ?WP_Post
+{
+    $posts = get_posts([
+        'post_type' => 'post',
+        'posts_per_page' => 1,
+        'ignore_sticky_posts' => true,
+        'meta_key' => '_kepoli_post_kind',
+        'meta_value' => $kind,
+    ]);
+
+    return $posts ? $posts[0] : null;
+}
+
 function kepoli_setup(): void
 {
     add_theme_support('title-tag');

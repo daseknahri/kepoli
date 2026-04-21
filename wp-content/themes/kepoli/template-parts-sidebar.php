@@ -26,20 +26,26 @@
 
 <section class="sidebar-section">
     <h3><?php esc_html_e('Exploreaza categoriile', 'kepoli'); ?></h3>
-    <ul class="more-list">
+    <ul class="more-list more-list--stacked">
         <?php foreach (get_categories(['hide_empty' => true, 'exclude' => [1], 'orderby' => 'count', 'order' => 'DESC']) as $category) : ?>
-            <li><a href="<?php echo esc_url(get_category_link($category)); ?>"><?php echo esc_html($category->name); ?></a></li>
+            <li>
+                <a href="<?php echo esc_url(get_category_link($category)); ?>">
+                    <span><?php echo esc_html($category->name); ?></span>
+                    <strong><?php echo esc_html((string) $category->count); ?></strong>
+                </a>
+            </li>
         <?php endforeach; ?>
     </ul>
 </section>
 
 <section class="sidebar-section">
     <h3><?php esc_html_e('Pagini utile', 'kepoli'); ?></h3>
-    <ul class="more-list">
+    <ul class="more-list more-list--stacked">
         <li><a href="<?php echo esc_url(home_url('/despre-kepoli/')); ?>"><?php esc_html_e('Despre Kepoli', 'kepoli'); ?></a></li>
         <li><a href="<?php echo esc_url(home_url('/despre-autor/')); ?>"><?php esc_html_e('Despre autor', 'kepoli'); ?></a></li>
         <li><a href="<?php echo esc_url(home_url('/contact/')); ?>"><?php esc_html_e('Contact', 'kepoli'); ?></a></li>
         <li><a href="<?php echo esc_url(home_url('/politica-de-confidentialitate/')); ?>"><?php esc_html_e('Confidentialitate', 'kepoli'); ?></a></li>
+        <li><a href="<?php echo esc_url(home_url('/publicitate-si-consimtamant/')); ?>"><?php esc_html_e('Publicitate si consimtamant', 'kepoli'); ?></a></li>
     </ul>
 </section>
 
