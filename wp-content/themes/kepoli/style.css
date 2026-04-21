@@ -769,6 +769,41 @@ h3 {
   font-size: 1.22rem;
 }
 
+.share-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.share-tools__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.share-tools__icon {
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--paper-soft);
+  color: var(--olive-dark);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
 .entry-jumpnav {
   display: flex;
   flex-wrap: wrap;
@@ -921,6 +956,50 @@ h3 {
 .related-card__body p {
   margin: 0 0 18px;
   color: var(--muted);
+}
+
+.post-navigation-pro {
+  margin-top: 38px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.post-navigation-pro__item {
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  background: var(--surface);
+  border-top: 2px solid var(--tone-strong, var(--olive));
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.post-navigation-pro__body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.post-navigation-pro__eyebrow {
+  color: var(--copper);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.post-navigation-pro__body strong {
+  font-size: 1.1rem;
+  line-height: 1.25;
+}
+
+.post-navigation-pro__body span:last-child {
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
 .sidebar {
@@ -1221,6 +1300,7 @@ h3 {
   .author-strip,
   .content-layout,
   .related-grid,
+  .post-navigation-pro,
   .site-footer__inner {
     grid-template-columns: 1fr;
   }
@@ -1250,6 +1330,10 @@ h3 {
 
   .site-brand img {
     width: 132px;
+  }
+
+  .post-navigation-pro__item {
+    grid-template-columns: 1fr;
   }
 
   .browse-links,
@@ -1293,5 +1377,52 @@ h3 {
 
   .author-box {
     grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .site-header,
+  .site-footer,
+  .sidebar,
+  .ad-slot,
+  .share-tools,
+  .reading-progress,
+  .post-navigation-pro,
+  .related-posts--cards,
+  .search-link,
+  .site-nav-toggle {
+    display: none !important;
+  }
+
+  .content-layout {
+    width: 100%;
+    padding: 0;
+    display: block;
+  }
+
+  .entry,
+  .entry-content,
+  .kepoli-recipe-box {
+    max-width: none;
+  }
+
+  .entry-title,
+  .entry-excerpt,
+  .entry-content,
+  .entry-content p,
+  .entry-content li,
+  .entry-content h2,
+  .entry-content h3 {
+    color: #000;
+  }
+
+  a {
+    color: #000;
+    text-decoration: none;
   }
 }

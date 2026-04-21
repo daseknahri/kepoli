@@ -67,4 +67,41 @@
     document.addEventListener('scroll', updateProgress, { passive: true });
     window.addEventListener('resize', updateProgress);
   }
+
+  document.querySelectorAll('[data-copy-url]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const url = button.getAttribute('data-copy-url') || '';
+      const defaultLabel = button.getAttribute('data-copy-default') || 'Copy';
+      const successLabel = button.getAttribute('data-copy-success') || 'Copied';
+      const label = button.querySelector('span:last-child');
+
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(url);
+        } else {
+          const input = document.createElement('input');
+          input.value = url;
+          document.body.appendChild(input);
+          input.select();
+          document.execCommand('copy');
+          input.remove();
+        }
+
+        if (label) {
+          label.textContent = successLabel;
+          window.setTimeout(() => {
+            label.textContent = defaultLabel;
+          }, 1800);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-print-page]').forEach((button) => {
+    button.addEventListener('click', () => {
+      window.print();
+    });
+  });
 })();

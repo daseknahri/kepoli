@@ -228,6 +228,62 @@ function kepoli_related_posts_by_kind(int $post_id = 0, string $kind = 'recipe')
     return kepoli_get_posts_by_slugs(array_slice($slugs, 0, 3));
 }
 
+function kepoli_post_updated_label(int $post_id = 0): string
+{
+    $post_id = $post_id ?: get_the_ID();
+    $published = get_post_time('U', true, $post_id);
+    $modified = get_post_modified_time('U', true, $post_id);
+
+    if (!$published || !$modified || ($modified - $published) < DAY_IN_SECONDS) {
+        return '';
+    }
+
+    return sprintf(__('Actualizat %s', 'kepoli'), get_the_modified_date('', $post_id));
+}
+
+function kepoli_share_links(int $post_id = 0): array
+{
+    $post_id = $post_id ?: get_the_ID();
+    $url = get_permalink($post_id);
+    $title = html_entity_decode(wp_strip_all_tags(get_the_title($post_id)), ENT_QUOTES, 'UTF-8');
+    $text = rawurlencode($title . ' - ' . $url);
+    $subject = rawurlencode($title);
+    $body = rawurlencode($title . "\n\n" . $url);
+
+    $links = [
+        [
+            'type' => 'facebook',
+            'label' => __('Facebook', 'kepoli'),
+            'url' => 'https://www.facebook.com/sharer/sharer.php?u=' . rawurlencode($url),
+        ],
+        [
+            'type' => 'whatsapp',
+            'label' => __('WhatsApp', 'kepoli'),
+            'url' => 'https://wa.me/?text=' . $text,
+        ],
+        [
+            'type' => 'email',
+            'label' => __('Email', 'kepoli'),
+            'url' => 'mailto:?subject=' . $subject . '&body=' . $body,
+        ],
+        [
+            'type' => 'copy',
+            'label' => __('Copiaza linkul', 'kepoli'),
+            'url' => $url,
+        ],
+    ];
+
+    if (kepoli_post_kind($post_id) === 'recipe') {
+        $links[] = [
+            'type' => 'print',
+            'label' => __('Printeaza', 'kepoli'),
+            'url' => '#print',
+        ];
+    }
+
+    return $links;
+}
+
 function kepoli_setup(): void
 {
     add_theme_support('title-tag');
