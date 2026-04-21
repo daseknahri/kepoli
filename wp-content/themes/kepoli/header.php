@@ -18,22 +18,20 @@
             <img src="<?php echo esc_url(kepoli_asset_uri('kepoli-wordmark')); ?>" alt="Kepoli">
         </a>
         <div class="site-nav-panel" id="site-nav-panel" data-nav-panel>
-            <nav class="site-nav" aria-label="<?php esc_attr_e('Navigatie principala', 'kepoli'); ?>">
-                <?php
-                wp_nav_menu([
-                    'theme_location' => 'primary',
-                    'container' => false,
-                    'fallback_cb' => false,
-                ]);
-                ?>
-            </nav>
-            <a class="search-link search-link--panel" href="<?php echo esc_url(home_url('/?s=')); ?>" aria-label="<?php esc_attr_e('Cauta', 'kepoli'); ?>">
-                <?php echo kepoli_icon('search'); ?>
-                <span><?php esc_html_e('Cauta', 'kepoli'); ?></span>
-            </a>
+            <div class="site-nav-panel__inner" data-nav-panel-inner>
+                <nav class="site-nav" aria-label="<?php esc_attr_e('Navigatie principala', 'kepoli'); ?>">
+                    <?php
+                    wp_nav_menu([
+                        'theme_location' => 'primary',
+                        'container' => false,
+                        'fallback_cb' => false,
+                    ]);
+                    ?>
+                </nav>
+            </div>
         </div>
         <div class="site-header__cluster">
-            <a class="search-link search-link--desktop" href="<?php echo esc_url(home_url('/?s=')); ?>" aria-label="<?php esc_attr_e('Cauta', 'kepoli'); ?>">
+            <a class="search-link search-link--header" href="<?php echo esc_url(home_url('/?s=')); ?>" aria-label="<?php esc_attr_e('Cauta', 'kepoli'); ?>">
                 <?php echo kepoli_icon('search'); ?>
             </a>
             <button class="site-nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav-panel" data-nav-toggle>
@@ -48,6 +46,7 @@
         <span class="reading-progress__bar" data-reading-progress-bar></span>
     </div>
 </header>
+<?php kepoli_render_topic_nav(); ?>
 <?php if (!is_front_page()) : ?>
     <?php echo kepoli_ad_slot('header'); ?>
 <?php endif; ?>

@@ -1,6 +1,7 @@
 (() => {
   const toggle = document.querySelector('[data-nav-toggle]');
   const panel = document.querySelector('[data-nav-panel]');
+  const panelInner = panel ? panel.querySelector('[data-nav-panel-inner]') || panel : null;
 
   if (toggle && panel) {
     const closePanel = () => {
@@ -26,7 +27,7 @@
     });
 
     document.addEventListener('click', (event) => {
-      if (!panel.contains(event.target) && !toggle.contains(event.target)) {
+      if (panelInner && !panelInner.contains(event.target) && !toggle.contains(event.target)) {
         closePanel();
       }
     });

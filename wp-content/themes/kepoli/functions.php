@@ -196,6 +196,99 @@ function kepoli_render_browse_links(string $class = 'browse-links'): void
     echo '</div>';
 }
 
+function kepoli_current_topic_slug(): string
+{
+    if (is_category()) {
+        $term = get_queried_object();
+        return $term instanceof WP_Term ? $term->slug : '';
+    }
+
+    if (is_singular('post')) {
+        if (kepoli_post_kind() === 'article') {
+            return 'articole';
+        }
+
+        $category = kepoli_primary_category();
+        return $category ? $category->slug : 'retete';
+    }
+
+    if (is_page('retete')) {
+        return 'retete';
+    }
+
+    if (is_page('articole')) {
+        return 'articole';
+    }
+
+    return '';
+}
+
+function kepoli_topic_nav_items(): array
+{
+    $items = [
+        [
+            'slug' => 'retete',
+            'label' => __('Retete', 'kepoli'),
+            'url' => home_url('/retete/'),
+            'section' => true,
+        ],
+    ];
+
+    foreach (['ciorbe-si-supe', 'feluri-principale', 'patiserie-si-deserturi', 'conserve-si-garnituri'] as $slug) {
+        $category = get_category_by_slug($slug);
+        if (!$category instanceof WP_Term) {
+            continue;
+        }
+
+        $items[] = [
+            'slug' => $slug,
+            'label' => $category->name,
+            'url' => get_category_link($category),
+            'section' => false,
+        ];
+    }
+
+    $items[] = [
+        'slug' => 'articole',
+        'label' => __('Articole', 'kepoli'),
+        'url' => home_url('/articole/'),
+        'section' => true,
+    ];
+
+    $current = kepoli_current_topic_slug();
+
+    return array_map(static function (array $item) use ($current): array {
+        $item['active'] = $item['slug'] === $current;
+        return $item;
+    }, $items);
+}
+
+function kepoli_render_topic_nav(): void
+{
+    $items = kepoli_topic_nav_items();
+    if (!$items) {
+        return;
+    }
+
+    echo '<div class="topic-nav-shell">';
+    echo '<nav class="topic-nav" aria-label="' . esc_attr__('Categorii si sectiuni', 'kepoli') . '">';
+    foreach ($items as $item) {
+        $classes = ['topic-nav__item'];
+        if (!empty($item['section'])) {
+            $classes[] = 'topic-nav__item--section';
+        }
+        if (!empty($item['active'])) {
+            $classes[] = 'is-active';
+        }
+
+        echo '<a class="' . esc_attr(implode(' ', $classes)) . '" href="' . esc_url($item['url']) . '">';
+        echo esc_html($item['label']);
+        echo '</a>';
+    }
+    echo '</nav>';
+    echo '</div>';
+}
+
 function kepoli_post_media_mode(int $post_id = 0): string
 {
     $post_id = $post_id ?: get_the_ID();

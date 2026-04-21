@@ -4,7 +4,7 @@ Theme URI: https://kepoli.com
 Author: Isalune Merovik
 Author URI: https://kepoli.com/despre-autor/
 Description: A lightweight Romanian food blog theme built for recipes, editorial reading, internal linking, and ad-ready spacing.
-Version: 1.1.7
+Version: 1.1.8
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.1
@@ -130,6 +130,7 @@ textarea {
   width: var(--content);
   min-height: 72px;
   margin: 0 auto;
+  position: relative;
   display: flex;
   align-items: center;
   gap: 20px;
@@ -161,6 +162,12 @@ textarea {
   gap: 16px;
 }
 
+.site-nav-panel__inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
 .site-nav {
   margin-left: 0;
   font-family: Arial, Helvetica, sans-serif;
@@ -181,8 +188,9 @@ textarea {
   display: inline-flex;
   align-items: center;
   min-height: 40px;
-  padding: 0 2px;
+  padding: 0 4px;
   color: var(--ink);
+  border-radius: 999px;
   text-decoration: none;
 }
 
@@ -190,6 +198,11 @@ textarea {
 .site-nav .current-menu-item > a,
 .site-nav .current_page_item > a {
   color: var(--clay);
+}
+
+.site-nav .current-menu-item > a,
+.site-nav .current_page_item > a {
+  background: rgba(200, 116, 63, 0.08);
 }
 
 .search-link {
@@ -209,12 +222,8 @@ textarea {
   height: 18px;
 }
 
-.search-link--panel {
-  display: none;
-  width: auto;
-  padding: 0 14px;
-  gap: 8px;
-  font-family: Arial, Helvetica, sans-serif;
+.search-link--header {
+  flex-shrink: 0;
 }
 
 .site-nav-toggle {
@@ -265,6 +274,60 @@ textarea {
   height: 100%;
   background: linear-gradient(90deg, var(--copper), var(--olive));
   transition: width 120ms linear;
+}
+
+.topic-nav-shell {
+  border-bottom: 1px solid rgba(113, 88, 57, 0.12);
+  background: rgba(255, 253, 248, 0.9);
+}
+
+.topic-nav {
+  width: var(--content);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.topic-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.topic-nav__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(113, 88, 57, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, 0.88);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.topic-nav__item:hover {
+  border-color: rgba(200, 116, 63, 0.35);
+  color: var(--clay);
+}
+
+.topic-nav__item--section {
+  border-color: transparent;
+  background: rgba(79, 85, 37, 0.08);
+}
+
+.topic-nav__item.is-active {
+  border-color: transparent;
+  background: var(--copper);
+  color: #fff;
 }
 
 .ad-slot {
@@ -1917,13 +1980,8 @@ h3 {
     place-items: center;
   }
 
-  .search-link--desktop {
-    display: none;
-  }
-
-  .search-link--panel {
-    display: inline-flex;
-    justify-content: center;
+  .search-link--header {
+    display: inline-grid;
   }
 
   .site-nav-panel {
@@ -1931,9 +1989,8 @@ h3 {
     left: 0;
     right: 0;
     top: calc(100% + 1px);
-    display: grid;
-    gap: 14px;
-    padding: 18px 12px 20px;
+    display: block;
+    padding: 10px 0 16px;
     background: rgba(251, 247, 239, 0.98);
     border-bottom: 1px solid rgba(113, 88, 57, 0.16);
     box-shadow: 0 20px 60px rgba(41, 34, 20, 0.12);
@@ -1951,19 +2008,37 @@ h3 {
     transform: translateY(0);
   }
 
+  .site-nav-panel__inner {
+    width: min(420px, calc(100vw - 24px));
+    margin-left: auto;
+    display: grid;
+    gap: 6px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 16px 36px rgba(41, 34, 20, 0.1);
+  }
+
   .site-nav {
     width: 100%;
   }
 
   .site-nav ul {
     display: grid;
-    gap: 6px;
+    gap: 4px;
   }
 
   .site-nav a {
-    min-height: 44px;
+    min-height: 46px;
     width: 100%;
-    padding: 0 8px;
+    padding: 0 12px;
+    border-radius: 8px;
+  }
+
+  .topic-nav {
+    width: 100%;
+    padding: 9px 12px;
   }
 
   .home-hero {
@@ -2055,7 +2130,7 @@ h3 {
   }
 
   .site-brand img {
-    width: 132px;
+    width: 116px;
   }
 
   .site-header__inner {
@@ -2064,7 +2139,22 @@ h3 {
   }
 
   .site-nav-panel {
-    padding: 16px 12px calc(20px + env(safe-area-inset-bottom));
+    padding: 10px 0 calc(20px + env(safe-area-inset-bottom));
+  }
+
+  .site-nav-panel__inner {
+    width: 100%;
+  }
+
+  .topic-nav {
+    gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .topic-nav__item {
+    min-height: 34px;
+    padding: 0 12px;
+    font-size: 0.84rem;
   }
 
   .browse-links,
