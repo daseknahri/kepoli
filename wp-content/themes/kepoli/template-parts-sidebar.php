@@ -9,7 +9,7 @@
 
 <section class="sidebar-section">
     <h3><?php esc_html_e('Din aceeasi bucatarie', 'kepoli'); ?></h3>
-    <ul class="more-list">
+    <ul class="more-list more-list--posts">
         <?php
         $latest = new WP_Query([
             'post_type' => 'post',
@@ -19,7 +19,12 @@
         while ($latest->have_posts()) :
             $latest->the_post();
             ?>
-            <li><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></li>
+            <li>
+                <a href="<?php the_permalink(); ?>">
+                    <span class="more-list__eyebrow"><?php echo esc_html(get_the_date('j M Y')); ?> / <?php echo esc_html(kepoli_post_kind_label()); ?></span>
+                    <strong><?php the_title(); ?></strong>
+                </a>
+            </li>
         <?php endwhile; wp_reset_postdata(); ?>
     </ul>
 </section>

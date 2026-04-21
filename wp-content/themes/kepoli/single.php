@@ -10,6 +10,7 @@ get_header();
     $category = kepoli_primary_category();
     $updated_label = kepoli_post_updated_label();
     $share_links = kepoli_share_links();
+    $article_headings = !$is_recipe ? kepoli_article_heading_index() : [];
     $share_icons = [
         'facebook' => 'F',
         'whatsapp' => 'W',
@@ -81,6 +82,22 @@ get_header();
                         <a href="#mod-de-preparare"><?php esc_html_e('Preparare', 'kepoli'); ?></a>
                         <a href="#sfaturi-pentru-reusita"><?php esc_html_e('Sfaturi', 'kepoli'); ?></a>
                         <a href="#legaturi-utile"><?php esc_html_e('Mai departe', 'kepoli'); ?></a>
+                    </nav>
+                <?php elseif (count($article_headings) > 1) : ?>
+                    <nav class="entry-outline" aria-label="<?php esc_attr_e('In acest articol', 'kepoli'); ?>">
+                        <div class="entry-outline__header">
+                            <p class="eyebrow"><?php esc_html_e('In articol', 'kepoli'); ?></p>
+                        </div>
+                        <ol class="entry-outline__list">
+                            <?php foreach ($article_headings as $index => $heading) : ?>
+                                <li>
+                                    <a href="#<?php echo esc_attr($heading['id']); ?>">
+                                        <span class="entry-outline__number"><?php echo esc_html((string) ($index + 1)); ?></span>
+                                        <span><?php echo esc_html($heading['label']); ?></span>
+                                    </a>
+                                </li>
+                            <?php endforeach; ?>
+                        </ol>
                     </nav>
                 <?php endif; ?>
             </header>

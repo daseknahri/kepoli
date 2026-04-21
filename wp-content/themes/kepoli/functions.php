@@ -241,6 +241,55 @@ function kepoli_post_updated_label(int $post_id = 0): string
     return sprintf(__('Actualizat %s', 'kepoli'), get_the_modified_date('', $post_id));
 }
 
+function kepoli_article_heading_index(int $post_id = 0): array
+{
+    $post_id = $post_id ?: get_the_ID();
+
+    if (!$post_id || kepoli_post_kind($post_id) !== 'article') {
+        return [];
+    }
+
+    $content = (string) get_post_field('post_content', $post_id);
+    if ($content === '') {
+        return [];
+    }
+
+    preg_match_all('/<h2(?:\s[^>]*)?>(.*?)<\/h2>/i', $content, $matches);
+    if (empty($matches[1])) {
+        return [];
+    }
+
+    $headings = [];
+    $seen = [];
+
+    foreach ($matches[1] as $heading_html) {
+        $label = trim(wp_strip_all_tags($heading_html));
+        if ($label === '') {
+            continue;
+        }
+
+        $base = sanitize_title($label);
+        if ($base === '') {
+            $base = 'sectiune';
+        }
+
+        $id = $base;
+        $suffix = 2;
+        while (isset($seen[$id])) {
+            $id = $base . '-' . $suffix;
+            $suffix++;
+        }
+
+        $seen[$id] = true;
+        $headings[] = [
+            'id' => $id,
+            'label' => $label,
+        ];
+    }
+
+    return $headings;
+}
+
 function kepoli_share_links(int $post_id = 0): array
 {
     $post_id = $post_id ?: get_the_ID();
@@ -666,6 +715,38 @@ function kepoli_recipe_content_anchors(string $content): string
     ]);
 }
 add_filter('the_content', 'kepoli_recipe_content_anchors', 5);
+
+function kepoli_article_content_anchors(string $content): string
+{
+    if (!is_singular('post') || kepoli_post_kind() !== 'article') {
+        return $content;
+    }
+
+    $headings = kepoli_article_heading_index(get_the_ID());
+    if (!$headings) {
+        return $content;
+    }
+
+    $index = 0;
+
+    return (string) preg_replace_callback(
+        '/<h2(?![^>]*\sid=)([^>]*)>(.*?)<\/h2>/i',
+        static function (array $matches) use (&$index, $headings): string {
+            if (!isset($headings[$index])) {
+                return $matches[0];
+            }
+
+            $attrs = trim($matches[1]);
+            $attrs = $attrs !== '' ? ' ' . $attrs : '';
+            $id = $headings[$index]['id'];
+            $index++;
+
+            return '<h2 id="' . esc_attr($id) . '"' . $attrs . '>' . $matches[2] . '</h2>';
+        },
+        $content
+    );
+}
+add_filter('the_content', 'kepoli_article_content_anchors', 6);
 
 function kepoli_breadcrumbs(): void
 {
