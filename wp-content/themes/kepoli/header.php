@@ -31,5 +31,7 @@
         </a>
     </div>
 </header>
-<?php echo kepoli_ad_slot('header'); ?>
+<?php if (!is_front_page()) : ?>
+    <?php echo kepoli_ad_slot('header'); ?>
+<?php endif; ?>
 <main id="content" class="site-main">
