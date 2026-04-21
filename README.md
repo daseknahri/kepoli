@@ -57,7 +57,7 @@ Before submitting to AdSense:
 
 ## Author Writing
 
-The `kepoli-author-tools` plugin switches posts to the classic editor for a simpler title/content workflow. It adds `Pauza`, `2 parti`, and `3 parti` toolbar buttons for native WordPress post pagination, plus a Kepoli setup box for post type, meta description, related slugs, and recipe structured data. The Posts list also shows Kepoli type/readiness columns for quick editorial checks. See `docs/author-workflow.md` for the exact writing flow.
+The `kepoli-author-tools` plugin switches posts to the classic editor for a simpler title/content workflow. It adds `Pauza`, `2 parti`, and `3 parti` toolbar buttons for native WordPress post pagination, plus a Kepoli setup box for post type, meta description, related slugs, featured-image metadata, and recipe structured data. The setup box can prefill meta descriptions, internal-link slugs, and image metadata from the current post, and empty fields receive sensible defaults on save. The Posts list also shows Kepoli type/readiness columns for quick editorial checks. See `docs/author-workflow.md` for the exact writing flow.
 
 ## Media
 

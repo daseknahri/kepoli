@@ -33,6 +33,166 @@
     }
   }
 
+  function cleanText(value) {
+    const div = document.createElement('div');
+    div.innerHTML = value || '';
+    return (div.textContent || div.innerText || '')
+      .replace(/\s+/g, ' ')
+      .replace(/\s+([,.!?;:])/g, '$1')
+      .trim();
+  }
+
+  function currentTitle() {
+    const title = document.getElementById('title');
+    return title ? title.value.trim() : '';
+  }
+
+  function currentKind() {
+    const checked = document.querySelector('input[name="kepoli_post_kind"]:checked');
+    return checked ? checked.value : 'recipe';
+  }
+
+  function currentContentText() {
+    const editor = activeVisualEditor();
+    const textarea = getTextarea();
+
+    if (editor) {
+      return cleanText(editor.getContent({ format: 'html' }));
+    }
+
+    return textarea ? cleanText(textarea.value) : '';
+  }
+
+  function setStatus(message) {
+    const status = document.querySelector('[data-kepoli-automation-status]');
+    if (!status) {
+      return;
+    }
+
+    status.textContent = message;
+    window.setTimeout(() => {
+      status.textContent = '';
+    }, 2600);
+  }
+
+  function setField(selector, value) {
+    const field = document.querySelector(selector);
+    if (!field || !value) {
+      return;
+    }
+
+    field.value = value;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function shortSentence(text, maxLength) {
+    const clean = cleanText(text);
+    if (clean.length <= maxLength) {
+      return clean;
+    }
+
+    const slice = clean.slice(0, maxLength + 1);
+    const sentenceEnd = Math.max(slice.lastIndexOf('.'), slice.lastIndexOf('!'), slice.lastIndexOf('?'));
+    const wordEnd = slice.lastIndexOf(' ');
+    const end = sentenceEnd > 90 ? sentenceEnd + 1 : Math.max(80, wordEnd);
+
+    return `${slice.slice(0, end).replace(/[,:;\s]+$/, '')}...`;
+  }
+
+  function normalizeWords(text) {
+    const stopwords = new Set([
+      'acest', 'aceasta', 'aceste', 'acasa', 'aici', 'ale', 'are', 'care', 'cand', 'cum',
+      'din', 'este', 'fara', 'mai', 'mult', 'pentru', 'prin', 'sau', 'sunt', 'unde',
+      'un', 'una', 'unei', 'unui', 'reteta', 'retete', 'romanesc', 'romaneasca', 'kepoli',
+      'the', 'and', 'with', 'from'
+    ]);
+
+    return cleanText(text)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .split(/\s+/)
+      .filter((word) => word.length > 3 && !stopwords.has(word));
+  }
+
+  function scorePost(post, sourceWords) {
+    const haystack = normalizeWords([
+      post.title,
+      post.excerpt,
+      (post.categories || []).join(' '),
+      (post.tags || []).join(' ')
+    ].join(' '));
+    const hay = new Set(haystack);
+    let score = 0;
+
+    sourceWords.forEach((word) => {
+      if (hay.has(word)) {
+        score += 3;
+      } else if (haystack.some((candidate) => candidate.includes(word) || word.includes(candidate))) {
+        score += 1;
+      }
+    });
+
+    return score;
+  }
+
+  function relatedSuggestions(kind) {
+    const posts = (window.kepoliAuthorTools && window.kepoliAuthorTools.relatedPosts) || [];
+    const sourceWords = normalizeWords(`${currentTitle()} ${currentContentText()}`);
+
+    return posts
+      .map((post) => ({ ...post, score: scorePost(post, sourceWords) }))
+      .filter((post) => post.slug && post.kind === kind)
+      .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
+  }
+
+  function bindAutomationButtons() {
+    const metaButton = document.querySelector('[data-kepoli-generate-meta]');
+    const relatedButton = document.querySelector('[data-kepoli-suggest-related]');
+    const imageButton = document.querySelector('[data-kepoli-generate-image-meta]');
+
+    if (metaButton) {
+      metaButton.addEventListener('click', () => {
+        const text = currentContentText();
+        const title = currentTitle();
+        const description = shortSentence(text || title, 155);
+        setField('textarea[name="kepoli_meta_description"]', description);
+        setStatus('Meta description generata. Verifica textul inainte de publicare.');
+      });
+    }
+
+    if (relatedButton) {
+      relatedButton.addEventListener('click', () => {
+        const kind = currentKind();
+        const recipes = relatedSuggestions('recipe').slice(0, kind === 'recipe' ? 3 : 5).map((post) => post.slug);
+        const articles = relatedSuggestions('article').slice(0, kind === 'recipe' ? 1 : 2).map((post) => post.slug);
+
+        setField('textarea[name="kepoli_related_recipe_slugs"]', recipes.join(', '));
+        setField('textarea[name="kepoli_related_article_slugs"]', articles.join(', '));
+        setStatus('Linkuri interne sugerate. Ajusteaza lista daca vrei alte recomandari.');
+      });
+    }
+
+    if (imageButton) {
+      imageButton.addEventListener('click', () => {
+        const title = currentTitle() || 'Reteta Kepoli';
+        const kind = currentKind();
+        const prefix = kind === 'article' ? 'Imagine editoriala pentru' : 'Fotografie culinara pentru';
+        const alt = shortSentence(`${prefix} ${title}, publicata pe blogul romanesc Kepoli.`, 150);
+        const caption = shortSentence(`${title} pe Kepoli.`, 120);
+        const description = shortSentence(`Imagine reprezentativa pentru ${title}, folosita in articolul culinar Kepoli.`, 220);
+
+        setField('input[name="kepoli_image_alt"]', alt);
+        setField('input[name="kepoli_image_title"]', title);
+        setField('input[name="kepoli_image_caption"]', caption);
+        setField('textarea[name="kepoli_image_description"]', description);
+        setStatus('Image meta generata. Verifica daca descrie corect imaginea aleasa.');
+      });
+    }
+  }
+
   function insertAtCursor(textarea, text) {
     const start = textarea.selectionStart || 0;
     const end = textarea.selectionEnd || 0;
@@ -168,6 +328,7 @@
 
   function initKepoliAuthorTools() {
     addQuicktagsButtons();
+    bindAutomationButtons();
     bindTemplateButtons();
     bindKindToggle();
   }

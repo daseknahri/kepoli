@@ -43,6 +43,22 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   margin-top: 12px;
 }
 
+.kepoli-automation-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 12px;
+  border: 1px solid #d9c8af;
+  background: #fffdf8;
+}
+
+.kepoli-automation-actions__status {
+  color: #6b654f;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .kepoli-post-setup {
   display: grid;
   gap: 18px;
@@ -60,6 +76,7 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
 
 .kepoli-post-setup__group legend,
 .kepoli-post-setup label > span,
+.kepoli-image-fields h4,
 .kepoli-recipe-fields h4 {
   display: block;
   margin: 0 0 7px;
@@ -105,6 +122,13 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   background: #fbf7ef;
 }
 
+.kepoli-image-fields {
+  padding: 16px;
+  border: 1px solid #e7d9c4;
+  background: #fffdf8;
+}
+
+.kepoli-image-fields p,
 .kepoli-recipe-fields p {
   margin-top: 0;
   color: #6b654f;
