@@ -20,9 +20,12 @@
             $latest->the_post();
             ?>
             <li>
-                <a href="<?php the_permalink(); ?>">
-                    <span class="more-list__eyebrow"><?php echo esc_html(get_the_date('j M Y')); ?> / <?php echo esc_html(kepoli_post_kind_label()); ?></span>
-                    <strong><?php the_title(); ?></strong>
+                <a class="more-list__post-link" href="<?php the_permalink(); ?>">
+                    <div class="more-list__media"><?php echo kepoli_post_media_markup(get_the_ID(), 'sidebar'); ?></div>
+                    <span class="more-list__body">
+                        <span class="more-list__eyebrow"><?php echo esc_html(get_the_date('j M Y')); ?> / <?php echo esc_html(kepoli_post_kind_label()); ?></span>
+                        <strong><?php the_title(); ?></strong>
+                    </span>
                 </a>
             </li>
         <?php endwhile; wp_reset_postdata(); ?>
