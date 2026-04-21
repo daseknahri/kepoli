@@ -4,7 +4,7 @@ Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and food arti
 
 ## What This Repo Builds
 
-- WordPress with MariaDB, deployed by Docker Compose.
+- WordPress with MariaDB, deployed by Docker Compose with small Kepoli-specific images built from this repo.
 - A custom `kepoli` theme focused on reading, recipes, internal links, and ad-safe layouts.
 - A one-shot `wp-init` service that installs/configures WordPress and seeds 30 published posts plus required AdSense-readiness pages.
 - A small MU plugin that self-runs the same seed once if a platform starts WordPress but skips the one-shot seed service.
@@ -37,7 +37,7 @@ The seed is idempotent: rerunning `docker compose -f docker-compose.yml -f docke
 docker compose run --rm wp-init
 ```
 
-Use only `docker-compose.yml` in Coolify. Do not add `docker-compose.local.yml`; that file publishes `localhost:8080` for local development only.
+Use only `docker-compose.yml` in Coolify. Do not add `docker-compose.local.yml`; that file publishes `localhost:8080` for local development only. Coolify should build the included `kepoli-wordpress` and `kepoli-wp-cli` images from the repo so the theme, MU plugins, seed scripts, and content are copied into the containers.
 
 ## AdSense Notes
 

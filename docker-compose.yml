@@ -16,7 +16,10 @@ services:
       retries: 10
 
   wordpress:
-    image: wordpress:php8.3-apache
+    build:
+      context: .
+      dockerfile: docker/wordpress/Dockerfile
+    image: kepoli-wordpress:latest
     restart: unless-stopped
     depends_on:
       mariadb:
@@ -42,10 +45,6 @@ services:
     volumes:
       - kepoli_wordpress:/var/www/html
       - kepoli_uploads:/var/www/html/wp-content/uploads
-      - ./wp-content/themes/kepoli:/var/www/html/wp-content/themes/kepoli:ro
-      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
-      - ./seed:/seed:ro
-      - ./content:/content:ro
     expose:
       - "80"
     healthcheck:
@@ -55,14 +54,16 @@ services:
       retries: 10
 
   wp-init:
-    image: wordpress:cli-php8.3
+    build:
+      context: .
+      dockerfile: docker/wp-cli/Dockerfile
+    image: kepoli-wp-cli:latest
     restart: "no"
     depends_on:
       mariadb:
         condition: service_healthy
       wordpress:
         condition: service_started
-    user: "33:33"
     environment:
       WORDPRESS_DB_HOST: mariadb:3306
       WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME:?WORDPRESS_DB_NAME is required}
@@ -82,11 +83,6 @@ services:
     volumes:
       - kepoli_wordpress:/var/www/html
       - kepoli_uploads:/var/www/html/wp-content/uploads
-      - ./wp-content/themes/kepoli:/var/www/html/wp-content/themes/kepoli:ro
-      - ./wp-content/mu-plugins:/var/www/html/wp-content/mu-plugins:ro
-      - ./seed:/seed:ro
-      - ./content:/content:ro
-    entrypoint: ["/bin/sh", "/seed/bin/bootstrap.sh"]
 
 volumes:
   kepoli_db:
