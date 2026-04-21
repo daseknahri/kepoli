@@ -105,6 +105,10 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.kepoli-post-setup__grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .kepoli-post-setup input[type="text"],
 .kepoli-post-setup input[type="number"],
 .kepoli-post-setup textarea {

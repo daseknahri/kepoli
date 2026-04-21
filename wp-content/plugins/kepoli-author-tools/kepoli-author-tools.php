@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Kepoli Author Tools
- * Description: Simplifies the Kepoli post editor with split tools, SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.3.0
+ * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
+ * Version: 1.4.0
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,8 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.3.0';
+    private const VERSION = '1.4.0';
+    private static $is_updating_post = false;
 
     public static function init(): void
     {
@@ -137,6 +138,7 @@ final class Kepoli_Author_Tools
         $kind = get_post_meta($post->ID, '_kepoli_post_kind', true);
         $kind = in_array($kind, ['recipe', 'article'], true) ? $kind : 'recipe';
         $seo_title = (string) get_post_meta($post->ID, '_kepoli_seo_title', true);
+        $excerpt = (string) $post->post_excerpt;
         $meta_description = (string) get_post_meta($post->ID, '_kepoli_meta_description', true);
         $related_recipes = self::array_meta_to_text($post->ID, '_kepoli_related_recipe_slugs');
         $related_articles = self::array_meta_to_text($post->ID, '_kepoli_related_article_slugs');
@@ -147,6 +149,7 @@ final class Kepoli_Author_Tools
         ?>
         <div class="kepoli-post-setup">
             <div class="kepoli-automation-actions">
+                <button type="button" class="button" data-kepoli-generate-excerpt><?php esc_html_e('Genereaza excerpt', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-generate-meta><?php esc_html_e('Genereaza meta description', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-suggest-related><?php esc_html_e('Sugereaza linkuri interne', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-generate-image-meta><?php esc_html_e('Genereaza meta imagine', 'kepoli-author-tools'); ?></button>
@@ -170,6 +173,13 @@ final class Kepoli_Author_Tools
                     <span><?php esc_html_e('SEO title optional', 'kepoli-author-tools'); ?></span>
                     <input type="text" name="kepoli_seo_title" value="<?php echo esc_attr($seo_title); ?>" placeholder="<?php esc_attr_e('Daca ramane gol, se foloseste titlul postarii.', 'kepoli-author-tools'); ?>">
                 </label>
+                <label>
+                    <span><?php esc_html_e('Excerpt', 'kepoli-author-tools'); ?></span>
+                    <textarea name="kepoli_post_excerpt" rows="3" maxlength="260" placeholder="<?php esc_attr_e('Rezumat scurt pentru carduri, arhive si intro.', 'kepoli-author-tools'); ?>"><?php echo esc_textarea($excerpt); ?></textarea>
+                </label>
+            </div>
+
+            <div class="kepoli-post-setup__grid kepoli-post-setup__grid--single">
                 <label>
                     <span><?php esc_html_e('Meta description', 'kepoli-author-tools'); ?></span>
                     <textarea name="kepoli_meta_description" rows="3" maxlength="180" placeholder="<?php esc_attr_e('Rezumat scurt pentru Google si distribuire sociala.', 'kepoli-author-tools'); ?>"><?php echo esc_textarea($meta_description); ?></textarea>
@@ -248,6 +258,10 @@ final class Kepoli_Author_Tools
     {
         unset($update);
 
+        if (self::$is_updating_post) {
+            return;
+        }
+
         if (!isset($_POST['kepoli_author_tools_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash((string) $_POST['kepoli_author_tools_nonce'])), 'kepoli_author_tools_save')) {
             return;
         }
@@ -264,6 +278,7 @@ final class Kepoli_Author_Tools
         $kind = in_array($kind, ['recipe', 'article'], true) ? $kind : 'recipe';
         update_post_meta($post_id, '_kepoli_post_kind', $kind);
 
+        self::save_post_excerpt($post_id, $post);
         self::save_text_meta($post_id, '_kepoli_seo_title', 'kepoli_seo_title', 70);
         self::save_meta_description($post_id, $post);
 
@@ -616,6 +631,41 @@ final class Kepoli_Author_Tools
         }
 
         update_post_meta($post_id, '_kepoli_meta_description', $value);
+    }
+
+    private static function save_post_excerpt(int $post_id, WP_Post $post): void
+    {
+        $value = isset($_POST['kepoli_post_excerpt']) ? sanitize_textarea_field(wp_unslash((string) $_POST['kepoli_post_excerpt'])) : '';
+        $value = $value !== '' ? $value : trim((string) $post->post_excerpt);
+        $value = $value !== '' ? $value : self::generate_post_excerpt($post);
+        $value = self::limit_text(self::plain_text($value), 260);
+
+        if ($value === '' || $value === (string) $post->post_excerpt) {
+            return;
+        }
+
+        self::$is_updating_post = true;
+        wp_update_post([
+            'ID' => $post_id,
+            'post_excerpt' => $value,
+        ]);
+        self::$is_updating_post = false;
+        $post->post_excerpt = $value;
+    }
+
+    private static function generate_post_excerpt(WP_Post $post): string
+    {
+        $source = trim((string) $post->post_excerpt);
+
+        if ($source === '') {
+            $source = trim((string) $post->post_content);
+        }
+
+        if ($source === '') {
+            $source = trim((string) $post->post_title);
+        }
+
+        return self::sentence_limit($source, 220, 95);
     }
 
     private static function generate_meta_description(WP_Post $post): string

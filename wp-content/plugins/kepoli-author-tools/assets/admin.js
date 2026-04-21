@@ -149,9 +149,20 @@
   }
 
   function bindAutomationButtons() {
+    const excerptButton = document.querySelector('[data-kepoli-generate-excerpt]');
     const metaButton = document.querySelector('[data-kepoli-generate-meta]');
     const relatedButton = document.querySelector('[data-kepoli-suggest-related]');
     const imageButton = document.querySelector('[data-kepoli-generate-image-meta]');
+
+    if (excerptButton) {
+      excerptButton.addEventListener('click', () => {
+        const text = currentContentText();
+        const title = currentTitle();
+        const excerpt = shortSentence(text || title, 220);
+        setField('textarea[name="kepoli_post_excerpt"]', excerpt);
+        setStatus('Excerpt generat. Ajusteaza-l daca vrei un rezumat mai editorial.');
+      });
+    }
 
     if (metaButton) {
       metaButton.addEventListener('click', () => {
