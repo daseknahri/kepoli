@@ -9,6 +9,7 @@ Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and food arti
 - An optional one-shot `wp-init` seed profile for manual reseeding.
 - A small MU plugin that self-runs the same seed once if a platform starts WordPress but skips the one-shot seed service, and keeps the writer account as an administrator.
 - Google Site Kit installation for later AdSense, Search Console, and Analytics connection from WordPress admin.
+- Comment and ping defaults tuned for a content-first launch, with seeded pages/posts closed to reduce spam overhead.
 
 ## Local Start
 

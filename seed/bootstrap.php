@@ -69,6 +69,8 @@ function kepoli_seed_upsert_page(array $page, int $author_id): int
         'post_author' => $author_id,
         'post_name' => $page['slug'],
         'post_title' => $page['title'],
+        'comment_status' => 'closed',
+        'ping_status' => 'closed',
         'post_content' => str_replace(
             ['{{SITE_EMAIL}}', '{{WRITER_EMAIL}}'],
             [kepoli_seed_env('SITE_EMAIL', 'contact@kepoli.com'), kepoli_seed_env('WRITER_EMAIL', 'isalunemerovik@gmail.com')],
@@ -271,6 +273,12 @@ update_option('timezone_string', 'Europe/Bucharest');
 update_option('date_format', 'j F Y');
 update_option('time_format', 'H:i');
 update_option('posts_per_page', 9);
+update_option('default_role', 'subscriber');
+update_option('default_comment_status', 'closed');
+update_option('default_ping_status', 'closed');
+update_option('require_name_email', '1');
+update_option('close_comments_for_old_posts', '1');
+update_option('close_comments_days_old', '14');
 
 global $wp_rewrite;
 if ($wp_rewrite instanceof WP_Rewrite) {
@@ -315,6 +323,8 @@ foreach ($posts as $index => $post) {
         'post_name' => $post['slug'],
         'post_title' => $post['title'],
         'post_excerpt' => $post['excerpt'],
+        'comment_status' => 'closed',
+        'ping_status' => 'closed',
         'post_content' => '<p>' . esc_html($post['excerpt']) . '</p>',
         'post_date' => $date,
         'post_date_gmt' => get_gmt_from_date($date),
@@ -381,7 +391,7 @@ foreach (['contact', 'politica-de-confidentialitate', 'politica-de-cookies', 'te
 
 update_option('default_category', $category_ids['ciorbe-si-supe'] ?? 1);
 update_option('posts_per_page', 9);
-update_option('kepoli_seed_version', '2026-04-21-admin-user');
+update_option('kepoli_seed_version', '2026-04-21-discussion-defaults');
 flush_rewrite_rules(false);
 
 echo "Seeded " . count($posts) . " posts and " . count($pages) . " pages.\n";

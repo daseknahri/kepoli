@@ -75,6 +75,7 @@ wp rewrite structure "/%category%/%postname%/" --hard
 
 wp theme activate kepoli
 wp plugin install google-site-kit --activate || true
+wp plugin deactivate akismet hello >/dev/null 2>&1 || true
 
 wp eval-file /seed/bootstrap.php
 wp rewrite flush --hard
