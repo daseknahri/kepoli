@@ -4,12 +4,14 @@
 
   if (toggle && panel) {
     const closePanel = () => {
+      document.body.classList.remove('nav-open');
       toggle.classList.remove('is-open');
       toggle.setAttribute('aria-expanded', 'false');
       panel.classList.remove('is-open');
     };
 
     const openPanel = () => {
+      document.body.classList.add('nav-open');
       toggle.classList.add('is-open');
       toggle.setAttribute('aria-expanded', 'true');
       panel.classList.add('is-open');
@@ -33,6 +35,12 @@
       if (event.key === 'Escape') {
         closePanel();
       }
+    });
+
+    panel.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', () => {
+        closePanel();
+      });
     });
 
     window.addEventListener('resize', () => {

@@ -23,7 +23,9 @@ get_header();
             <header class="entry-header">
                 <?php kepoli_breadcrumbs(); ?>
                 <div class="entry-meta">
-                    <?php echo esc_html(get_the_date()); ?> / <?php echo esc_html(kepoli_read_time()); ?> / <?php echo esc_html(get_the_author()); ?>
+                    <span><?php echo esc_html(get_the_date()); ?></span>
+                    <span><?php echo esc_html(kepoli_read_time()); ?></span>
+                    <span><?php echo esc_html(get_the_author()); ?></span>
                 </div>
                 <div class="entry-toolbar">
                     <span class="entry-toolbar__pill <?php echo esc_attr(kepoli_post_tone_class()); ?>"><?php echo esc_html(kepoli_post_kind_label()); ?></span>
