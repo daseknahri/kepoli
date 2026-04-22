@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.4.0
+ * Version: 1.4.1
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,23 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.4.0';
+    private const VERSION = '1.4.1';
+    private const TEMPLATE_PROMPTS = [
+        'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
+        'Ingredient 1',
+        'Ingredient 2',
+        'Ingredient 3',
+        'Descrie primul pas clar, cu temperatura, timp sau semne vizuale daca este nevoie.',
+        'Continua cu pasii in ordinea fireasca.',
+        'Incheie cu momentul in care preparatul este gata.',
+        'Adauga ajustari, greseli de evitat si variante utile pentru ingrediente.',
+        'Explica pastrarea la frigider, reincalzirea sau consumul in siguranta.',
+        'Raspunde practic, cu intervale realiste.',
+        'Prezinta subiectul si spune cititorului ce va invata din articol.',
+        'Explica punctele importante in paragrafe scurte, cu exemple concrete.',
+        'Leaga sfaturile de retete, ingrediente sau obiceiuri de gatit acasa.',
+        'Adauga linkuri interne catre retete sau ghiduri Kepoli apropiate.',
+    ];
     private static $is_updating_post = false;
 
     public static function init(): void
@@ -29,6 +45,8 @@ final class Kepoli_Author_Tools
         add_action('manage_post_posts_custom_column', [self::class, 'render_post_list_column'], 10, 2);
         add_action('restrict_manage_posts', [self::class, 'render_post_kind_filter']);
         add_action('pre_get_posts', [self::class, 'filter_posts_by_kind']);
+        add_filter('the_content', [self::class, 'remove_template_prompts_from_content'], 4);
+        add_filter('get_the_excerpt', [self::class, 'remove_template_prompts_from_excerpt'], 12, 2);
     }
 
     public static function use_classic_editor_for_posts(bool $use_block_editor, string $post_type): bool
@@ -386,6 +404,39 @@ final class Kepoli_Author_Tools
         $query->set('meta_query', $meta_query);
     }
 
+    public static function remove_template_prompts_from_content(string $content): string
+    {
+        if (is_admin() || $content === '') {
+            return $content;
+        }
+
+        foreach (self::TEMPLATE_PROMPTS as $prompt) {
+            $quoted = preg_quote($prompt, '/');
+            $content = (string) preg_replace('/<p>\s*' . $quoted . '\s*<\/p>/iu', '', $content);
+            $content = (string) preg_replace('/<li>\s*' . $quoted . '\s*<\/li>/iu', '', $content);
+        }
+
+        $content = (string) preg_replace('/<ul>\s*<\/ul>/i', '', $content);
+        $content = (string) preg_replace('/<ol>\s*<\/ol>/i', '', $content);
+
+        return $content;
+    }
+
+    public static function remove_template_prompts_from_excerpt(string $excerpt, ?WP_Post $post = null): string
+    {
+        if ($excerpt === '') {
+            return $excerpt;
+        }
+
+        $clean = self::remove_template_prompt_text($excerpt);
+
+        if (($clean === '' || self::word_count($clean) < 8) && $post instanceof WP_Post) {
+            $clean = self::sentence_limit((string) $post->post_content, 220, 95);
+        }
+
+        return self::word_count($clean) < 8 ? '' : $clean;
+    }
+
     private static function is_post_editor_screen(): bool
     {
         if (!is_admin()) {
@@ -622,8 +673,12 @@ final class Kepoli_Author_Tools
     private static function save_meta_description(int $post_id, WP_Post $post): void
     {
         $value = isset($_POST['kepoli_meta_description']) ? sanitize_textarea_field(wp_unslash((string) $_POST['kepoli_meta_description'])) : '';
+        $value = self::remove_template_prompt_text($value);
         $value = $value !== '' ? $value : self::generate_meta_description($post);
         $value = self::limit_text(self::plain_text($value), 180);
+        if (self::word_count($value) < 8) {
+            $value = self::limit_text(self::plain_text(self::generate_meta_description($post)), 180);
+        }
 
         if ($value === '') {
             delete_post_meta($post_id, '_kepoli_meta_description');
@@ -636,9 +691,14 @@ final class Kepoli_Author_Tools
     private static function save_post_excerpt(int $post_id, WP_Post $post): void
     {
         $value = isset($_POST['kepoli_post_excerpt']) ? sanitize_textarea_field(wp_unslash((string) $_POST['kepoli_post_excerpt'])) : '';
+        $value = self::remove_template_prompt_text($value);
         $value = $value !== '' ? $value : trim((string) $post->post_excerpt);
+        $value = self::remove_template_prompt_text($value);
         $value = $value !== '' ? $value : self::generate_post_excerpt($post);
         $value = self::limit_text(self::plain_text($value), 260);
+        if (self::word_count($value) < 8) {
+            $value = self::limit_text(self::plain_text(self::generate_post_excerpt($post)), 260);
+        }
 
         if ($value === '' || $value === (string) $post->post_excerpt) {
             return;
@@ -655,10 +715,10 @@ final class Kepoli_Author_Tools
 
     private static function generate_post_excerpt(WP_Post $post): string
     {
-        $source = trim((string) $post->post_excerpt);
+        $source = self::remove_template_prompt_text(trim((string) $post->post_excerpt));
 
         if ($source === '') {
-            $source = trim((string) $post->post_content);
+            $source = self::remove_template_prompt_text(trim((string) $post->post_content));
         }
 
         if ($source === '') {
@@ -670,10 +730,10 @@ final class Kepoli_Author_Tools
 
     private static function generate_meta_description(WP_Post $post): string
     {
-        $source = trim((string) $post->post_excerpt);
+        $source = self::remove_template_prompt_text(trim((string) $post->post_excerpt));
 
         if ($source === '') {
-            $source = trim((string) $post->post_content);
+            $source = self::remove_template_prompt_text(trim((string) $post->post_content));
         }
 
         if ($source === '') {
@@ -837,12 +897,37 @@ final class Kepoli_Author_Tools
 
     private static function plain_text(string $text): string
     {
+        $text = self::remove_template_prompt_text($text);
         $text = strip_shortcodes($text);
         $text = wp_strip_all_tags($text);
         $text = html_entity_decode($text, ENT_QUOTES, get_bloginfo('charset'));
         $text = preg_replace('/\s+/', ' ', $text);
 
         return trim((string) $text);
+    }
+
+    private static function remove_template_prompt_text(string $text): string
+    {
+        if ($text === '') {
+            return '';
+        }
+
+        foreach (self::TEMPLATE_PROMPTS as $prompt) {
+            $text = str_replace($prompt, '', $text);
+        }
+
+        return trim((string) preg_replace('/\s+/', ' ', $text));
+    }
+
+    private static function word_count(string $text): int
+    {
+        $plain = self::plain_text($text);
+        if ($plain === '') {
+            return 0;
+        }
+
+        $words = preg_split('/\s+/', $plain) ?: [];
+        return count(array_filter($words));
     }
 
     private static function posted_slugs(string $field): array

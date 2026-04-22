@@ -261,39 +261,31 @@
   function recipeTemplate() {
     return [
       '<h2>Pe scurt</h2>',
-      '<p>Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.</p>',
+      '<!-- Kepoli: scrie 2-3 fraze despre rezultat, ocazie si textura. -->',
       '<h2>Ingrediente</h2>',
-      '<ul>',
-      '<li>Ingredient 1</li>',
-      '<li>Ingredient 2</li>',
-      '<li>Ingredient 3</li>',
-      '</ul>',
+      '<!-- Kepoli: adauga ingredientele intr-o lista, cate unul pe rand. -->',
       '<h2>Mod de preparare</h2>',
-      '<ol>',
-      '<li>Descrie primul pas clar, cu temperatura, timp sau semne vizuale daca este nevoie.</li>',
-      '<li>Continua cu pasii in ordinea fireasca.</li>',
-      '<li>Incheie cu momentul in care preparatul este gata.</li>',
-      '</ol>',
+      '<!-- Kepoli: adauga pasii in ordine, cu timp, temperatura si semne vizuale cand este util. -->',
       '<h2>Sfaturi pentru reusita</h2>',
-      '<p>Adauga ajustari, greseli de evitat si variante utile pentru ingrediente.</p>',
+      '<!-- Kepoli: noteaza greseli de evitat, ajustari si variante utile. -->',
       '<h2>Cum pastrezi</h2>',
-      '<p>Explica pastrarea la frigider, reincalzirea sau consumul in siguranta.</p>',
+      '<!-- Kepoli: explica pastrarea, reincalzirea si consumul in siguranta. -->',
       '<h2>Intrebari frecvente</h2>',
       '<h3>Pot pregati reteta in avans?</h3>',
-      '<p>Raspunde practic, cu intervale realiste.</p>',
+      '<!-- Kepoli: raspunde practic, cu intervale realiste. -->',
     ].join('\n');
   }
 
   function articleTemplate() {
     return [
       '<h2>Ideea principala</h2>',
-      '<p>Prezinta subiectul si spune cititorului ce va invata din articol.</p>',
+      '<!-- Kepoli: prezinta subiectul si spune cititorului ce va afla. -->',
       '<h2>Ce merita retinut</h2>',
-      '<p>Explica punctele importante in paragrafe scurte, cu exemple concrete.</p>',
+      '<!-- Kepoli: explica punctele importante in paragrafe scurte, cu exemple concrete. -->',
       '<h2>Cum aplici in bucatarie</h2>',
-      '<p>Leaga sfaturile de retete, ingrediente sau obiceiuri de gatit acasa.</p>',
+      '<!-- Kepoli: leaga sfaturile de retete, ingrediente sau obiceiuri de gatit acasa. -->',
       '<h2>Legaturi utile</h2>',
-      '<p>Adauga linkuri interne catre retete sau ghiduri Kepoli apropiate.</p>',
+      '<!-- Kepoli: adauga linkuri interne catre retete sau ghiduri apropiate. -->',
     ].join('\n');
   }
 

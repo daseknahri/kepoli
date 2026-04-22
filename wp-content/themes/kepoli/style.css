@@ -4,7 +4,7 @@ Theme URI: https://kepoli.com
 Author: Isalune Merovik
 Author URI: https://kepoli.com/despre-autor/
 Description: A lightweight Romanian food blog theme built for recipes, editorial reading, internal linking, and ad-ready spacing.
-Version: 1.2.4
+Version: 1.2.5
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.1
@@ -324,13 +324,20 @@ textarea {
   margin: 28px auto;
   display: grid;
   place-items: center;
-  border: 1px dashed rgba(79, 85, 37, 0.3);
-  background: rgba(255, 253, 248, 0.72);
+  border: 1px solid rgba(79, 85, 37, 0.16);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(255, 253, 248, 0.72), rgba(244, 234, 220, 0.5));
   color: var(--muted);
   font-family: Arial, Helvetica, sans-serif;
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.ad-slot--live {
+  min-height: 0;
+  border: 0;
+  background: transparent;
 }
 
 .ad-slot--sidebar {
@@ -1661,6 +1668,25 @@ h3 {
   border-radius: var(--radius);
 }
 
+.kepoli-recipe-box {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(255, 253, 248, 0.74);
+}
+
+.kepoli-recipe-box::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--olive), var(--copper));
+}
+
+.kepoli-recipe-box > h2:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
 .content-layout--recipe .entry-content h2 {
   padding-top: 10px;
   border-top: 1px solid rgba(230, 217, 200, 0.72);
@@ -1728,16 +1754,18 @@ h3 {
 .kepoli-recipe-meta {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1px;
+  gap: 8px;
   margin: 18px 0;
-  background: var(--line);
-  border: 1px solid var(--line);
+  background: transparent;
+  border: 0;
 }
 
 .kepoli-recipe-meta div {
   min-height: 68px;
   padding: 12px 14px;
-  background: var(--surface);
+  border: 1px solid rgba(230, 217, 200, 0.9);
+  border-radius: var(--radius);
+  background: rgba(251, 247, 239, 0.56);
 }
 
 .kepoli-recipe-meta span {
@@ -1775,8 +1803,17 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 0 12px;
+  padding: 10px 0;
   border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 160ms ease, padding 160ms ease;
+}
+
+.more-list--stacked a:hover,
+.more-list--stacked a:focus-visible {
+  padding-left: 4px;
+  color: var(--clay);
 }
 
 .more-list--stacked strong {
@@ -1794,18 +1831,29 @@ h3 {
   grid-template-columns: 72px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
-  padding-bottom: 12px;
+  padding: 8px;
   border-bottom: 1px solid var(--line);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: background 160ms ease, transform 160ms ease;
 }
 
 .more-list__post-link {
   color: var(--ink);
 }
 
+.more-list__post-link:hover,
+.more-list__post-link:focus-visible {
+  background: rgba(255, 253, 248, 0.62);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
 .more-list__media {
   display: block;
   aspect-ratio: 1 / 0.86;
   overflow: hidden;
+  border-radius: var(--radius);
   background: var(--paper-soft);
 }
 
@@ -1833,6 +1881,12 @@ h3 {
   color: var(--ink);
   font-size: 0.96rem;
   line-height: 1.35;
+  transition: color 160ms ease;
+}
+
+.more-list__post-link:hover strong,
+.more-list__post-link:focus-visible strong {
+  color: var(--clay);
 }
 
 .related-posts--cards {
@@ -1999,6 +2053,7 @@ h3 {
 .sidebar-section h3 {
   margin: 0 0 12px;
   font-size: 1.08rem;
+  text-wrap: pretty;
 }
 
 .sidebar-section a {
@@ -2025,6 +2080,7 @@ h3 {
   height: 76px;
   object-fit: cover;
   border-radius: 999px;
+  box-shadow: 0 0 0 4px rgba(255, 253, 248, 0.78), 0 10px 26px rgba(41, 34, 20, 0.12);
 }
 
 .author-box h2,
@@ -2057,6 +2113,20 @@ h3 {
   font-size: 0.88rem;
 }
 
+.author-box__links a {
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(200, 116, 63, 0.3);
+  color: var(--olive-dark);
+  text-decoration: none;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.author-box__links a:hover,
+.author-box__links a:focus-visible {
+  border-color: currentColor;
+  color: var(--clay);
+}
+
 .content-layout--single-post .author-box {
   margin-top: 22px;
 }
@@ -2074,6 +2144,12 @@ h3 {
   margin: 0;
   border: 0;
   border-radius: 0;
+  transition: background 160ms ease;
+}
+
+.page-panel:hover,
+.page-panel:focus-within {
+  background: #fffdf8;
 }
 
 .page-panel h2 {
@@ -2109,9 +2185,10 @@ h3 {
 
 .search-empty {
   grid-column: 1 / -1;
-  padding: 20px 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.62);
 }
 
 .search-empty p {
@@ -2308,6 +2385,10 @@ h3 {
   width: min(720px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 90px 0;
+}
+
+.not-found .search-form {
+  max-width: none;
 }
 
 @keyframes kepoli-rise {
@@ -2847,6 +2928,16 @@ h3 {
     flex-direction: column;
   }
 
+  .ad-slot {
+    min-height: 72px;
+    margin: 22px auto;
+    font-size: 0.7rem;
+  }
+
+  .ad-slot--sidebar {
+    min-height: 120px;
+  }
+
   .related-grid {
     gap: 10px;
   }
@@ -2926,6 +3017,12 @@ h3 {
 
   .kepoli-recipe-meta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .more-list--posts a {
+    grid-template-columns: 82px minmax(0, 1fr);
+    padding: 8px 0;
   }
 
   .content-layout--recipe .entry-content ul li,
