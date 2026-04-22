@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.4.1
+ * Version: 1.4.2
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.4.1';
+    private const VERSION = '1.4.2';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -29,6 +29,19 @@ final class Kepoli_Author_Tools
         'Explica punctele importante in paragrafe scurte, cu exemple concrete.',
         'Leaga sfaturile de retete, ingrediente sau obiceiuri de gatit acasa.',
         'Adauga linkuri interne catre retete sau ghiduri Kepoli apropiate.',
+    ];
+    private const TEMPLATE_OUTLINE_LABELS = [
+        'Pe scurt',
+        'Ingrediente',
+        'Mod de preparare',
+        'Sfaturi pentru reusita',
+        'Cum pastrezi',
+        'Intrebari frecvente',
+        'Pot pregati reteta in avans?',
+        'Ideea principala',
+        'Ce merita retinut',
+        'Cum aplici in bucatarie',
+        'Legaturi utile',
     ];
     private static $is_updating_post = false;
 
@@ -915,6 +928,14 @@ final class Kepoli_Author_Tools
         foreach (self::TEMPLATE_PROMPTS as $prompt) {
             $text = str_replace($prompt, '', $text);
         }
+
+        foreach (self::TEMPLATE_OUTLINE_LABELS as $label) {
+            $quoted = preg_quote($label, '/');
+            $text = (string) preg_replace('/<h[23][^>]*>\s*' . $quoted . '\s*<\/h[23]>/iu', ' ', $text);
+        }
+
+        $labels = implode('|', array_map(static fn (string $label): string => preg_quote($label, '/'), self::TEMPLATE_OUTLINE_LABELS));
+        $text = (string) preg_replace('/\b(?:' . $labels . ')\b(?=(?:\s+(?:' . $labels . ')\b)|\s*$)/iu', ' ', $text);
 
         return trim((string) preg_replace('/\s+/', ' ', $text));
     }

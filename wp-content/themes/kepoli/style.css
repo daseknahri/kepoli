@@ -4,7 +4,7 @@ Theme URI: https://kepoli.com
 Author: Isalune Merovik
 Author URI: https://kepoli.com/despre-autor/
 Description: A lightweight Romanian food blog theme built for recipes, editorial reading, internal linking, and ad-ready spacing.
-Version: 1.2.6
+Version: 1.2.7
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.1
@@ -29,6 +29,7 @@ Text Domain: kepoli
   --content: min(1120px, calc(100vw - 32px));
   --measure: 740px;
   font-size: 16px;
+  color-scheme: light;
 }
 
 * {
@@ -47,6 +48,11 @@ body {
   font-family: Georgia, "Times New Roman", serif;
   line-height: 1.65;
   text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(200, 116, 63, 0.24);
+  color: var(--ink);
 }
 
 body.nav-open {
@@ -1295,6 +1301,7 @@ h3 {
   margin: 0 0 14px;
   font-size: clamp(2.3rem, 4.8vw, 4.3rem);
   letter-spacing: 0;
+  text-wrap: balance;
 }
 
 .entry-excerpt {
@@ -1302,6 +1309,7 @@ h3 {
   margin: 0 0 14px;
   color: var(--muted);
   font-size: 1.06rem;
+  text-wrap: pretty;
 }
 
 .entry-summary {
@@ -1313,6 +1321,26 @@ h3 {
   padding: 12px 0 16px;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+}
+
+.entry-featured-media {
+  margin: 0 0 28px;
+}
+
+.entry-featured-media__image {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: var(--radius);
+  box-shadow: 0 16px 42px rgba(41, 34, 20, 0.1);
+}
+
+.entry-featured-media figcaption {
+  margin-top: 8px;
+  color: var(--muted);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .entry-meta-row {
@@ -1992,7 +2020,8 @@ h3 {
   transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 
-.post-navigation-simple__item:hover {
+.post-navigation-simple__item:hover,
+.post-navigation-simple__item:focus-visible {
   border-color: rgba(200, 116, 63, 0.34);
   background: rgba(255, 253, 248, 0.68);
   transform: translateY(-2px);
@@ -2037,6 +2066,7 @@ h3 {
 .sidebar {
   position: sticky;
   top: 104px;
+  align-self: start;
 }
 
 .content-layout--single-post .sidebar {
@@ -2834,6 +2864,14 @@ h3 {
     gap: 12px;
     padding: 0;
     border: 0;
+  }
+
+  .entry-featured-media {
+    margin-bottom: 22px;
+  }
+
+  .entry-featured-media__image {
+    aspect-ratio: 4 / 3;
   }
 
   .entry-meta-row {

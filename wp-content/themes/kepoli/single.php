@@ -86,6 +86,17 @@ get_header();
                     </nav>
                 <?php endif; ?>
             </header>
+            <?php if (has_post_thumbnail()) : ?>
+                <figure class="entry-featured-media">
+                    <?php the_post_thumbnail('large', ['class' => 'entry-featured-media__image']); ?>
+                    <?php
+                    $featured_caption = wp_get_attachment_caption(get_post_thumbnail_id());
+                    if ($featured_caption) :
+                        ?>
+                        <figcaption><?php echo esc_html($featured_caption); ?></figcaption>
+                    <?php endif; ?>
+                </figure>
+            <?php endif; ?>
             <div class="entry-content">
                 <?php the_content(); ?>
             </div>
