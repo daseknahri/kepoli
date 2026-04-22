@@ -4,7 +4,6 @@
  */
 get_header();
 
-$recipe_count = kepoli_published_kind_count('recipe');
 $recipe_categories = array_values(array_filter(get_categories([
     'hide_empty' => true,
     'exclude' => [1],
@@ -19,10 +18,6 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
     <p class="eyebrow"><?php esc_html_e('Retete', 'kepoli'); ?></p>
     <h1><?php esc_html_e('Retete romanesti', 'kepoli'); ?></h1>
     <p><?php esc_html_e('Alege o categorie sau porneste de la cele mai noi retete Kepoli.', 'kepoli'); ?></p>
-    <div class="meta-strip" aria-label="<?php esc_attr_e('Rezumat retete', 'kepoli'); ?>">
-        <span class="meta-strip__item"><?php echo esc_html(sprintf(_n('%d reteta publicata', '%d retete publicate', $recipe_count, 'kepoli'), $recipe_count)); ?></span>
-        <span class="meta-strip__item"><?php echo esc_html(sprintf(_n('%d categorie', '%d categorii', count($recipe_categories), 'kepoli'), count($recipe_categories))); ?></span>
-    </div>
 </header>
 <section class="category-band">
     <div class="section">
@@ -48,7 +43,6 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
     </div>
 </section>
 <?php if ($featured_recipe) : ?>
-    <?php $featured_recipe_category = kepoli_primary_category($featured_recipe->ID); ?>
     <section class="section section--tight">
         <div class="section__header section__header--compact">
             <div>
@@ -62,18 +56,12 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
             </a>
             <div class="lead-story__body">
                 <p class="eyebrow"><?php esc_html_e('Reteta recomandata', 'kepoli'); ?></p>
-                <?php if ($featured_recipe_category && $featured_recipe_category->slug !== 'articole') : ?>
-                    <div class="lead-story__chips content-chip-row">
-                        <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($featured_recipe_category)); ?>"><?php echo esc_html($featured_recipe_category->name); ?></a>
-                    </div>
-                <?php endif; ?>
                 <h3><a href="<?php echo esc_url(get_permalink($featured_recipe)); ?>"><?php echo esc_html(get_the_title($featured_recipe)); ?></a></h3>
                 <p><?php echo esc_html(get_the_excerpt($featured_recipe)); ?></p>
                 <div class="meta-strip meta-strip--inline">
                     <span class="meta-strip__item"><?php echo esc_html(get_the_date('j M Y', $featured_recipe)); ?></span>
                     <span class="meta-strip__item"><?php echo esc_html(kepoli_read_time($featured_recipe->ID)); ?></span>
                 </div>
-                <a class="button" href="<?php echo esc_url(get_permalink($featured_recipe)); ?>"><?php esc_html_e('Deschide reteta', 'kepoli'); ?></a>
             </div>
         </article>
     </section>

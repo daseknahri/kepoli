@@ -4,7 +4,6 @@
  */
 get_header();
 
-$article_count = kepoli_published_kind_count('article');
 $featured_article = kepoli_latest_post_by_kind('article');
 ?>
 <header class="archive-header">
@@ -12,13 +11,8 @@ $featured_article = kepoli_latest_post_by_kind('article');
     <p class="eyebrow"><?php esc_html_e('Articole', 'kepoli'); ?></p>
     <h1><?php esc_html_e('Ghiduri de bucatarie', 'kepoli'); ?></h1>
     <p><?php esc_html_e('Organizare, ingrediente, tehnici si idei pentru mese romanesti bine asezate.', 'kepoli'); ?></p>
-    <div class="meta-strip" aria-label="<?php esc_attr_e('Rezumat articole', 'kepoli'); ?>">
-        <span class="meta-strip__item"><?php echo esc_html(sprintf(_n('%d articol publicat', '%d articole publicate', $article_count, 'kepoli'), $article_count)); ?></span>
-    </div>
-    <?php kepoli_render_browse_links(); ?>
 </header>
 <?php if ($featured_article) : ?>
-    <?php $featured_article_category = kepoli_primary_category($featured_article->ID); ?>
     <section class="section section--tight">
         <div class="section__header section__header--compact">
             <div>
@@ -32,18 +26,12 @@ $featured_article = kepoli_latest_post_by_kind('article');
             </a>
             <div class="lead-story__body">
                 <p class="eyebrow"><?php esc_html_e('Articol recomandat', 'kepoli'); ?></p>
-                <?php if ($featured_article_category && $featured_article_category->slug !== 'articole') : ?>
-                    <div class="lead-story__chips content-chip-row">
-                        <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($featured_article_category)); ?>"><?php echo esc_html($featured_article_category->name); ?></a>
-                    </div>
-                <?php endif; ?>
                 <h3><a href="<?php echo esc_url(get_permalink($featured_article)); ?>"><?php echo esc_html(get_the_title($featured_article)); ?></a></h3>
                 <p><?php echo esc_html(get_the_excerpt($featured_article)); ?></p>
                 <div class="meta-strip meta-strip--inline">
                     <span class="meta-strip__item"><?php echo esc_html(get_the_date('j M Y', $featured_article)); ?></span>
                     <span class="meta-strip__item"><?php echo esc_html(kepoli_read_time($featured_article->ID)); ?></span>
                 </div>
-                <a class="button" href="<?php echo esc_url(get_permalink($featured_article)); ?>"><?php esc_html_e('Citeste articolul', 'kepoli'); ?></a>
             </div>
         </article>
     </section>
