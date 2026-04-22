@@ -525,6 +525,182 @@ function kepoli_seed_activate_plugin(string $plugin): void
     }
 }
 
+function kepoli_seed_image_plan(string $path): array
+{
+    if (!file_exists($path)) {
+        return [];
+    }
+
+    $items = kepoli_seed_json($path);
+    $plan = [];
+
+    foreach ($items as $item) {
+        if (!is_array($item) || empty($item['slug'])) {
+            continue;
+        }
+
+        $plan[sanitize_title((string) $item['slug'])] = $item;
+    }
+
+    return $plan;
+}
+
+function kepoli_seed_image_path(array $image): string
+{
+    $base = '/content/images';
+    $filename = sanitize_file_name((string) ($image['filename'] ?? ''));
+
+    if ($filename !== '') {
+        $path = $base . '/' . $filename;
+        if (is_readable($path)) {
+            return $path;
+        }
+    }
+
+    $slug = sanitize_title((string) ($image['slug'] ?? ''));
+    if ($slug === '') {
+        return '';
+    }
+
+    foreach (['jpg', 'jpeg', 'png', 'webp'] as $extension) {
+        $path = $base . '/' . $slug . '.' . $extension;
+        if (is_readable($path)) {
+            return $path;
+        }
+    }
+
+    return '';
+}
+
+function kepoli_seed_find_attachment(string $filename): int
+{
+    $ids = get_posts([
+        'post_type' => 'attachment',
+        'post_status' => 'inherit',
+        'posts_per_page' => 1,
+        'fields' => 'ids',
+        'no_found_rows' => true,
+        'meta_key' => '_kepoli_seed_image_filename',
+        'meta_value' => $filename,
+    ]);
+
+    if (!empty($ids)) {
+        return (int) $ids[0];
+    }
+
+    $slug = sanitize_title(pathinfo($filename, PATHINFO_FILENAME));
+    $attachment = $slug !== '' ? get_page_by_path($slug, OBJECT, 'attachment') : null;
+
+    return $attachment ? (int) $attachment->ID : 0;
+}
+
+function kepoli_seed_apply_attachment_meta(int $attachment_id, array $image): void
+{
+    $alt = sanitize_text_field((string) ($image['alt'] ?? ''));
+    $title = sanitize_text_field((string) ($image['title'] ?? ''));
+    $caption = sanitize_text_field((string) ($image['caption'] ?? ''));
+    $description = sanitize_textarea_field((string) ($image['description'] ?? ''));
+
+    if ($alt !== '') {
+        update_post_meta($attachment_id, '_wp_attachment_image_alt', substr($alt, 0, 160));
+    }
+
+    $attachment_update = ['ID' => $attachment_id];
+    if ($title !== '') {
+        $attachment_update['post_title'] = substr($title, 0, 90);
+    }
+    if ($caption !== '') {
+        $attachment_update['post_excerpt'] = substr($caption, 0, 180);
+    }
+    if ($description !== '') {
+        $attachment_update['post_content'] = substr($description, 0, 320);
+    }
+
+    if (count($attachment_update) > 1) {
+        wp_update_post(wp_slash($attachment_update), true);
+    }
+}
+
+function kepoli_seed_store_image_plan_meta(int $post_id, array $image): void
+{
+    update_post_meta($post_id, '_kepoli_image_plan_filename', sanitize_file_name((string) ($image['filename'] ?? '')));
+    update_post_meta($post_id, '_kepoli_image_plan_alt', sanitize_text_field((string) ($image['alt'] ?? '')));
+    update_post_meta($post_id, '_kepoli_image_plan_title', sanitize_text_field((string) ($image['title'] ?? '')));
+    update_post_meta($post_id, '_kepoli_image_plan_caption', sanitize_text_field((string) ($image['caption'] ?? '')));
+    update_post_meta($post_id, '_kepoli_image_plan_description', sanitize_textarea_field((string) ($image['description'] ?? '')));
+    update_post_meta($post_id, '_kepoli_image_plan_prompt', sanitize_textarea_field((string) ($image['prompt'] ?? '')));
+}
+
+function kepoli_seed_import_featured_image(int $post_id, array $image): void
+{
+    kepoli_seed_store_image_plan_meta($post_id, $image);
+
+    $filename = sanitize_file_name((string) ($image['filename'] ?? ''));
+    if ($filename === '') {
+        return;
+    }
+
+    $source = kepoli_seed_image_path($image);
+    if ($source === '') {
+        return;
+    }
+
+    $source_hash = hash_file('sha256', $source) ?: '';
+    $attachment_id = kepoli_seed_find_attachment($filename);
+    if ($attachment_id && $source_hash !== '' && (string) get_post_meta($attachment_id, '_kepoli_seed_image_hash', true) !== $source_hash) {
+        wp_delete_attachment($attachment_id, true);
+        $attachment_id = 0;
+    }
+
+    if (!$attachment_id) {
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+
+        $bits = file_get_contents($source);
+        if ($bits === false) {
+            throw new RuntimeException("Cannot read image {$source}");
+        }
+
+        $upload = wp_upload_bits($filename, null, $bits);
+        if (!empty($upload['error'])) {
+            throw new RuntimeException((string) $upload['error']);
+        }
+
+        $filetype = wp_check_filetype($upload['file'], null);
+        $attachment_id = wp_insert_attachment(wp_slash([
+            'post_mime_type' => $filetype['type'] ?: 'image/jpeg',
+            'post_title' => sanitize_text_field((string) ($image['title'] ?? pathinfo($filename, PATHINFO_FILENAME))),
+            'post_excerpt' => sanitize_text_field((string) ($image['caption'] ?? '')),
+            'post_content' => sanitize_textarea_field((string) ($image['description'] ?? '')),
+            'post_status' => 'inherit',
+            'post_parent' => $post_id,
+        ]), $upload['file'], $post_id, true);
+
+        if (is_wp_error($attachment_id)) {
+            throw new RuntimeException($attachment_id->get_error_message());
+        }
+
+        $metadata = wp_generate_attachment_metadata((int) $attachment_id, $upload['file']);
+        if (!is_wp_error($metadata) && !empty($metadata)) {
+            wp_update_attachment_metadata((int) $attachment_id, $metadata);
+        }
+
+        update_post_meta((int) $attachment_id, '_kepoli_seed_image_filename', $filename);
+        update_post_meta((int) $attachment_id, '_kepoli_seed_image_slug', sanitize_title((string) ($image['slug'] ?? '')));
+    }
+
+    wp_update_post(wp_slash([
+        'ID' => (int) $attachment_id,
+        'post_parent' => $post_id,
+    ]), true);
+
+    kepoli_seed_apply_attachment_meta((int) $attachment_id, $image);
+    if ($source_hash !== '') {
+        update_post_meta((int) $attachment_id, '_kepoli_seed_image_hash', $source_hash);
+    }
+    set_post_thumbnail($post_id, (int) $attachment_id);
+}
+
 function kepoli_seed_delete_placeholder_posts(array $expected_slugs): void
 {
     $expected = array_flip(array_map('sanitize_title', $expected_slugs));
@@ -592,6 +768,7 @@ $author_id = kepoli_seed_ensure_author();
 $categories = kepoli_seed_json('/content/categories.json');
 $pages = kepoli_seed_json('/content/pages.json');
 $posts = kepoli_seed_json('/content/posts.json');
+$image_plan = kepoli_seed_image_plan('/content/image-plan.json');
 kepoli_seed_delete_placeholder_posts(array_column($posts, 'slug'));
 
 $category_ids = [];
@@ -654,6 +831,10 @@ foreach ($posts as $index => $post) {
     update_post_meta($post_id, '_kepoli_related_slugs', array_values(array_unique(array_merge($post['related'] ?? [], $post['related_articles'] ?? []))));
     update_post_meta($post_id, '_kepoli_meta_description', $post['meta_description'] ?? $post['excerpt']);
     update_post_meta($post_id, '_kepoli_seo_title', $post['seo_title'] ?? $post['title']);
+
+    if (isset($image_plan[$post['slug']])) {
+        kepoli_seed_import_featured_image((int) $post_id, $image_plan[$post['slug']]);
+    }
 }
 
 foreach ($posts as $post) {
@@ -697,7 +878,7 @@ foreach (['despre-kepoli', 'despre-autor', 'contact', 'politica-de-confidentiali
 
 update_option('default_category', $category_ids['ciorbe-si-supe'] ?? 1);
 update_option('posts_per_page', 9);
-update_option('kepoli_seed_version', '2026-04-22-adsense-readiness-cleanup');
+update_option('kepoli_seed_version', '2026-04-22-image-plan');
 flush_rewrite_rules(false);
 
 echo "Seeded " . count($posts) . " posts and " . count($pages) . " pages.\n";

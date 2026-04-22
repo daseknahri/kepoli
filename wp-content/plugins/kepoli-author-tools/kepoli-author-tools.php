@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.4.2
+ * Version: 1.4.3
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.4.2';
+    private const VERSION = '1.4.3';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -175,6 +175,7 @@ final class Kepoli_Author_Tools
         $related_articles = self::array_meta_to_text($post->ID, '_kepoli_related_article_slugs');
         $recipe = self::recipe_data($post->ID);
         $image_meta = self::featured_image_meta($post->ID);
+        $image_prompt = (string) get_post_meta($post->ID, '_kepoli_image_plan_prompt', true);
 
         wp_nonce_field('kepoli_author_tools_save', 'kepoli_author_tools_nonce');
         ?>
@@ -231,6 +232,12 @@ final class Kepoli_Author_Tools
             <div class="kepoli-image-fields">
                 <h4><?php esc_html_e('Featured image metadata', 'kepoli-author-tools'); ?></h4>
                 <p><?php esc_html_e('Completeaza aceste campuri pentru imaginea reprezentativa. La salvare, Kepoli le aplica pe featured image daca exista una selectata.', 'kepoli-author-tools'); ?></p>
+                <?php if ($image_prompt !== '') : ?>
+                    <label class="kepoli-post-setup__prompt">
+                        <span><?php esc_html_e('Prompt imagine AI', 'kepoli-author-tools'); ?></span>
+                        <textarea rows="4" readonly><?php echo esc_textarea($image_prompt); ?></textarea>
+                    </label>
+                <?php endif; ?>
                 <div class="kepoli-post-setup__grid">
                     <label>
                         <span><?php esc_html_e('Alt text', 'kepoli-author-tools'); ?></span>
@@ -527,23 +534,29 @@ final class Kepoli_Author_Tools
 
     private static function featured_image_meta(int $post_id): array
     {
+        $planned = self::planned_image_meta($post_id);
         $thumbnail_id = get_post_thumbnail_id($post_id);
         if (!$thumbnail_id) {
-            return [
-                'alt' => '',
-                'title' => '',
-                'caption' => '',
-                'description' => '',
-            ];
+            return $planned;
         }
 
         $attachment = get_post($thumbnail_id);
 
         return [
-            'alt' => (string) get_post_meta($thumbnail_id, '_wp_attachment_image_alt', true),
-            'title' => $attachment ? $attachment->post_title : '',
-            'caption' => $attachment ? $attachment->post_excerpt : '',
-            'description' => $attachment ? $attachment->post_content : '',
+            'alt' => (string) get_post_meta($thumbnail_id, '_wp_attachment_image_alt', true) ?: $planned['alt'],
+            'title' => ($attachment ? $attachment->post_title : '') ?: $planned['title'],
+            'caption' => ($attachment ? $attachment->post_excerpt : '') ?: $planned['caption'],
+            'description' => ($attachment ? $attachment->post_content : '') ?: $planned['description'],
+        ];
+    }
+
+    private static function planned_image_meta(int $post_id): array
+    {
+        return [
+            'alt' => (string) get_post_meta($post_id, '_kepoli_image_plan_alt', true),
+            'title' => (string) get_post_meta($post_id, '_kepoli_image_plan_title', true),
+            'caption' => (string) get_post_meta($post_id, '_kepoli_image_plan_caption', true),
+            'description' => (string) get_post_meta($post_id, '_kepoli_image_plan_description', true),
         ];
     }
 

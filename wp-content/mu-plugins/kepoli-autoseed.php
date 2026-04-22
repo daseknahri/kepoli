@@ -27,7 +27,7 @@ function kepoli_autoseed_activate_plugin(string $plugin): void
 add_action('init', static function (): void {
     kepoli_autoseed_activate_plugin('kepoli-author-tools/kepoli-author-tools.php');
 
-    $target_version = '2026-04-22-adsense-readiness-cleanup';
+    $target_version = '2026-04-22-image-plan';
 
     if (get_option('kepoli_seed_version') === $target_version && wp_get_theme()->get_stylesheet() === 'kepoli') {
         return;

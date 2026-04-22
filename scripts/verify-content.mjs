@@ -3,10 +3,14 @@ import fs from 'node:fs';
 const posts = JSON.parse(fs.readFileSync('content/posts.json', 'utf8'));
 const pages = JSON.parse(fs.readFileSync('content/pages.json', 'utf8'));
 const categories = JSON.parse(fs.readFileSync('content/categories.json', 'utf8'));
+const imagePlan = fs.existsSync('content/image-plan.json')
+  ? JSON.parse(fs.readFileSync('content/image-plan.json', 'utf8'))
+  : [];
 
 const failures = [];
 const slugs = new Set();
 const categorySlugs = new Set(categories.map((category) => category.slug));
+const imagePlanBySlug = new Map();
 
 for (const post of posts) {
   if (slugs.has(post.slug)) failures.push(`Duplicate post slug: ${post.slug}`);
@@ -49,6 +53,33 @@ for (const post of posts) {
       .filter(Boolean).length;
     if (articleWordCount < 500) failures.push(`Article too thin overall: ${post.slug}`);
   }
+}
+
+for (const image of imagePlan) {
+  if (!image || typeof image !== 'object') {
+    failures.push('Invalid image plan item.');
+    continue;
+  }
+
+  if (!image.slug || typeof image.slug !== 'string') {
+    failures.push('Image plan item is missing slug.');
+    continue;
+  }
+
+  if (imagePlanBySlug.has(image.slug)) failures.push(`Duplicate image plan slug: ${image.slug}`);
+  imagePlanBySlug.set(image.slug, image);
+
+  if (!slugs.has(image.slug)) failures.push(`Image plan refers to unknown post slug: ${image.slug}`);
+  if (!image.filename || !/\.(jpg|jpeg|png|webp)$/i.test(image.filename)) failures.push(`Invalid image filename for ${image.slug}`);
+  if (!image.alt || image.alt.length < 25) failures.push(`Image alt text too short: ${image.slug}`);
+  if (!image.title || image.title.length < 8) failures.push(`Image title too short: ${image.slug}`);
+  if (!image.caption || image.caption.length < 20) failures.push(`Image caption too short: ${image.slug}`);
+  if (!image.description || image.description.length < 40) failures.push(`Image description too short: ${image.slug}`);
+  if (!image.prompt || image.prompt.length < 120) failures.push(`Image prompt too short: ${image.slug}`);
+}
+
+for (const post of posts) {
+  if (!imagePlanBySlug.has(post.slug)) failures.push(`Missing image plan entry: ${post.slug}`);
 }
 
 for (const post of posts) {

@@ -138,6 +138,16 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   color: #6b654f;
 }
 
+.kepoli-post-setup__prompt {
+  display: block;
+  margin: 0 0 14px;
+}
+
+.kepoli-post-setup__prompt textarea[readonly] {
+  min-height: 96px;
+  background: #f6f1e7;
+}
+
 .column-kepoli_kind {
   width: 110px;
 }
