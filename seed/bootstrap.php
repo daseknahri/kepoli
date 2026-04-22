@@ -525,6 +525,43 @@ function kepoli_seed_activate_plugin(string $plugin): void
     }
 }
 
+function kepoli_seed_delete_placeholder_posts(array $expected_slugs): void
+{
+    $expected = array_flip(array_map('sanitize_title', $expected_slugs));
+    $placeholder_markers = [
+        'Scrie aici de ce merita pregatita reteta',
+        'Ingredient 1',
+        'Descrie primul pas clar',
+        'Continua cu pasii in ordinea fireasca',
+        'Incheie cu momentul in care preparatul este gata',
+        'Adauga ajustari, greseli de evitat',
+        'Raspunde practic, cu intervale realiste',
+    ];
+
+    $query = new WP_Query([
+        'post_type' => 'post',
+        'post_status' => ['publish', 'draft', 'pending', 'future'],
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+        'no_found_rows' => true,
+    ]);
+
+    foreach ($query->posts as $post_id) {
+        $slug = (string) get_post_field('post_name', $post_id);
+        if ($slug !== '' && isset($expected[$slug])) {
+            continue;
+        }
+
+        $content = (string) get_post_field('post_content', $post_id);
+        foreach ($placeholder_markers as $marker) {
+            if (str_contains($content, $marker)) {
+                wp_delete_post((int) $post_id, true);
+                break;
+            }
+        }
+    }
+}
+
 if (wp_get_theme()->get_stylesheet() !== 'kepoli' && wp_get_theme('kepoli')->exists()) {
     switch_theme('kepoli');
 }
@@ -555,6 +592,7 @@ $author_id = kepoli_seed_ensure_author();
 $categories = kepoli_seed_json('/content/categories.json');
 $pages = kepoli_seed_json('/content/pages.json');
 $posts = kepoli_seed_json('/content/posts.json');
+kepoli_seed_delete_placeholder_posts(array_column($posts, 'slug'));
 
 $category_ids = [];
 foreach ($categories as $category) {
@@ -659,7 +697,7 @@ foreach (['despre-kepoli', 'despre-autor', 'contact', 'politica-de-confidentiali
 
 update_option('default_category', $category_ids['ciorbe-si-supe'] ?? 1);
 update_option('posts_per_page', 9);
-update_option('kepoli_seed_version', '2026-04-21-content-depth');
+update_option('kepoli_seed_version', '2026-04-22-adsense-readiness-cleanup');
 flush_rewrite_rules(false);
 
 echo "Seeded " . count($posts) . " posts and " . count($pages) . " pages.\n";
