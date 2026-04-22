@@ -12,13 +12,13 @@ Each post entry includes:
 - `title`: Media Library title.
 - `caption`: optional public-facing caption.
 - `description`: Media Library description.
-- `prompt`: AI image prompt for generation.
+- `prompt`: AI image prompt for generation, stored in the repo workflow rather than shown in the WordPress editor.
 
 ## How To Use It
 
 1. Generate the image from the stored prompt.
 2. Keep the image realistic, food-first, and free from text overlays, logos, or watermarks.
-3. Save it as the exact filename in `content/images/`.
+3. Prefer a compressed `webp` export and save it as the exact filename in `content/images/`.
 4. Redeploy or rerun the seed.
 5. Kepoli imports the image into WordPress and sets it as the featured image for that post.
 
@@ -26,6 +26,12 @@ You can check repo coverage with:
 
 ```bash
 node scripts/image-status.mjs
+```
+
+You can convert the launch set to `webp` and update the manifest with:
+
+```bash
+python scripts/optimize-launch-images.py
 ```
 
 ## Suggested Rules
