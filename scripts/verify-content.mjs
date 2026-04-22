@@ -104,6 +104,7 @@ const requiredPages = [
   'politica-de-confidentialitate',
   'politica-de-cookies',
   'publicitate-si-consimtamant',
+  'politica-editoriala',
   'termeni-si-conditii',
   'disclaimer-culinar',
 ];
@@ -121,6 +122,29 @@ const articleCount = posts.filter((post) => post.kind === 'article').length;
 if (posts.length !== 30) failures.push(`Expected 30 posts, found ${posts.length}`);
 if (recipeCount !== 24) failures.push(`Expected 24 recipes, found ${recipeCount}`);
 if (articleCount !== 6) failures.push(`Expected 6 articles, found ${articleCount}`);
+
+const riskyClaims = [
+  /\bdetox\b/i,
+  /\bmiracol(?:oasa|os|ul)?\b/i,
+  /\btrateaz(?:a|ă|ă)\b/i,
+  /\bvindec(?:a|ă)\b/i,
+  /\bslabesti\b/i,
+  /\bslabire\b/i,
+  /\bslabit\b/i,
+  /\bpierdere in greutate\b/i,
+  /\bgarantat(?:a|e)?\b/i,
+  /\bfara efort\b/i,
+  /\bantiinflamator\b/i,
+];
+
+for (const post of posts) {
+  const haystack = JSON.stringify(post);
+  for (const pattern of riskyClaims) {
+    if (pattern.test(haystack)) {
+      failures.push(`Risky policy phrase in post content: ${post.slug} / ${pattern}`);
+    }
+  }
+}
 
 if (failures.length) {
   console.error(failures.join('\n'));

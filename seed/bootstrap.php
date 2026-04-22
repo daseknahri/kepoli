@@ -1063,13 +1063,13 @@ kepoli_seed_menu_page($primary_menu, 'Articole', $page_ids['articole']);
 kepoli_seed_menu_page($primary_menu, 'Despre', $page_ids['despre-kepoli']);
 
 $footer_menu = kepoli_seed_reset_menu('Footer', 'footer');
-foreach (['despre-kepoli', 'despre-autor', 'contact', 'politica-de-confidentialitate', 'politica-de-cookies', 'publicitate-si-consimtamant', 'termeni-si-conditii', 'disclaimer-culinar'] as $slug) {
+foreach (['despre-kepoli', 'despre-autor', 'contact', 'politica-de-confidentialitate', 'politica-de-cookies', 'publicitate-si-consimtamant', 'politica-editoriala', 'termeni-si-conditii', 'disclaimer-culinar'] as $slug) {
     kepoli_seed_menu_page($footer_menu, $pages[array_search($slug, array_column($pages, 'slug'), true)]['title'], $page_ids[$slug]);
 }
 
 update_option('default_category', $category_ids['ciorbe-si-supe'] ?? 1);
 update_option('posts_per_page', 9);
-update_option('kepoli_seed_version', '2026-04-22-seo-content-enhancement');
+update_option('kepoli_seed_version', '2026-04-22-adsense-policy-hardening');
 flush_rewrite_rules(false);
 
 echo "Seeded " . count($posts) . " posts and " . count($pages) . " pages.\n";
