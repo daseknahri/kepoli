@@ -111,11 +111,16 @@ $article_list = new WP_Query([
                 <h2><?php esc_html_e('Alege dupa pofta', 'kepoli'); ?></h2>
             </div>
         </div>
-        <div class="category-list category-list--compact">
+        <div class="category-list category-list--showcase">
             <?php foreach ($categories as $category) : ?>
-                <a href="<?php echo esc_url(get_category_link($category)); ?>">
-                    <span><?php echo esc_html($category->name); ?></span>
-                    <strong><?php echo esc_html(sprintf(_n('%d articol', '%d articole', $category->count, 'kepoli'), $category->count)); ?></strong>
+                <?php $category_meta = kepoli_category_card_meta($category); ?>
+                <a class="category-card <?php echo esc_attr(kepoli_tone_class($category->slug)); ?>" href="<?php echo esc_url(get_category_link($category)); ?>">
+                    <span class="category-card__top">
+                        <span class="category-card__icon" aria-hidden="true"><?php echo esc_html($category_meta['icon']); ?></span>
+                        <span class="category-card__count"><?php echo esc_html(sprintf(_n('%d articol', '%d articole', $category->count, 'kepoli'), $category->count)); ?></span>
+                    </span>
+                    <strong><?php echo esc_html($category->name); ?></strong>
+                    <span class="category-card__description"><?php echo esc_html($category_meta['description']); ?></span>
                 </a>
             <?php endforeach; ?>
         </div>

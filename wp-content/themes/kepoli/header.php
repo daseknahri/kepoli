@@ -46,7 +46,6 @@
         <span class="reading-progress__bar" data-reading-progress-bar></span>
     </div>
 </header>
-<?php kepoli_render_topic_nav(); ?>
 <?php if (!is_front_page()) : ?>
     <?php echo kepoli_ad_slot('header'); ?>
 <?php endif; ?>
