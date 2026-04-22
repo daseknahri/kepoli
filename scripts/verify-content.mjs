@@ -16,8 +16,10 @@ const imagePlanBySlug = new Map();
 for (const post of posts) {
   if (slugs.has(post.slug)) failures.push(`Duplicate post slug: ${post.slug}`);
   slugs.add(post.slug);
+
   if (seoTitles.has(post.seo_title)) failures.push(`Duplicate SEO title: ${post.seo_title}`);
   seoTitles.add(post.seo_title);
+
   if (!categorySlugs.has(post.category)) failures.push(`Unknown category for ${post.slug}: ${post.category}`);
   if (!post.excerpt || post.excerpt.length < 70) failures.push(`Short excerpt: ${post.slug}`);
   if (!post.meta_description || post.meta_description.length < 70) failures.push(`Thin meta description: ${post.slug}`);
@@ -29,6 +31,7 @@ for (const post of posts) {
     for (const key of ['ingredients', 'steps', 'related', 'related_articles']) {
       if (!Array.isArray(post[key]) || post[key].length === 0) failures.push(`Missing ${key}: ${post.slug}`);
     }
+
     if ((post.ingredients || []).length < 6) failures.push(`Recipe needs more ingredients context: ${post.slug}`);
     if ((post.steps || []).length < 5) failures.push(`Recipe needs fuller preparation steps: ${post.slug}`);
     if (!post.notes || post.notes.length < 60) failures.push(`Recipe notes too short: ${post.slug}`);
@@ -40,14 +43,18 @@ for (const post of posts) {
     if (!Array.isArray(post.sections) || post.sections.length < 5) failures.push(`Article needs deeper sections: ${post.slug}`);
     if (!Array.isArray(post.takeaways) || post.takeaways.length < 4) failures.push(`Article needs takeaways: ${post.slug}`);
     if (!Array.isArray(post.faq) || post.faq.length < 3) failures.push(`Article needs FAQ: ${post.slug}`);
+
     for (const section of post.sections || []) {
       if (!section.heading || section.heading.length < 8) failures.push(`Weak article heading: ${post.slug}`);
       if (!section.body || section.body.length < 180) failures.push(`Thin article section: ${post.slug} / ${section.heading || 'section'}`);
     }
+
     for (const item of post.faq || []) {
       if (!item.question || !item.answer) failures.push(`Incomplete FAQ item: ${post.slug}`);
     }
+
     if (!Array.isArray(post.related) || post.related.length < 4) failures.push(`Article needs related recipes: ${post.slug}`);
+
     const articleWordCount = [
       post.excerpt,
       ...(post.takeaways || []),
@@ -57,6 +64,7 @@ for (const post of posts) {
       .join(' ')
       .split(/\s+/)
       .filter(Boolean).length;
+
     if (articleWordCount < 500) failures.push(`Article too thin overall: ${post.slug}`);
   }
 }
@@ -126,8 +134,8 @@ if (articleCount !== 6) failures.push(`Expected 6 articles, found ${articleCount
 const riskyClaims = [
   /\bdetox\b/i,
   /\bmiracol(?:oasa|os|ul)?\b/i,
-  /\btrateaz(?:a|ă|ă)\b/i,
-  /\bvindec(?:a|ă)\b/i,
+  /\btrateaza\b/i,
+  /\bvindeca\b/i,
   /\bslabesti\b/i,
   /\bslabire\b/i,
   /\bslabit\b/i,
