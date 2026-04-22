@@ -5,7 +5,7 @@
     "title": "Ciorba de perisoare",
     "category": "ciorbe-si-supe",
     "tags": ["ciorba", "perisoare", "pranz", "retete romanesti"],
-    "excerpt": "Ciorba de perisoare cu legume, carne tocata si bors, potrivita pentru un pranz romanesc complet.",
+    "excerpt": "Ciorba de perisoare cu bors, legume taiate marunt si perisoare fragede, una dintre cele mai cautate ciorbe romanesti pentru pranz.",
     "prep": "25 min",
     "cook": "50 min",
     "servings": "6 portii",
@@ -15,7 +15,7 @@
     "related": ["ciorba-radauteana", "supa-de-pui-cu-galuste", "sarmale-in-foi-de-varza"],
     "related_articles": ["ghidul-camarii-romanesti"],
     "seo_title": "Ciorba de perisoare reteta romaneasca",
-    "meta_description": "Reteta de ciorba de perisoare cu bors, legume si carne tocata, explicata pas cu pas pentru gatit acasa."
+    "meta_description": "Cum faci ciorba de perisoare cu zeama limpede, perisoare pufoase si bors echilibrat, fara sa se destrame la fierbere."
   },
   {
     "kind": "recipe",
@@ -23,7 +23,7 @@
     "title": "Ciorba radauteana",
     "category": "ciorbe-si-supe",
     "tags": ["ciorba", "pui", "smantana", "retete bucovinene"],
-    "excerpt": "Ciorba radauteana cremoasa, cu piept de pui, smantana, usturoi si legume fierte lent.",
+    "excerpt": "Ciorba radauteana cremoasa, cu pui fiert bland, usturoi si smantana temperata corect, buna pentru mesele de duminica.",
     "prep": "20 min",
     "cook": "1 ora",
     "servings": "6 portii",
@@ -33,7 +33,7 @@
     "related": ["ciorba-de-perisoare", "ciorba-de-burta", "supa-de-pui-cu-galuste"],
     "related_articles": ["cum-alegi-ingredientele-pentru-retete-romanesti"],
     "seo_title": "Ciorba radauteana cremoasa cu pui",
-    "meta_description": "Ciorba radauteana cu pui, smantana si usturoi, pregatita in pasi simpli si siguri."
+    "meta_description": "Reteta de ciorba radauteana cu pui fraged, smantana si usturoi, explicata clar pentru o textura fina si gust echilibrat."
   },
   {
     "kind": "recipe",
@@ -41,7 +41,7 @@
     "title": "Ciorba de burta",
     "category": "ciorbe-si-supe",
     "tags": ["ciorba", "burta", "smantana", "usturoi"],
-    "excerpt": "Ciorba de burta aromata, dreasa cu smantana si usturoi, pentru mesele cand vrei un gust traditional.",
+    "excerpt": "Ciorba de burta cu supa de vita, usturoi si smantana, servita clasic cu otet si ardei iute.",
     "prep": "25 min",
     "cook": "1 ora 30 min",
     "servings": "8 portii",
@@ -51,7 +51,7 @@
     "related": ["ciorba-radauteana", "ciorba-de-fasole-cu-afumatura", "tochitura-moldoveneasca"],
     "related_articles": ["tehnici-simple-pentru-aluaturi-si-baze"],
     "seo_title": "Ciorba de burta reteta traditionala",
-    "meta_description": "Reteta de ciorba de burta cu smantana, usturoi si supa de vita, explicata clar pentru acasa."
+    "meta_description": "Reteta de ciorba de burta dreasa corect, cu supa concentrata, smantana temperata si gust acrisor ajustat la final."
   },
   {
     "kind": "recipe",
@@ -59,7 +59,7 @@
     "title": "Ciorba de fasole cu afumatura",
     "category": "ciorbe-si-supe",
     "tags": ["fasole", "afumatura", "ciorba", "iarna"],
-    "excerpt": "Ciorba de fasole cu afumatura, legume si cimbru, densa si potrivita pentru zile reci.",
+    "excerpt": "Ciorba de fasole cu ciolan afumat, legume si cimbru, satioasa si potrivita pentru zile reci sau meniuri de weekend.",
     "prep": "20 min",
     "cook": "1 ora 40 min",
     "servings": "8 portii",
@@ -69,7 +69,7 @@
     "related": ["iahnie-de-fasole", "varza-calita-cu-carnati", "muraturi-asortate"],
     "related_articles": ["calendarul-gusturilor-de-sezon"],
     "seo_title": "Ciorba de fasole cu afumatura",
-    "meta_description": "Ciorba de fasole cu ciolan afumat, legume si cimbru, o reteta satioasa pentru sezonul rece."
+    "meta_description": "Cum faci ciorba de fasole cu afumatura astfel incat boabele sa ramana fragede si zeama sa aiba gust rotund, nu greu."
   },
   {
     "kind": "recipe",
@@ -77,7 +77,7 @@
     "title": "Supa de pui cu galuste",
     "category": "ciorbe-si-supe",
     "tags": ["supa", "pui", "galuste", "familie"],
-    "excerpt": "Supa limpede de pui cu galuste pufoase de gris, legume dulci si zeama aromata, potrivita pentru mesele de familie.",
+    "excerpt": "Supa limpede de pui cu galuste de gris moi si pufoase, o reteta de familie care pune accent pe claritate si textura.",
     "prep": "20 min",
     "cook": "1 ora 20 min",
     "servings": "6 portii",
@@ -87,7 +87,7 @@
     "related": ["ciorba-radauteana", "supa-crema-de-legume-de-iarna", "tocanita-de-pui-cu-mamaliga"],
     "related_articles": ["meniu-romanesc-de-duminica"],
     "seo_title": "Supa de pui cu galuste pufoase",
-    "meta_description": "Reteta de supa de pui cu galuste de gris, limpede, aromata si usor de pregatit."
+    "meta_description": "Reteta de supa de pui cu galuste pufoase, cu zeama limpede si pasi clari pentru galuste care nu se intaresc."
   },
   {
     "kind": "recipe",
@@ -95,7 +95,7 @@
     "title": "Supa crema de legume de iarna",
     "category": "ciorbe-si-supe",
     "tags": ["supa crema", "legume", "iarna", "rapid"],
-    "excerpt": "Supa crema catifelata din radacinoase, cartofi si usturoi copt, servita cu crutoane.",
+    "excerpt": "Supa crema de legume de iarna, cu radacinoase, cartof si usturoi copt, fina, calda si usor de pus pe masa intr-o seara rece.",
     "prep": "15 min",
     "cook": "40 min",
     "servings": "4 portii",
@@ -105,7 +105,7 @@
     "related": ["supa-de-pui-cu-galuste", "salata-de-vinete", "mamaliga-cu-branza-si-smantana"],
     "related_articles": ["cum-pastrezi-mancarea-gatita"],
     "seo_title": "Supa crema de legume de iarna",
-    "meta_description": "Supa crema de legume de iarna, simpla si catifelata, cu radacinoase si usturoi copt."
+    "meta_description": "Supa crema de legume de iarna cu textura catifelata, gust dulceag de radacinoase si idei simple pentru servire."
   },
   {
     "kind": "recipe",
@@ -113,7 +113,7 @@
     "title": "Sarmale in foi de varza",
     "category": "feluri-principale",
     "tags": ["sarmale", "varza", "porc", "sarbatori"],
-    "excerpt": "Sarmale romanesti in foi de varza murata, fierte lent cu afumatura si cimbru.",
+    "excerpt": "Sarmale in foi de varza murata, cu umplutura bine legata, afumatura si fierbere lenta pentru gust de sarbatoare.",
     "prep": "1 ora",
     "cook": "3 ore",
     "servings": "10 portii",
@@ -123,7 +123,7 @@
     "related": ["mamaliga-cu-branza-si-smantana", "varza-calita-cu-carnati", "muraturi-asortate"],
     "related_articles": ["meniu-romanesc-de-duminica"],
     "seo_title": "Sarmale in foi de varza murata",
-    "meta_description": "Reteta de sarmale romanesti cu varza murata, carne, orez si afumatura, gatite lent."
+    "meta_description": "Cum faci sarmale in foi de varza murata cu umplutura frageda, zeama echilibrata si timp de gatire care merita."
   },
   {
     "kind": "recipe",
@@ -131,7 +131,7 @@
     "title": "Mamaliga cu branza si smantana",
     "category": "feluri-principale",
     "tags": ["mamaliga", "branza", "smantana", "rapid"],
-    "excerpt": "Mamaliga cremoasa cu branza sarata, smantana si unt, gata pentru o masa simpla.",
+    "excerpt": "Mamaliga cu branza si smantana, cremoasa si sarata exact cat trebuie, una dintre cele mai simple mese romanesti de casa.",
     "prep": "5 min",
     "cook": "20 min",
     "servings": "4 portii",
@@ -141,7 +141,7 @@
     "related": ["tochitura-moldoveneasca", "tocanita-de-pui-cu-mamaliga", "sarmale-in-foi-de-varza"],
     "related_articles": ["ghidul-camarii-romanesti"],
     "seo_title": "Mamaliga cu branza si smantana",
-    "meta_description": "Mamaliga cu branza, smantana si unt, o reteta romaneasca simpla pentru orice zi."
+    "meta_description": "Reteta de mamaliga cu branza si smantana, cu proportii clare pentru o textura legata si gust autentic de malai."
   },
   {
     "kind": "recipe",
@@ -149,7 +149,7 @@
     "title": "Tochitura moldoveneasca",
     "category": "feluri-principale",
     "tags": ["tochitura", "moldova", "porc", "mamaliga"],
-    "excerpt": "Tochitura moldoveneasca cu carne rumenita, carnati, sos de rosii si mamaliga.",
+    "excerpt": "Tochitura moldoveneasca cu porc rumenit, carnati si sos scazut, servita cum trebuie cu mamaliga.",
     "prep": "20 min",
     "cook": "1 ora",
     "servings": "4 portii",
@@ -159,7 +159,7 @@
     "related": ["mamaliga-cu-branza-si-smantana", "varza-calita-cu-carnati", "muraturi-asortate"],
     "related_articles": ["meniu-romanesc-de-duminica"],
     "seo_title": "Tochitura moldoveneasca cu mamaliga",
-    "meta_description": "Tochitura moldoveneasca cu carne de porc, carnati, usturoi si sos de rosii."
+    "meta_description": "Tochitura moldoveneasca explicata pas cu pas, cu accent pe rumenire, sos scazut si servire clasica cu mamaliga."
   },
   {
     "kind": "recipe",
@@ -167,7 +167,7 @@
     "title": "Tocanita de pui cu mamaliga",
     "category": "feluri-principale",
     "tags": ["tocanita", "pui", "mamaliga", "cina"],
-    "excerpt": "Tocanita de pui cu ceapa, ardei si sos de rosii, servita cu mamaliga calda.",
+    "excerpt": "Tocanita de pui cu sos de rosii, ceapa si ardei, potrivita pentru o cina calda cu mamaliga.",
     "prep": "15 min",
     "cook": "55 min",
     "servings": "4 portii",
@@ -177,7 +177,7 @@
     "related": ["ostropel-de-pui", "supa-de-pui-cu-galuste", "mamaliga-cu-branza-si-smantana"],
     "related_articles": ["cum-pastrezi-mancarea-gatita"],
     "seo_title": "Tocanita de pui cu mamaliga",
-    "meta_description": "Reteta de tocanita de pui cu sos de rosii, ardei, usturoi si mamaliga calda, explicata pentru gatit acasa."
+    "meta_description": "Reteta de tocanita de pui cu sos legat si carne frageda, buna pentru pranzuri de familie si reincalzire a doua zi."
   },
   {
     "kind": "recipe",
@@ -185,7 +185,7 @@
     "title": "Ostropel de pui",
     "category": "feluri-principale",
     "tags": ["ostropel", "pui", "usturoi", "rosii"],
-    "excerpt": "Ostropel de pui cu usturoi, rosii si sos lucios, bun langa piure sau mamaliga.",
+    "excerpt": "Ostropel de pui cu usturoi si rosii, cu sos lucios si gust curat, bun langa mamaliga sau piure.",
     "prep": "10 min",
     "cook": "45 min",
     "servings": "4 portii",
@@ -195,7 +195,7 @@
     "related": ["tocanita-de-pui-cu-mamaliga", "ardei-umpluti", "supa-de-pui-cu-galuste"],
     "related_articles": ["cum-alegi-ingredientele-pentru-retete-romanesti"],
     "seo_title": "Ostropel de pui cu usturoi",
-    "meta_description": "Ostropel de pui cu sos de rosii si usturoi, reteta simpla pentru pranz."
+    "meta_description": "Cum faci ostropel de pui cu usturoi parfumat corect si sos de rosii bine legat, fara gust amar."
   },
   {
     "kind": "recipe",
@@ -203,7 +203,7 @@
     "title": "Ardei umpluti",
     "category": "feluri-principale",
     "tags": ["ardei", "carne", "orez", "sos de rosii"],
-    "excerpt": "Ardei umpluti cu carne si orez, fierti in sos de rosii cu cimbru si dafin.",
+    "excerpt": "Ardei umpluti cu carne si orez, fierti in sos de rosii, o reteta clasica pentru mese de familie.",
     "prep": "35 min",
     "cook": "1 ora 20 min",
     "servings": "6 portii",
@@ -213,7 +213,7 @@
     "related": ["sarmale-in-foi-de-varza", "ostropel-de-pui", "salata-de-vinete"],
     "related_articles": ["calendarul-gusturilor-de-sezon"],
     "seo_title": "Ardei umpluti cu carne si orez",
-    "meta_description": "Ardei umpluti in sos de rosii, cu carne, orez, ceapa si condimente romanesti."
+    "meta_description": "Reteta de ardei umpluti in sos de rosii, cu umplutura echilibrata si timpi clari pentru gatire completa."
   },
   {
     "kind": "recipe",
@@ -221,7 +221,7 @@
     "title": "Varza calita cu carnati",
     "category": "feluri-principale",
     "tags": ["varza", "carnati", "afumatura", "tigaie"],
-    "excerpt": "Varza calita cu carnati afumati, rosii si cimbru, gatita incet pentru gust adanc.",
+    "excerpt": "Varza calita cu carnati afumati, rosii si cimbru, gatita incet pana devine moale si gustoasa.",
     "prep": "15 min",
     "cook": "1 ora",
     "servings": "5 portii",
@@ -231,7 +231,7 @@
     "related": ["sarmale-in-foi-de-varza", "ciorba-de-fasole-cu-afumatura", "muraturi-asortate"],
     "related_articles": ["calendarul-gusturilor-de-sezon"],
     "seo_title": "Varza calita cu carnati afumati",
-    "meta_description": "Varza calita cu carnati, rosii si cimbru, o mancare romaneasca satioasa."
+    "meta_description": "Varza calita cu carnati afumati, explicata simplu pentru o mancare satioasa, buna cu mamaliga sau muraturi."
   },
   {
     "kind": "recipe",
@@ -239,7 +239,7 @@
     "title": "Iahnie de fasole",
     "category": "feluri-principale",
     "tags": ["fasole", "iahnie", "post", "ceapa"],
-    "excerpt": "Iahnie de fasole cu ceapa, bulion si foi de dafin, buna simpla sau langa muraturi.",
+    "excerpt": "Iahnie de fasole cu ceapa multa si bulion, cremoasa si buna atat de post, cat si ca garnitura.",
     "prep": "15 min",
     "cook": "1 ora 30 min",
     "servings": "6 portii",
@@ -249,7 +249,7 @@
     "related": ["ciorba-de-fasole-cu-afumatura", "muraturi-asortate", "mamaliga-cu-branza-si-smantana"],
     "related_articles": ["ghidul-camarii-romanesti"],
     "seo_title": "Iahnie de fasole cu ceapa",
-    "meta_description": "Iahnie de fasole cu ceapa, bulion si foi de dafin, reteta de post sau garnitura."
+    "meta_description": "Cum faci iahnie de fasole cu sos legat si boabe fragede, fara sa devina fada sau prea grea."
   },
   {
     "kind": "recipe",
@@ -257,7 +257,7 @@
     "title": "Cozonac cu nuca",
     "category": "patiserie-si-deserturi",
     "tags": ["cozonac", "nuca", "aluat", "sarbatori"],
-    "excerpt": "Cozonac cu nuca si cacao, aluat dospit lent si miez pufos pentru mese de sarbatoare.",
+    "excerpt": "Cozonac cu nuca si cacao, cu aluat dospit bine si miez care se desface frumos la feliere.",
     "prep": "1 ora",
     "cook": "45 min",
     "servings": "2 cozonaci",
@@ -267,7 +267,7 @@
     "related": ["cornulete-fragede", "gogosi-pufoase", "placinta-cu-mere"],
     "related_articles": ["tehnici-simple-pentru-aluaturi-si-baze"],
     "seo_title": "Cozonac cu nuca pufos de casa",
-    "meta_description": "Cozonac cu nuca si cacao, aluat dospit si pasi clari pentru sarbatori."
+    "meta_description": "Reteta de cozonac cu nuca pufos de casa, cu repere utile pentru framantare, dospire si coacere."
   },
   {
     "kind": "recipe",
@@ -275,7 +275,7 @@
     "title": "Papanasi prajiti",
     "category": "patiserie-si-deserturi",
     "tags": ["papanasi", "branza", "desert", "smantana"],
-    "excerpt": "Papanasi prajiti cu branza dulce, smantana si dulceata acrisoara, explicati pentru textura frageda si forma stabila.",
+    "excerpt": "Papanasi prajiti cu branza dulce, smantana si dulceata, crocanti la exterior si fragezi in interior.",
     "prep": "20 min",
     "cook": "20 min",
     "servings": "6 portii",
@@ -285,7 +285,7 @@
     "related": ["clatite-cu-dulceata", "gogosi-pufoase", "salam-de-biscuiti"],
     "related_articles": ["cum-alegi-ingredientele-pentru-retete-romanesti"],
     "seo_title": "Papanasi prajiti cu smantana",
-    "meta_description": "Papanasi prajiti cu branza dulce, smantana si dulceata, desert romanesc clasic."
+    "meta_description": "Cum faci papanasi prajiti care isi pastreaza forma, raman fragezi si se potrivesc bine cu smantana si dulceata."
   },
   {
     "kind": "recipe",
@@ -293,7 +293,7 @@
     "title": "Placinta cu mere",
     "category": "patiserie-si-deserturi",
     "tags": ["placinta", "mere", "scortisoara", "desert"],
-    "excerpt": "Placinta cu mere rase, scortisoara si foi fragede, buna calda sau rece.",
+    "excerpt": "Placinta cu mere si scortisoara, cu foi fragede si umplutura bine scazuta, buna atat calda, cat si rece.",
     "prep": "35 min",
     "cook": "40 min",
     "servings": "12 bucati",
@@ -303,7 +303,7 @@
     "related": ["cozonac-cu-nuca", "cornulete-fragede", "clatite-cu-dulceata"],
     "related_articles": ["calendarul-gusturilor-de-sezon"],
     "seo_title": "Placinta cu mere si scortisoara",
-    "meta_description": "Placinta cu mere rase si scortisoara, cu foi fragede si umplutura aromata."
+    "meta_description": "Reteta de placinta cu mere cu foi fragede, umplutura aromata si sfaturi simple pentru a evita foile crude."
   },
   {
     "kind": "recipe",
@@ -311,7 +311,7 @@
     "title": "Gogosi pufoase",
     "category": "patiserie-si-deserturi",
     "tags": ["gogosi", "aluat", "desert", "dospit"],
-    "excerpt": "Gogosi pufoase, dospite lent, prajite aurii si pudrate cu zahar pentru un desert de casa.",
+    "excerpt": "Gogosi pufoase de casa, crescute bine si prajite uniform, pentru zilele cand vrei un desert simplu si nostalgic.",
     "prep": "45 min",
     "cook": "20 min",
     "servings": "20 gogosi",
@@ -321,7 +321,7 @@
     "related": ["papanasi-prajiti", "cozonac-cu-nuca", "cornulete-fragede"],
     "related_articles": ["tehnici-simple-pentru-aluaturi-si-baze"],
     "seo_title": "Gogosi pufoase de casa reteta simpla",
-    "meta_description": "Gogosi pufoase cu aluat dospit, aromate cu vanilie si coaja de lamaie."
+    "meta_description": "Reteta de gogosi pufoase cu aluat dospit, cu semne clare pentru dospire buna si prajire corecta."
   },
   {
     "kind": "recipe",
@@ -329,7 +329,7 @@
     "title": "Clatite cu dulceata",
     "category": "patiserie-si-deserturi",
     "tags": ["clatite", "dulceata", "desert rapid", "lapte"],
-    "excerpt": "Clatite subtiri si moi, umplute cu dulceata, pentru un desert rapid de familie.",
+    "excerpt": "Clatite subtiri si elastice, umplute cu dulceata, bune pentru mic dejun dulce sau desert rapid.",
     "prep": "10 min",
     "cook": "25 min",
     "servings": "12 clatite",
@@ -339,7 +339,7 @@
     "related": ["papanasi-prajiti", "placinta-cu-mere", "salam-de-biscuiti"],
     "related_articles": ["cum-pastrezi-mancarea-gatita"],
     "seo_title": "Clatite cu dulceata simple",
-    "meta_description": "Clatite subtiri cu lapte, apa minerala si dulceata, reteta rapida pentru desert de familie."
+    "meta_description": "Cum faci clatite cu dulceata care nu se rup, raman moi si se ruleaza usor chiar si dupa racire."
   },
   {
     "kind": "recipe",
@@ -347,7 +347,7 @@
     "title": "Salam de biscuiti",
     "category": "patiserie-si-deserturi",
     "tags": ["salam de biscuiti", "fara coacere", "cacao", "desert"],
-    "excerpt": "Salam de biscuiti cu cacao, unt, lapte si nuca, desert fara coacere care se feliaza frumos dupa racire.",
+    "excerpt": "Salam de biscuiti fara coacere, cu cacao, unt si bucati de biscuit care ii dau textura buna la taiere.",
     "prep": "25 min",
     "cook": "5 min",
     "servings": "2 rulouri",
@@ -357,7 +357,7 @@
     "related": ["clatite-cu-dulceata", "papanasi-prajiti", "cornulete-fragede"],
     "related_articles": ["ghidul-camarii-romanesti"],
     "seo_title": "Salam de biscuiti fara coacere",
-    "meta_description": "Salam de biscuiti cu cacao, unt, lapte si nuca, desert simplu fara coacere, potrivit pentru pregatit in avans."
+    "meta_description": "Reteta de salam de biscuiti fara coacere, cu compozitie legata bine si timp de racire care face diferenta."
   },
   {
     "kind": "recipe",
@@ -365,7 +365,7 @@
     "title": "Cornulete fragede",
     "category": "patiserie-si-deserturi",
     "tags": ["cornulete", "desert", "gem", "aluat fraged"],
-    "excerpt": "Cornulete fragede cu gem si nuca, pudrate cu zahar vanilat si potrivite pentru platouri de sarbatoare.",
+    "excerpt": "Cornulete fragede cu gem si nuca, pudrate fin, potrivite pentru sarbatori sau pentru o tava de weekend.",
     "prep": "45 min",
     "cook": "25 min",
     "servings": "40 cornulete",
@@ -375,7 +375,7 @@
     "related": ["cozonac-cu-nuca", "placinta-cu-mere", "gogosi-pufoase"],
     "related_articles": ["tehnici-simple-pentru-aluaturi-si-baze"],
     "seo_title": "Cornulete fragede cu gem",
-    "meta_description": "Cornulete fragede cu gem si nuca, reteta clasica pentru platouri de sarbatoare."
+    "meta_description": "Cum faci cornulete fragede cu gem care nu curge si aluat care se rupe placut, nu se intareste."
   },
   {
     "kind": "recipe",
@@ -383,7 +383,7 @@
     "title": "Zacusca de vinete",
     "category": "conserve-si-garnituri",
     "tags": ["zacusca", "vinete", "conserve", "toamna"],
-    "excerpt": "Zacusca de vinete cu ardei copti si ceapa, fiarta incet pentru borcane aromate.",
+    "excerpt": "Zacusca de vinete cu ardei copti si ceapa, fiarta domol pentru borcane cu gust rotund de toamna.",
     "prep": "1 ora",
     "cook": "2 ore",
     "servings": "10 borcane mici",
@@ -393,7 +393,7 @@
     "related": ["salata-de-vinete", "muraturi-asortate", "ardei-umpluti"],
     "related_articles": ["calendarul-gusturilor-de-sezon"],
     "seo_title": "Zacusca de vinete pentru iarna",
-    "meta_description": "Zacusca de vinete cu ardei copti si ceapa, reteta pentru borcane de toamna."
+    "meta_description": "Reteta de zacusca de vinete pentru iarna, cu repere clare pentru scurgere, fierbere si consistenta buna de borcan."
   },
   {
     "kind": "recipe",
@@ -401,7 +401,7 @@
     "title": "Muraturi asortate",
     "category": "conserve-si-garnituri",
     "tags": ["muraturi", "conserve", "saramura", "iarna"],
-    "excerpt": "Muraturi asortate in saramura, crocante si aromate, pentru fripturi si mancaruri grele.",
+    "excerpt": "Muraturi asortate in saramura, crocante si aromate, bune langa fripturi, fasole sau tocanite.",
     "prep": "40 min",
     "cook": "10 min",
     "servings": "4 borcane mari",
@@ -411,7 +411,7 @@
     "related": ["sarmale-in-foi-de-varza", "iahnie-de-fasole", "tochitura-moldoveneasca"],
     "related_articles": ["cum-pastrezi-mancarea-gatita"],
     "seo_title": "Muraturi asortate in saramura",
-    "meta_description": "Muraturi asortate cu hrean, usturoi si marar, puse in saramura pentru iarna."
+    "meta_description": "Cum faci muraturi asortate in saramura cu legume crocante si gust echilibrat, fara saramura tulbure."
   },
   {
     "kind": "recipe",
@@ -419,7 +419,7 @@
     "title": "Salata de vinete",
     "category": "conserve-si-garnituri",
     "tags": ["vinete", "salata", "aperitiv", "vara"],
-    "excerpt": "Salata de vinete coapte cu ceapa si ulei, fina, afumata si buna ca aperitiv rece.",
+    "excerpt": "Salata de vinete coapte, tocata fin si legata treptat cu ulei, un aperitiv clasic pentru mesele de vara.",
     "prep": "20 min",
     "cook": "35 min",
     "servings": "6 portii",
@@ -429,7 +429,7 @@
     "related": ["zacusca-de-vinete", "ardei-umpluti", "supa-crema-de-legume-de-iarna"],
     "related_articles": ["cum-alegi-ingredientele-pentru-retete-romanesti"],
     "seo_title": "Salata de vinete coapte reteta clasica",
-    "meta_description": "Salata de vinete coapte cu ceapa, ulei si lamaie, aperitiv romanesc simplu pentru mese de vara."
+    "meta_description": "Reteta de salata de vinete coapte cu textura fina, fara gust amar si cu echilibru bun intre ceapa, ulei si lamaie."
   },
   {
     "kind": "article",
@@ -437,12 +437,12 @@
     "title": "Ghidul camarii romanesti",
     "category": "articole",
     "tags": ["camara", "ingrediente", "organizare"],
-    "excerpt": "O camara romaneasca bine gandita nu inseamna rafturi pline, ci ingrediente care se leaga intre ele si iti scurteaza drumul pana la o masa buna.",
+    "excerpt": "O camara romaneasca bine asezata iti scurteaza gatitul de peste saptamana: stii ce poti pune pe foc, ce merita cumparat si ce nu are rost sa stea uitat pe raft.",
     "takeaways": [
-      "Porneste de la ingrediente care apar in mai multe retete, nu de la cumparaturi ocazionale.",
-      "Tine separat baza de gust, ingredientele pentru consistenta si aromele finale.",
-      "Cumpara in ritmul in care gatesti, nu in ritmul in care arata bine pe raft.",
-      "Verifica lunar ce folosesti des si ce ramane uitat, apoi ajusteaza lista."
+      "Pastreaza in centru ingredientele care intra in mai multe retete, nu cele cumparate din entuziasm.",
+      "Separa baza de gust, produsele uscate si aromele finale ca sa vezi imediat ce iti lipseste.",
+      "Verifica periodic stocurile, borcanele deschise si produsele pe care nu le mai folosesti.",
+      "O camara buna te ajuta sa gatesti mai repede si sa arunci mai putin."
     ],
     "sections": [
       {"heading": "Ce merita sa ai constant in casa", "body": "O camara utila pentru gatit romaneste porneste de la cateva ingrediente recurente: ceapa, usturoi, morcovi, telina, bulion, orez, fasole boabe, malai, faina, ulei, sare si piper. Nu ai nevoie de zeci de produse speciale ca sa poti pune repede pe masa o ciorba, o tocanita, o mamaliga sau un desert simplu. Important este ca ingredientele de baza sa fie proaspete, bine pastrate si suficient de versatile incat sa intre in mai multe retete intr-o singura saptamana."},
@@ -457,8 +457,8 @@
       {"question": "Cum stiu ca o camara este prea aglomerata?", "answer": "Cand ai multe produse deschise, mai multe variante ale aceluiasi ingredient si nu poti spune rapid ce masa poti construi din ele. O camara eficienta iti da claritate, nu sentimentul ca trebuie sa consumi ceva doar pentru ca exista."}
     ],
     "related": ["ciorba-de-perisoare", "mamaliga-cu-branza-si-smantana", "iahnie-de-fasole", "salam-de-biscuiti", "sarmale-in-foi-de-varza"],
-    "seo_title": "Ghidul camarii romanesti pentru gatit acasa",
-    "meta_description": "Cum organizezi o camara romaneasca utila: ingrediente de baza, condimente, cumparaturi fara risipa si adaptare la sezon."
+    "seo_title": "Ghidul camarii romanesti: ingrediente de baza si organizare",
+    "meta_description": "Cum organizezi o camara romaneasca utila: ingrediente de baza, condimente, stocuri smart si cumparaturi fara risipa."
   },
   {
     "kind": "article",
@@ -466,12 +466,12 @@
     "title": "Cum alegi ingredientele pentru retete romanesti",
     "category": "articole",
     "tags": ["ingrediente", "cumparaturi", "retete romanesti"],
-    "excerpt": "Ingredientele bune nu inseamna neaparat cele mai scumpe, ci pe cele potrivite retetei, sezonului si felului in care vrei sa gatesti acasa.",
+    "excerpt": "Ingredientele bune pentru retete romanesti nu sunt neaparat cele mai scumpe, ci cele care se potrivesc preparatului, sezonului si modului in care gatesti de fapt acasa.",
     "takeaways": [
-      "Alege ingredientele dupa reteta si sezon, nu dupa eticheta cea mai pompoasa.",
-      "Carnea prea slaba, lactatele prea usoare sau legumele fara gust cer apoi multe corectii.",
-      "Sarea si aciditatea se verifica in contextul intregii oale, nu separat.",
-      "Daca un produs intra in mai multe retete din saptamana, devine o alegere mai buna."
+      "Judeca ingredientul dupa rolul lui in reteta, nu dupa ambalaj sau pretul cel mai mare.",
+      "Legumele de baza, carnea si lactatele schimba mai mult rezultatul decat condimentele scumpe.",
+      "Sezonul si prospetimea reduc nevoia de corectii in oala si de artificii la final.",
+      "Cand nu gasesti varianta perfecta, cauta echivalentul apropiat ca textura si gust."
     ],
     "sections": [
       {"heading": "Legumele si zarzavatul de baza", "body": "Pentru multe retete romanesti, ceapa, morcovul, telina, ardeiul si usturoiul sunt fundatia gustului. Alege legume ferme, cu miros firesc si coaja sanatoasa, nu neaparat perfecte vizual. Cand baza este buna, nici ciorba, nici tocanita nu mai cer atata corectie din bulion, vegeta sau prea multa sare."},
@@ -486,8 +486,8 @@
       {"question": "Ce fac daca nu gasesc exact ingredientul din reteta?", "answer": "Cauta o alternativa apropiata ca textura, grasime sau aciditate, nu doar ca nume. Daca schimbi un ingredient important, ajusteaza cantitatea si asteptarile: uneori rezultatul ramane bun, dar nu va fi identic."}
     ],
     "related": ["ciorba-radauteana", "ostropel-de-pui", "salata-de-vinete", "papanasi-prajiti", "ardei-umpluti"],
-    "seo_title": "Cum alegi ingredientele pentru retete romanesti",
-    "meta_description": "Repere practice pentru alegerea carnii, lactatelor, legumelor, fainii si condimentelor din retetele romanesti."
+    "seo_title": "Cum alegi ingredientele bune pentru retete romanesti",
+    "meta_description": "Sfaturi practice pentru alegerea legumelor, carnii, lactatelor, fainii si condimentelor in retetele romanesti de acasa."
   },
   {
     "kind": "article",
@@ -495,12 +495,12 @@
     "title": "Meniu romanesc de duminica",
     "category": "articole",
     "tags": ["meniu", "duminica", "familie"],
-    "excerpt": "Un meniu romanesc de duminica iese mai bine cand are ritm si echilibru: ceva cald, ceva satios, ceva dulce si suficient spatiu ca sa nu gatesti in fuga.",
+    "excerpt": "Un meniu romanesc de duminica iese mai bine cand felurile se sprijina intre ele: ceva cald la inceput, un principal bine ales si un desert care nu te tine captiv in bucatarie.",
     "takeaways": [
-      "Nu pune in acelasi meniu trei preparate grele doar pentru ca toate iti plac.",
-      "Gateste inainte ce se reincalzeste bine si lasa pe ultima suta de metri doar pasii sensibili.",
-      "Garniturile si muraturile echilibreaza mai bine masa decat un al doilea fel greu.",
-      "Un desert simplu si bine ales poate inchide masa mai frumos decat unul spectaculos si obositor."
+      "Construieste masa pe echilibru, nu pe numarul de feluri.",
+      "Muta pe sambata tot ce se poate coace, fierbe sau portiona dinainte.",
+      "Daca principalul e greu, desertul trebuie sa fie mai simplu si mai usor de servit.",
+      "Servirea calma incepe cu organizarea blatului si a mesei, nu cu ultimul foc aprins."
     ],
     "sections": [
       {"heading": "Cum construiesti o masa coerenta", "body": "Meniul de duminica nu trebuie gandit ca o lista lunga de preparate, ci ca o succesiune fireasca. O ciorba sau o supa buna deschide masa, felul principal aduce consistenta, iar desertul ar trebui sa incheie usor, nu sa oboseasca. Cand toate sunt grele, bogate si gatite in ultimul moment, masa devine mai stresanta pentru gazda decat placuta pentru cei de la masa."},
@@ -515,8 +515,8 @@
       {"question": "Cum impac gusturile diferite ale familiei?", "answer": "Construieste baza mesei cat mai clasica si lasa variatiile in garnituri, toppinguri sau desert. E mai simplu sa adaptezi o mamaliga, o muratura sau o dulceata decat sa faci doua feluri principale separate."}
     ],
     "related": ["supa-de-pui-cu-galuste", "sarmale-in-foi-de-varza", "tochitura-moldoveneasca", "placinta-cu-mere", "gogosi-pufoase"],
-    "seo_title": "Meniu romanesc de duminica pentru acasa",
-    "meta_description": "Cum organizezi un meniu romanesc de duminica: structura, preparate care merg impreuna si pasi de pregatire in avans."
+    "seo_title": "Meniu romanesc de duminica: idei si organizare",
+    "meta_description": "Idei pentru un meniu romanesc de duminica, cu exemple de combinatii, pregatire in avans si servire fara agitatie."
   },
   {
     "kind": "article",
@@ -524,12 +524,12 @@
     "title": "Tehnici simple pentru aluaturi si baze",
     "category": "articole",
     "tags": ["aluat", "tehnici", "patiserie"],
-    "excerpt": "Aluaturile ies mai sigur cand inveti sa citesti textura, temperatura si ritmul retetei, nu doar sa urmezi minutele din pasii scrisi.",
+    "excerpt": "Aluaturile bune se citesc cu mana si cu ochiul: textura, temperatura si timpul de odihna spun mai mult decat simpla lista de grame.",
     "takeaways": [
-      "Textura aluatului spune mai mult decat ceasul.",
-      "Temperatura ingredientelor nu este un detaliu decorativ, ci una dintre marile diferente dintre reusita si dezamagire.",
-      "Odihna, dospirea si racirea sunt etape de lucru, nu pauze optionale.",
-      "Focul prea puternic strica mai des desertul decat o face lipsa de zahar."
+      "Textura aluatului si ritmul lui real bat cronometrul din reteta.",
+      "Temperatura ingredientelor schimba direct cresterea, elasticitatea si fragezimea.",
+      "Odihna, dospirea si racirea sunt parti din tehnica, nu pauze optionale.",
+      "Multe greseli se pot corecta daca observi la timp ce se intampla in bol, tava sau tigaie."
     ],
     "sections": [
       {"heading": "Temperatura ingredientelor schimba tot", "body": "Aluaturile dospite cresc mai frumos cand laptele este caldut, ouale nu vin direct din frigider si grasimea se incorporeaza usor, nu in bucati reci. In schimb, aluaturile fragede cer unt rece, miscare rapida si putina insistenta. Daca aplici aceeasi logica tuturor deserturilor, rezultatul va fi imprevizibil chiar daca reteta pare corecta pe hartie."},
@@ -544,8 +544,8 @@
       {"question": "Cum stiu daca problema este la foc sau la compozitie?", "answer": "Daca exteriorul se coloreaza prea repede, iar interiorul ramane greu, de multe ori focul este prea puternic. Daca textura este compacta chiar si cu coacere corecta, atunci compozitia sau etapa de odihna au avut de suferit."}
     ],
     "related": ["cozonac-cu-nuca", "gogosi-pufoase", "cornulete-fragede", "placinta-cu-mere", "clatite-cu-dulceata"],
-    "seo_title": "Tehnici simple pentru aluaturi si baze",
-    "meta_description": "Reguli practice pentru aluaturi dospite, fragede si deserturi de casa: temperatura, textura, dospire si controlul focului."
+    "seo_title": "Tehnici simple pentru aluaturi si deserturi de casa",
+    "meta_description": "Ghid practic pentru aluaturi dospite, fragede si baze de desert: temperatura, textura, framantare, dospire si controlul focului."
   },
   {
     "kind": "article",
@@ -553,19 +553,19 @@
     "title": "Calendarul gusturilor de sezon",
     "category": "articole",
     "tags": ["sezon", "calendar", "legume"],
-    "excerpt": "Cand gatesti dupa sezon, cumparaturile devin mai simple, gustul iese mai curat si retetele par mai firesti decat atunci cand fortezi ingredientele nepotrivite lunii.",
+    "excerpt": "Cand gatesti dupa sezon, alegi mai usor ce cumperi, ce pui in camara si ce retete chiar merita facute in luna respectiva.",
     "takeaways": [
-      "Sezonul nu este doar despre pret, ci si despre gust, textura si efort mai mic in bucatarie.",
-      "Retetele de casa ies mai bine cand pornesc de la ce se gaseste bine in momentul acela.",
-      "Toamna si iarna cer planificare diferita fata de primavara si vara.",
-      "Cateva borcane, congelari simple si meniuri flexibile te ajuta sa treci usor intre sezoane."
+      "Sezonul influenteaza gustul, pretul si usurinta cu care iese reteta.",
+      "Fiecare anotimp are cateva ingrediente care merita puse in centru, nu doar folosite decorativ.",
+      "Tranzitia dintre sezoane se face mai bine cu meniuri flexibile decat cu liste rigide.",
+      "Cateva conserve, congelari si retete pivot te ajuta sa folosesti sezonul fara stres."
     ],
     "sections": [
       {"heading": "Primavara: inceputul meselor mai usoare", "body": "Primavara e momentul in care revii usor la ciorbe mai limpezi, supe simple si garnituri mai verzi, chiar daca bucataria romaneasca ramane atasata de feluri consistente. Nu trebuie sa schimbi tot meniul peste noapte; este suficient sa cauti ingrediente mai proaspete, sa scurtezi putin timpii de gatire si sa lasi mai mult loc preparatelor care nu cer sosuri grele."},
       {"heading": "Vara: legume bune, retete mai directe", "body": "Vara merita sa mergi spre vinete, ardei, rosii si preparate care valorifica gustul natural al legumelor, nu il ascund. Salata de vinete, supele mai usoare, garniturile reci si deserturile rapide devin mai convingatoare tocmai pentru ca ingredientele isi fac singure o parte din treaba. Cand piata iti da gust, reteta are voie sa fie mai simpla."},
       {"heading": "Toamna: sezonul care cere organizare", "body": "Toamna nu este doar despre mancare buna, ci si despre felul in care iti pregatesti lunile urmatoare. Merele, ardeii, vinetele, gogonelele si varza te imping natural spre placinte, zacusca, muraturi si mancaruri cu baza de legume coapte. Este si anotimpul in care o ora de munca in plus poate insemna cateva mese salvate mai tarziu."},
       {"heading": "Iarna: retete care tin de cald si de satietate", "body": "Iarna apar natural fasolea, varza, afumaturile, ciorbele bogate si mancarurile lente, pentru ca ele raspund nevoii reale de satietate si confort. Asta nu inseamna sa transformi fiecare masa intr-o sarbatoare grea. Echilibrul vine din muraturi, din portii potrivite si din alternarea felurilor consistente cu unele mai simple."},
-      {"heading": "Cum folosesti sezonul fara sa complici meniul", "body": "Nu este nevoie de calendare rigide sau de reguli pretioase. E suficient sa observi ce arata bine, ce miroase bine si ce apare constant la pret corect in piata sau magazin. Apoi construiesti doua sau trei retete in jurul acelui ingredient, nu una singura, si lasi meniul sa se schimbe natural de la o luna la alta."}
+      {"heading": "Cum folosesti sezonul fara sa complici meniul", "body": "Nu este nevoie de calendare rigide sau de reguli pretioase. E suficient sa observi ce arata bine, ce miroase bine si ce apare constant la pret corect in piata sau magazin. Apoi construiesti doua sau trei retete in jurul acelui ingredient, nu una singura, si lasi meniul sa se schimbe natural de la o luna la alta. Cand ingredientul este in sezon, ai nevoie de mai putine corectii si de mai putine artificii ca sa obtii gust clar in farfurie."}
     ],
     "faq": [
       {"question": "Trebuie sa gatesc doar cu ingrediente de sezon?", "answer": "Nu, dar ingredientele de sezon iti dau de obicei cel mai bun raport intre gust, pret si usurinta in bucatarie. Restul pot ramane completari, nu centrul mesei."},
@@ -573,8 +573,8 @@
       {"question": "Cum decid ce retete merita pastrate pentru iarna?", "answer": "Alege preparatele pe care chiar le mananci in mod repetat: zacusca, muraturi, baze de sos sau portii congelate de mancare gatita. Ce nu folosesti iarna nu merita spatiul doar pentru ideea de a fi pregatit."}
     ],
     "related": ["zacusca-de-vinete", "muraturi-asortate", "ciorba-de-fasole-cu-afumatura", "varza-calita-cu-carnati", "placinta-cu-mere"],
-    "seo_title": "Calendarul gusturilor de sezon in bucataria romaneasca",
-    "meta_description": "Cum alegi retetele dupa sezon: ce gatesti primavara, vara, toamna si iarna si cum iti organizezi mesele mai usor."
+    "seo_title": "Calendarul gusturilor de sezon pentru gatit acasa",
+    "meta_description": "Cum alegi retetele dupa sezon si cum folosesti mai bine ingredientele bune din primavara, vara, toamna si iarna."
   },
   {
     "kind": "article",
@@ -582,12 +582,12 @@
     "title": "Cum pastrezi mancarea gatita",
     "category": "articole",
     "tags": ["pastrare", "siguranta", "organizare"],
-    "excerpt": "Pastrarea corecta a mancarii gatite inseamna mai putina risipa, mai mult calm in timpul saptamanii si mai putine greseli facute din graba sau oboseala.",
+    "excerpt": "Pastrarea corecta a mancarii gatite nu tine doar de frigider, ci de racire, portionare, etichetare si decizii calme despre ce merita pastrat.",
     "takeaways": [
-      "Racirea si portionarea rapide sunt mai importante decat pare.",
-      "Frigiderul si congelatorul sunt instrumente bune doar daca etichetezi si rotesti preparatele.",
-      "Reincalzirea trebuie facuta uniform, nu doar pana cand exteriorul pare fierbinte.",
-      "Cand un preparat arata sau miroase ciudat, nu merita fortat."
+      "Raceste si portioneaza preparatele mai repede decat iti vine natural dupa gatit.",
+      "Frigiderul si congelatorul functioneaza doar daca vezi clar ce ai si de cand.",
+      "Reincalzirea buna inseamna caldura uniforma, nu doar abur la suprafata.",
+      "Cand un preparat ridica dubii, prudenta valoreaza mai mult decat economia."
     ],
     "sections": [
       {"heading": "Racirea corecta incepe din momentul in care ai terminat gatitul", "body": "Nu lasa oala mare pe aragaz sau pe blat ore intregi doar pentru ca este mai comod. Portioneaza mancarea in vase mai mici sau in recipiente joase ca sa se raceasca mai repede si mai uniform. O bucatarie organizata nu inseamna doar sa gatesti bine, ci si sa inchizi corect procesul dupa ce ai stins focul."},
@@ -602,7 +602,7 @@
       {"question": "Cum imi fac un sistem simplu de rotatie?", "answer": "Noteaza data pe recipient si pune in fata ceea ce trebuie consumat primul. Regula practica este simpla: ce ai gatit primul, aceea folosesti mai intai, nu ce vezi intamplator cand deschizi frigiderul."}
     ],
     "related": ["tocanita-de-pui-cu-mamaliga", "muraturi-asortate", "supa-crema-de-legume-de-iarna", "clatite-cu-dulceata", "ciorba-de-perisoare"],
-    "seo_title": "Cum pastrezi mancarea gatita acasa",
-    "meta_description": "Sfaturi practice pentru racire, frigider, congelare, reincalzire si reducerea risipei la mancarea gatita."
+    "seo_title": "Cum pastrezi mancarea gatita corect acasa",
+    "meta_description": "Sfaturi practice pentru racire, frigider, congelare, reincalzire si gestionarea resturilor de mancare gatita acasa."
   }
 ]
