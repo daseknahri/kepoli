@@ -4,7 +4,7 @@ Theme URI: https://kepoli.com
 Author: Isalune Merovik
 Author URI: https://kepoli.com/despre-autor/
 Description: A lightweight Romanian food blog theme built for recipes, editorial reading, internal linking, and ad-ready spacing.
-Version: 1.2.3
+Version: 1.2.4
 Requires at least: 6.4
 Tested up to: 6.8
 Requires PHP: 8.1
@@ -343,6 +343,9 @@ textarea {
 }
 
 .home-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   min-height: clamp(460px, 74svh, 620px);
   display: grid;
   align-items: center;
@@ -352,7 +355,19 @@ textarea {
   background-size: cover;
 }
 
+.home-hero::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 18%;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(251, 247, 239, 0), var(--paper));
+  pointer-events: none;
+}
+
 .home-hero__inner {
+  position: relative;
+  z-index: 1;
   max-width: 720px;
   width: var(--content);
   margin: 0 auto;
@@ -426,6 +441,12 @@ textarea {
   margin-bottom: 18px;
 }
 
+.section__header h2,
+.archive-header h1,
+.search-header h1 {
+  text-wrap: balance;
+}
+
 .section__header--compact {
   margin-bottom: 16px;
 }
@@ -487,7 +508,8 @@ h3 {
   transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
-.post-card:hover {
+.post-card:hover,
+.post-card:focus-within {
   transform: translateY(-3px);
   border-color: rgba(200, 116, 63, 0.35);
   background: #fffdf8;
@@ -539,10 +561,13 @@ h3 {
 .content-chip--category {
   border: 1px solid rgba(230, 217, 200, 0.92);
   background: var(--surface);
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
 }
 
-.content-chip--category:hover {
+.content-chip--category:hover,
+.content-chip--category:focus-visible {
   border-color: rgba(200, 116, 63, 0.4);
+  background: #fffdf8;
   color: var(--clay);
 }
 
@@ -607,23 +632,33 @@ h3 {
 }
 
 .post-card:hover .post-media__image,
+.post-card:focus-within .post-media__image,
 .lead-story:hover .post-media__image,
+.lead-story:focus-within .post-media__image,
 .related-card:hover .post-media__image,
+.related-card:focus-within .post-media__image,
 .compact-post:hover .post-media__image,
+.compact-post:focus-within .post-media__image,
 .more-list__post-link:hover .post-media__image {
   transform: scale(1.035);
 }
 
 .post-card:hover .post-media__mark,
+.post-card:focus-within .post-media__mark,
 .related-card:hover .post-media__mark,
-.lead-story:hover .post-media__mark {
+.related-card:focus-within .post-media__mark,
+.lead-story:hover .post-media__mark,
+.lead-story:focus-within .post-media__mark {
   transform: translateY(-2px);
   background: #fffdf8;
 }
 
 .post-card:hover .post-media__icon,
+.post-card:focus-within .post-media__icon,
 .related-card:hover .post-media__icon,
-.lead-story:hover .post-media__icon {
+.related-card:focus-within .post-media__icon,
+.lead-story:hover .post-media__icon,
+.lead-story:focus-within .post-media__icon {
   transform: translateY(-2px) scale(1.03);
   opacity: 0.9;
 }
@@ -702,12 +737,45 @@ h3 {
 .post-card h3 a {
   color: var(--ink);
   text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.post-card h3 a:hover,
+.post-card h3 a:focus-visible {
+  color: var(--clay);
 }
 
 .post-card p {
   margin: 0;
   color: var(--muted);
   font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.post-card h3,
+.lead-story__body h3,
+.compact-post__body h3,
+.related-card__body h3 {
+  text-wrap: pretty;
+}
+
+.post-card p,
+.lead-story__body p,
+.compact-post__body p,
+.related-card__body p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+}
+
+.post-card p,
+.related-card__body p {
+  -webkit-line-clamp: 3;
+}
+
+.lead-story__body p,
+.compact-post__body p {
+  -webkit-line-clamp: 2;
 }
 
 .tone-default,
@@ -805,7 +873,8 @@ h3 {
   z-index: -1;
 }
 
-.category-card:hover {
+.category-card:hover,
+.category-card:focus-visible {
   transform: translateY(-3px);
   background: #fffdf8;
   border-color: rgba(200, 116, 63, 0.34);
@@ -833,7 +902,8 @@ h3 {
   transition: transform 180ms ease;
 }
 
-.category-card:hover .category-card__icon {
+.category-card:hover .category-card__icon,
+.category-card:focus-visible .category-card__icon {
   transform: rotate(-3deg) scale(1.04);
 }
 
@@ -907,6 +977,15 @@ h3 {
   background: rgba(255, 253, 248, 0.62);
   color: var(--ink);
   text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.browse-link:hover,
+.browse-link:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(200, 116, 63, 0.36);
+  background: #fffdf8;
+  color: var(--clay);
 }
 
 .browse-link strong,
@@ -933,12 +1012,14 @@ h3 {
 .search-header {
   width: var(--content);
   margin: 0 auto;
-  padding: 36px 0 18px;
+  padding: 42px 0 22px;
+  border-bottom: 1px solid rgba(230, 217, 200, 0.7);
 }
 
 .archive-header--compact {
   width: 100%;
   padding: 0 0 28px;
+  border-bottom: 0;
 }
 
 .archive-header h1,
@@ -998,7 +1079,8 @@ h3 {
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
-.lead-story:hover {
+.lead-story:hover,
+.lead-story:focus-within {
   transform: translateY(-3px);
   border-color: rgba(200, 116, 63, 0.3);
   box-shadow: var(--shadow-lift);
@@ -1016,7 +1098,7 @@ h3 {
 }
 
 .lead-story__body {
-  padding: 20px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1032,6 +1114,12 @@ h3 {
 .lead-story__body h3 a {
   color: var(--ink);
   text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.lead-story__body h3 a:hover,
+.lead-story__body h3 a:focus-visible {
+  color: var(--clay);
 }
 
 .lead-story__body p {
@@ -1069,12 +1157,14 @@ h3 {
   padding: 8px;
   border-top: 1px solid transparent;
   border-radius: var(--radius);
-  transition: background 160ms ease, transform 160ms ease;
+  transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
-.compact-post:hover {
+.compact-post:hover,
+.compact-post:focus-within {
   background: rgba(255, 253, 248, 0.66);
   transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(41, 34, 20, 0.06);
 }
 
 .compact-post__media {
@@ -1106,6 +1196,12 @@ h3 {
 .compact-post__body h3 a {
   color: var(--ink);
   text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.compact-post__body h3 a:hover,
+.compact-post__body h3 a:focus-visible {
+  color: var(--clay);
 }
 
 .compact-post__body p {
@@ -2002,6 +2098,13 @@ h3 {
   padding: 0 0 4px;
   border-bottom: 1px solid var(--line);
   text-decoration: none;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+
+.page-links a:hover,
+.page-links a:focus-visible {
+  border-color: currentColor;
+  color: var(--clay);
 }
 
 .search-empty {
@@ -2040,7 +2143,8 @@ h3 {
   transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-.pagination a:hover {
+.pagination a:hover,
+.pagination a:focus-visible {
   border-color: rgba(200, 116, 63, 0.4);
   background: rgba(255, 253, 248, 0.78);
   color: var(--clay);
@@ -2048,6 +2152,7 @@ h3 {
 }
 
 .pagination .current {
+  border-color: var(--olive);
   background: var(--olive);
   color: #fff;
 }
@@ -2068,7 +2173,21 @@ h3 {
   min-height: 48px;
   padding: 0 14px;
   border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fffdf8;
+  color: var(--ink);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.search-field:hover {
+  border-color: rgba(200, 116, 63, 0.32);
   background: #fff;
+}
+
+.search-field:focus {
+  border-color: rgba(200, 116, 63, 0.58);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(200, 116, 63, 0.1);
 }
 
 .search-submit {
@@ -2088,7 +2207,8 @@ h3 {
   transition: background 160ms ease, transform 160ms ease;
 }
 
-.search-submit:hover {
+.search-submit:hover,
+.search-submit:focus-visible {
   background: var(--copper);
   transform: translateY(-1px);
 }
@@ -2099,8 +2219,17 @@ h3 {
 }
 
 .site-footer {
+  position: relative;
   background: #252416;
   color: rgba(255, 253, 248, 0.78);
+}
+
+.site-footer::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--olive), var(--copper));
 }
 
 .site-footer__inner {
@@ -2128,6 +2257,12 @@ h3 {
 .site-footer a {
   color: #fffdf8;
   text-decoration: none;
+  transition: color 160ms ease, opacity 160ms ease;
+}
+
+.site-footer a:hover,
+.site-footer a:focus-visible {
+  color: #f1c0a0;
 }
 
 .site-footer p {
@@ -2152,6 +2287,9 @@ h3 {
 }
 
 .footer-menu ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: grid;
   gap: 8px;
 }
