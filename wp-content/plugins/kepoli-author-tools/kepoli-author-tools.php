@@ -175,7 +175,6 @@ final class Kepoli_Author_Tools
         $related_articles = self::array_meta_to_text($post->ID, '_kepoli_related_article_slugs');
         $recipe = self::recipe_data($post->ID);
         $image_meta = self::featured_image_meta($post->ID);
-        $image_prompt = (string) get_post_meta($post->ID, '_kepoli_image_plan_prompt', true);
 
         wp_nonce_field('kepoli_author_tools_save', 'kepoli_author_tools_nonce');
         ?>
@@ -232,12 +231,6 @@ final class Kepoli_Author_Tools
             <div class="kepoli-image-fields">
                 <h4><?php esc_html_e('Featured image metadata', 'kepoli-author-tools'); ?></h4>
                 <p><?php esc_html_e('Completeaza aceste campuri pentru imaginea reprezentativa. La salvare, Kepoli le aplica pe featured image daca exista una selectata.', 'kepoli-author-tools'); ?></p>
-                <?php if ($image_prompt !== '') : ?>
-                    <label class="kepoli-post-setup__prompt">
-                        <span><?php esc_html_e('Prompt imagine AI', 'kepoli-author-tools'); ?></span>
-                        <textarea rows="4" readonly><?php echo esc_textarea($image_prompt); ?></textarea>
-                    </label>
-                <?php endif; ?>
                 <div class="kepoli-post-setup__grid">
                     <label>
                         <span><?php esc_html_e('Alt text', 'kepoli-author-tools'); ?></span>
