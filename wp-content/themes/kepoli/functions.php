@@ -87,6 +87,49 @@ function kepoli_current_description(): string
     return trim(wp_strip_all_tags((string) $description));
 }
 
+function kepoli_current_seo_title(): string
+{
+    if (is_singular('post')) {
+        $seo_title = trim((string) get_post_meta(get_the_ID(), '_kepoli_seo_title', true));
+        $title = $seo_title !== '' ? $seo_title : single_post_title('', false);
+    } elseif (is_front_page()) {
+        $title = 'Kepoli - Retete romanesti si articole culinare';
+    } elseif (is_page('retete')) {
+        $title = 'Retete romanesti pentru acasa | Kepoli';
+    } elseif (is_page('articole')) {
+        $title = 'Articole culinare si ghiduri practice | Kepoli';
+    } elseif (is_category()) {
+        $title = single_cat_title('', false) . ' - Retete si articole | Kepoli';
+    } elseif (is_search()) {
+        $title = sprintf('Cautare: %s | Kepoli', get_search_query());
+    } elseif (is_404()) {
+        $title = 'Pagina negasita | Kepoli';
+    } elseif (is_page()) {
+        $title = single_post_title('', false);
+    } elseif (is_archive()) {
+        $title = get_the_archive_title();
+    } else {
+        $title = get_bloginfo('name');
+    }
+
+    $paged = max(1, (int) get_query_var('paged'), (int) get_query_var('page'));
+    if ($paged > 1) {
+        $title .= ' - Pagina ' . $paged;
+    }
+
+    if (!str_contains($title, 'Kepoli')) {
+        $title .= ' | Kepoli';
+    }
+
+    return trim($title);
+}
+
+function kepoli_document_title(string $title): string
+{
+    return kepoli_current_seo_title();
+}
+add_filter('pre_get_document_title', 'kepoli_document_title');
+
 function kepoli_social_image_url(): string
 {
     if (is_singular() && has_post_thumbnail(get_the_ID())) {
@@ -102,6 +145,18 @@ function kepoli_social_image_url(): string
     }
 
     return kepoli_asset_uri('writer-photo', 'svg');
+}
+
+function kepoli_social_image_alt(): string
+{
+    if (is_singular() && has_post_thumbnail(get_the_ID())) {
+        $alt = trim((string) get_post_meta((int) get_post_thumbnail_id(get_the_ID()), '_wp_attachment_image_alt', true));
+        if ($alt !== '') {
+            return $alt;
+        }
+    }
+
+    return kepoli_current_description() ?: kepoli_brand_description();
 }
 
 function kepoli_current_url(): string
@@ -497,6 +552,13 @@ function kepoli_meta_description(): void
         printf("<meta name=\"description\" content=\"%s\">\n", esc_attr(wp_trim_words($description, 28, '')));
     }
 
+    printf("<meta name=\"robots\" content=\"max-image-preview:large\">\n");
+    printf("<link rel=\"canonical\" href=\"%s\">\n", esc_url(kepoli_current_url()));
+
+    if (is_singular('post')) {
+        printf("<meta name=\"author\" content=\"%s\">\n", esc_attr(get_the_author()));
+    }
+
     $verification = kepoli_env('SEARCH_CONSOLE_VERIFICATION');
     if ($verification !== '') {
         printf("<meta name=\"google-site-verification\" content=\"%s\">\n", esc_attr($verification));
@@ -508,11 +570,12 @@ add_action('wp_head', 'kepoli_meta_description', 2);
 
 function kepoli_social_meta(): void
 {
-    $title = wp_get_document_title();
+    $title = kepoli_current_seo_title();
     $description = wp_trim_words(kepoli_current_description(), 28, '');
     $url = kepoli_current_url();
     $type = is_singular('post') ? 'article' : 'website';
     $image = kepoli_social_image_url();
+    $image_alt = kepoli_social_image_alt();
 
     printf("<meta property=\"og:locale\" content=\"%s\">\n", esc_attr(str_replace('-', '_', get_bloginfo('language'))));
     printf("<meta property=\"og:site_name\" content=\"%s\">\n", esc_attr(get_bloginfo('name')));
@@ -521,10 +584,26 @@ function kepoli_social_meta(): void
     printf("<meta property=\"og:url\" content=\"%s\">\n", esc_url($url));
     printf("<meta property=\"og:type\" content=\"%s\">\n", esc_attr($type));
     printf("<meta property=\"og:image\" content=\"%s\">\n", esc_url($image));
+    printf("<meta property=\"og:image:alt\" content=\"%s\">\n", esc_attr($image_alt));
     printf("<meta name=\"twitter:card\" content=\"summary_large_image\">\n");
     printf("<meta name=\"twitter:title\" content=\"%s\">\n", esc_attr($title));
     printf("<meta name=\"twitter:description\" content=\"%s\">\n", esc_attr($description));
     printf("<meta name=\"twitter:image\" content=\"%s\">\n", esc_url($image));
+
+    if (is_singular('post')) {
+        printf("<meta property=\"article:published_time\" content=\"%s\">\n", esc_attr(get_the_date('c')));
+        printf("<meta property=\"article:modified_time\" content=\"%s\">\n", esc_attr(get_the_modified_date('c')));
+        printf("<meta property=\"article:author\" content=\"%s\">\n", esc_attr(get_the_author()));
+
+        $category = kepoli_primary_category();
+        if ($category) {
+            printf("<meta property=\"article:section\" content=\"%s\">\n", esc_attr($category->name));
+        }
+
+        foreach (wp_get_post_tags(get_the_ID(), ['fields' => 'names']) as $tag) {
+            printf("<meta property=\"article:tag\" content=\"%s\">\n", esc_attr($tag));
+        }
+    }
 }
 add_action('wp_head', 'kepoli_social_meta', 3);
 
@@ -745,6 +824,7 @@ function kepoli_site_json_ld(): void
             '@id' => home_url('/#website'),
             'url' => home_url('/'),
             'name' => 'Kepoli',
+            'alternateName' => 'kepoli.com',
             'description' => kepoli_brand_description(),
             'inLanguage' => 'ro-RO',
             'publisher' => ['@id' => home_url('/#organization')],
@@ -771,6 +851,84 @@ function kepoli_site_json_ld(): void
     echo '<script type="application/ld+json">' . wp_json_encode($graph, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
 }
 add_action('wp_head', 'kepoli_site_json_ld', 19);
+
+function kepoli_collection_schema_posts(): array
+{
+    if (is_page('retete')) {
+        return get_posts([
+            'post_type' => 'post',
+            'posts_per_page' => 24,
+            'ignore_sticky_posts' => true,
+            'meta_key' => '_kepoli_post_kind',
+            'meta_value' => 'recipe',
+        ]);
+    }
+
+    if (is_page('articole')) {
+        return get_posts([
+            'post_type' => 'post',
+            'posts_per_page' => 24,
+            'ignore_sticky_posts' => true,
+            'meta_key' => '_kepoli_post_kind',
+            'meta_value' => 'article',
+        ]);
+    }
+
+    if (is_category()) {
+        $term = get_queried_object();
+        if (!$term instanceof WP_Term) {
+            return [];
+        }
+
+        return get_posts([
+            'post_type' => 'post',
+            'posts_per_page' => 24,
+            'ignore_sticky_posts' => true,
+            'cat' => (int) $term->term_id,
+        ]);
+    }
+
+    return [];
+}
+
+function kepoli_collection_json_ld(): void
+{
+    if (is_admin() || is_singular()) {
+        return;
+    }
+
+    $posts = kepoli_collection_schema_posts();
+    if (!$posts) {
+        return;
+    }
+
+    $items = [];
+    foreach (array_values($posts) as $index => $post) {
+        $items[] = [
+            '@type' => 'ListItem',
+            'position' => $index + 1,
+            'url' => get_permalink($post),
+            'name' => get_the_title($post),
+        ];
+    }
+
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'CollectionPage',
+        'name' => is_category() ? single_cat_title('', false) : (is_page() ? get_the_title() : get_bloginfo('name')),
+        'description' => kepoli_current_description(),
+        'url' => kepoli_current_url(),
+        'mainEntity' => [
+            '@type' => 'ItemList',
+            'itemListOrder' => 'https://schema.org/ItemListOrderAscending',
+            'numberOfItems' => count($items),
+            'itemListElement' => $items,
+        ],
+    ];
+
+    echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
+}
+add_action('wp_head', 'kepoli_collection_json_ld', 22);
 
 function kepoli_recipe_content_anchors(string $content): string
 {
@@ -822,23 +980,99 @@ add_filter('the_content', 'kepoli_article_content_anchors', 6);
 
 function kepoli_breadcrumbs(): void
 {
+    $items = kepoli_breadcrumb_items();
+
     echo '<nav class="breadcrumbs" aria-label="' . esc_attr__('Breadcrumbs', 'kepoli') . '">';
-    echo '<a href="' . esc_url(home_url('/')) . '">' . esc_html__('Acasa', 'kepoli') . '</a>';
+    foreach ($items as $index => $item) {
+        if ($index > 0) {
+            echo ' / ';
+        }
+
+        if (!empty($item['url'])) {
+            echo '<a href="' . esc_url($item['url']) . '">' . esc_html($item['name']) . '</a>';
+        } else {
+            echo '<span>' . esc_html($item['name']) . '</span>';
+        }
+    }
+    echo '</nav>';
+}
+
+function kepoli_breadcrumb_items(): array
+{
+    $items = [
+        [
+            'name' => __('Acasa', 'kepoli'),
+            'url' => home_url('/'),
+        ],
+    ];
 
     if (is_singular('post')) {
         $category = get_the_category();
         if ($category) {
-            echo ' / <a href="' . esc_url(get_category_link($category[0])) . '">' . esc_html($category[0]->name) . '</a>';
+            $items[] = [
+                'name' => $category[0]->name,
+                'url' => get_category_link($category[0]),
+            ];
         }
-        echo ' / <span>' . esc_html(get_the_title()) . '</span>';
+        $items[] = [
+            'name' => get_the_title(),
+            'url' => '',
+        ];
     } elseif (is_category()) {
-        echo ' / <span>' . esc_html(single_cat_title('', false)) . '</span>';
+        $items[] = [
+            'name' => single_cat_title('', false),
+            'url' => '',
+        ];
     } elseif (is_page()) {
-        echo ' / <span>' . esc_html(get_the_title()) . '</span>';
+        $items[] = [
+            'name' => get_the_title(),
+            'url' => '',
+        ];
+    } elseif (is_search()) {
+        $items[] = [
+            'name' => sprintf(__('Rezultate pentru "%s"', 'kepoli'), get_search_query()),
+            'url' => '',
+        ];
     }
 
-    echo '</nav>';
+    return $items;
 }
+
+function kepoli_breadcrumb_json_ld(): void
+{
+    if (is_admin()) {
+        return;
+    }
+
+    $items = kepoli_breadcrumb_items();
+    if (count($items) < 2) {
+        return;
+    }
+
+    $list = [];
+    foreach ($items as $index => $item) {
+        $entry = [
+            '@type' => 'ListItem',
+            'position' => $index + 1,
+            'name' => $item['name'],
+        ];
+
+        if (!empty($item['url'])) {
+            $entry['item'] = $item['url'];
+        }
+
+        $list[] = $entry;
+    }
+
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => $list,
+    ];
+
+    echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
+}
+add_action('wp_head', 'kepoli_breadcrumb_json_ld', 23);
 
 function kepoli_get_posts_by_slugs(array $slugs): array
 {

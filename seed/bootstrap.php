@@ -150,6 +150,29 @@ function kepoli_seed_link(string $slug, array $post_ids): string
     return isset($post_ids[$slug]) ? get_permalink($post_ids[$slug]) : home_url('/');
 }
 
+function kepoli_seed_post_data(string $slug, array $posts): ?array
+{
+    foreach ($posts as $post) {
+        if (($post['slug'] ?? '') === $slug) {
+            return $post;
+        }
+    }
+
+    return null;
+}
+
+function kepoli_seed_post_title(string $slug, array $posts): string
+{
+    $post = kepoli_seed_post_data($slug, $posts);
+    return $post['title'] ?? kepoli_seed_slug_to_title($slug);
+}
+
+function kepoli_seed_post_excerpt(string $slug, array $posts): string
+{
+    $post = kepoli_seed_post_data($slug, $posts);
+    return trim((string) ($post['excerpt'] ?? ''));
+}
+
 function kepoli_seed_recipe_matches(array $post, array $needles): bool
 {
     $haystack = strtolower(
@@ -169,6 +192,147 @@ function kepoli_seed_recipe_matches(array $post, array $needles): bool
     }
 
     return false;
+}
+
+function kepoli_seed_recipe_value_paragraphs(array $post): array
+{
+    switch ($post['category']) {
+        case 'ciorbe-si-supe':
+            return [
+                'Reteta aceasta raspunde bine unei cautari simple: cum faci acasa un bol romanesc cald, bine legat si usor de servit in familie. Are pasi accesibili, dar si suficiente repere ca sa poti controla limpezimea, aciditatea si textura finala.',
+                'Daca gatesti pentru pranz, pentru doua zile sau pentru o masa de duminica, tipul acesta de reteta castiga prin echilibru: ingredientele sunt recognoscibile, timpul de lucru este clar, iar rezultatul poate fi adaptat usor dupa gustul casei.',
+            ];
+        case 'feluri-principale':
+            return [
+                'Reteta este construita pentru mesele la care vrei ceva satios, clar explicat si usor de legat de o garnitura sau de o ciorba. Fiecare pas conteaza pentru gustul final, dar nu ai nevoie de tehnici complicate ca sa iasa bine.',
+                'Pentru cine cauta mancare romaneasca facuta acasa, avantajul real este predictibilitatea: stii cand sa rumenesti, cand sa adaugi lichidul si ce semne iti arata ca preparatul este gata, nu doar cat timp a stat pe foc.',
+            ];
+        case 'patiserie-si-deserturi':
+            return [
+                'Reteta merita daca vrei un desert romanesc explicat fara scurtaturi confuze. Accentul cade pe textura, pe timpii de odihna sau coacere si pe semnele vizuale care iti spun cand preparatul este reusit.',
+                'La deserturi, cititorii cauta de obicei doua lucruri: sa nu rateze textura si sa poata repeta rezultatul. Tocmai de aceea, pasii si sfaturile sunt gandite sa reduca micile erori care strica aluaturile ori deserturile prajite.',
+            ];
+        case 'conserve-si-garnituri':
+            return [
+                'Reteta este utila cand vrei ceva care completeaza bine masa si poate fi pregatit organizat, cu atentie la curatenie, textura si echilibru de gust. Nu e doar o lista de pasi, ci un mod de lucru usor de urmat de la un sezon la altul.',
+                'Pentru garnituri si conserve, valoarea vine din detalii: ce legume alegi, cat lichid lasi, cand gusti si cum pastrezi rezultatul. Tocmai acele detalii fac diferenta intre un preparat bun si unul pe care vrei sa-l refaci sigur.',
+            ];
+        default:
+            return [
+                'Reteta este scrisa pentru gatit acasa, cu explicatii clare si repere practice care te ajuta sa intelegi nu doar ordinea pasilor, ci si ce urmaresti in fiecare etapa.',
+                'Scopul nu este sa incarce pagina cu text, ci sa raspunda intrebarilor firesti pe care le ai in timp ce gatesti: cat de mult fierbi, cand ajustezi gustul si cum servesti preparatul astfel incat sa ramana echilibrat.',
+            ];
+    }
+}
+
+function kepoli_seed_recipe_ingredient_focus_paragraphs(array $post): array
+{
+    if (kepoli_seed_recipe_matches($post, ['smantana', 'galbenus'])) {
+        return [
+            'Ingredientele-cheie ale retetei sunt baza lichida, partea grasa care rotunjeste gustul si elementul de legatura care da textura finala. Cand folosesti smantana sau galbenusuri, temperatura devine la fel de importanta ca proportiile.',
+            'Daca trebuie sa adaptezi, mergi pe schimbari mici: ajusteaza aciditatea la final, rareste cu zeama fierbinte daca textura e prea densa si evita inlocuirile agresive care schimba prea mult gustul specific retetei.',
+        ];
+    }
+
+    if (kepoli_seed_recipe_matches($post, ['bors', 'otet', 'lamaie', 'murata'])) {
+        return [
+            'Aici conteaza mai ales echilibrul dintre ingredientul principal, legumele de baza si sursa de aciditate. Gustul bun nu vine din mult bors sau mult otet, ci din felul in care completeaza restul preparatului fara sa il acopere.',
+            'Daca schimbi ingredientele, pastreaza raportul dintre dulceata naturala a legumelor, sarea din preparat si nota acra de la final. Ajustarile mici, facute dupa gust, sunt mai sigure decat o corectie mare dintr-o singura miscare.',
+        ];
+    }
+
+    if (kepoli_seed_recipe_matches($post, ['drojdie', 'faina', 'aluat', 'gris'])) {
+        return [
+            'In retetele de aluat sau compozitii sensibile, ingredientele-cheie sunt cele care controleaza structura: faina ori grisul, partea lichida si temperatura la care lucrezi. Cantitatea corecta este importanta, dar si ritmul in care incorporezi ingredientele.',
+            'Pentru adaptari, foloseste repere vizuale: aluatul trebuie sa fie elastic sau moale, nu intamplator lipicios, iar compozitia trebuie lasata sa se aseze inainte de modelare, prajire sau coacere.',
+        ];
+    }
+
+    if (kepoli_seed_recipe_matches($post, ['fasole', 'orez'])) {
+        return [
+            'Ingredientul principal are nevoie de suficient timp si de lichidul potrivit ca sa se gateasca uniform. In astfel de retete, rabdarea si ordinea etapelor sunt mai importante decat focul mare sau interventiile dese.',
+            'Daca adaptezi reteta, tine cont de faptul ca boabele, orezul sau legumele absorb diferit in functie de soi si sezon. Corecteaza consistenta treptat si foloseste lichid fierbinte, nu rece, cand mai completezi.',
+        ];
+    }
+
+    return [
+        'Ingredientele-cheie ale retetei sunt cele care dau corp, gust si ritm prepararii. Merita sa le alegi proaspete si sa le pregatesti din timp, pentru ca ordinea in care intra in vas influenteaza textura mai mult decat pare la prima vedere.',
+        'Daca ai nevoie de adaptari, incearca sa schimbi un singur lucru o data: tipul de carne, gradul de grasime, o garnitura sau un condiment. Asa iti ramane clar ce a schimbat cu adevarat rezultatul final.',
+    ];
+}
+
+function kepoli_seed_recipe_common_mistakes(array $post): array
+{
+    $items = [];
+
+    if ($post['category'] === 'ciorbe-si-supe') {
+        $items[] = 'Fierberea prea agresiva dupa ce ai adaugat ingredientele sensibile poate tulbura zeama si poate rupe textura ingredientelor.';
+    }
+
+    if (kepoli_seed_recipe_matches($post, ['smantana', 'galbenus'])) {
+        $items[] = 'Adaugarea directa a smantanii sau a galbenusurilor in lichid foarte fierbinte fara temperare risca sa taie preparatul.';
+    }
+
+    if (kepoli_seed_recipe_matches($post, ['drojdie', 'faina', 'aluat'])) {
+        $items[] = 'Prea multa faina adaugata din graba face aluatul greu si ascunde textura pe care o cauti de fapt.';
+    }
+
+    if (kepoli_seed_recipe_matches($post, ['orez'])) {
+        $items[] = 'Umplerea prea stransa sau lipsa lichidului suficient nu lasa orezul sa se gateasca uniform si sa ramana placut la interior.';
+    }
+
+    if (kepoli_seed_recipe_matches($post, ['usturoi'])) {
+        $items[] = 'Usturoiul tinut prea mult pe foc amaraste repede si schimba profilul retetei mai mult decat iti doresti.';
+    }
+
+    if (kepoli_seed_recipe_matches($post, ['fasole'])) {
+        $items[] = 'Sarea pusa prea devreme sau lipsa timpului de inmuiere pot intarzia gatirea boabelor si pot lasa textura neuniforma.';
+    }
+
+    $items[] = 'Condimentarea finala facuta fara gustare pe parcurs duce des la preparate bune tehnic, dar plate sau prea insistente la masa.';
+
+    return array_slice(array_values(array_unique($items)), 0, 4);
+}
+
+function kepoli_seed_render_related_links(string $heading, string $intro, array $slugs, array $post_ids, array $posts, string $heading_id = ''): string
+{
+    if ($slugs === []) {
+        return '';
+    }
+
+    $id_attr = $heading_id !== '' ? ' id="' . esc_attr($heading_id) . '"' : '';
+    $html = '<section class="related-posts"><h2' . $id_attr . '>' . esc_html($heading) . '</h2>';
+    $html .= '<p>' . esc_html($intro) . '</p><ul>';
+
+    foreach ($slugs as $slug) {
+        $title = kepoli_seed_post_title($slug, $posts);
+        $excerpt = kepoli_seed_post_excerpt($slug, $posts);
+        $html .= '<li><a href="' . esc_url(kepoli_seed_link($slug, $post_ids)) . '">' . esc_html($title) . '</a>';
+        if ($excerpt !== '') {
+            $html .= ' - ' . esc_html(wp_trim_words($excerpt, 20, '...'));
+        }
+        $html .= '</li>';
+    }
+
+    $html .= '</ul></section>';
+
+    return $html;
+}
+
+function kepoli_seed_article_context_paragraphs(array $post): array
+{
+    return [
+        'Ghidul de fata este gandit pentru cautari practice, nu pentru formulare vagi. El leaga subiectul principal de deciziile reale din bucatarie: cum alegi, cum organizezi, ce urmaresti si ce poti aplica imediat dupa lectura.',
+        'Daca vrei sa folosesti rapid informatia, porneste de la subtitluri si revino la partea care te intereseaza chiar in momentul in care faci lista de cumparaturi, pregatesti ingredientele sau planifici o masa completa.',
+    ];
+}
+
+function kepoli_seed_article_wrapup(array $post): string
+{
+    $first = $post['takeaways'][0] ?? 'Porneste de la lucrurile care iti aduc claritate imediata.';
+    $second = $post['takeaways'][1] ?? 'Apoi adapteaza sfaturile la ingredientele si ritmul casei tale.';
+
+    return 'Daca vrei sa aplici rapid ideile din ghid, incepe cu doua miscari simple: ' . $first . ' ' . $second . ' In felul acesta, informatia nu ramane doar teorie, ci se transforma mai usor in mese mai bine gandite si retete mai previzibile.';
 }
 
 function kepoli_seed_recipe_intro_guidance(array $post): array
@@ -384,7 +548,7 @@ function kepoli_seed_article_takeaways_html(array $takeaways): string
     return $html;
 }
 
-function kepoli_seed_recipe_content(array $post, array $post_ids, array $category_ids): string
+function kepoli_seed_recipe_content(array $post, array $post_ids, array $category_ids, array $posts): string
 {
     $category_id = $category_ids[$post['category']] ?? 0;
     $category_link = $category_id ? get_category_link($category_id) : home_url('/');
@@ -399,6 +563,11 @@ function kepoli_seed_recipe_content(array $post, array $post_ids, array $categor
     $html .= '<p>' . esc_html($post['excerpt']) . '</p>';
     $html .= '<p>Reteta face parte din categoria <a href="' . esc_url($category_link) . '">' . esc_html($category_name) . '</a> si este scrisa pentru gatit acasa, cu pasi clari si ingrediente usor de verificat.</p>';
     $html .= '[kepoli_ad slot="after_intro"]';
+    $html .= '<section><h2 id="de-ce-merita">De ce merita reteta</h2>';
+    foreach (kepoli_seed_recipe_value_paragraphs($post) as $paragraph) {
+        $html .= '<p>' . esc_html($paragraph) . '</p>';
+    }
+    $html .= '</section>';
     $html .= '<section class="kepoli-recipe-box">';
     $html .= '<h2 id="pe-scurt">Pe scurt</h2>';
     $html .= '<div class="kepoli-recipe-meta">';
@@ -419,6 +588,11 @@ function kepoli_seed_recipe_content(array $post, array $post_ids, array $categor
     $html .= '</ol>';
     $html .= '</section>';
     $html .= '[kepoli_ad slot="mid_content"]';
+    $html .= '<section><h2 id="ingrediente-cheie">Ingrediente-cheie si adaptari</h2>';
+    foreach (kepoli_seed_recipe_ingredient_focus_paragraphs($post) as $paragraph) {
+        $html .= '<p>' . esc_html($paragraph) . '</p>';
+    }
+    $html .= '</section>';
     $html .= '<h2 id="inainte-sa-incepi">Inainte sa incepi</h2>';
     foreach (kepoli_seed_recipe_intro_guidance($post) as $paragraph) {
         $html .= '<p>' . esc_html($paragraph) . '</p>';
@@ -426,15 +600,25 @@ function kepoli_seed_recipe_content(array $post, array $post_ids, array $categor
     $html .= '<h2 id="sfaturi-pentru-reusita">Sfaturi pentru reusita</h2>';
     $html .= '<p>' . esc_html($post['notes']) . '</p>';
     $html .= '<p>' . esc_html(kepoli_seed_recipe_adjustment_text($post)) . '</p>';
+    $html .= '<section><h2 id="greseli-frecvente">Greseli frecvente</h2><ul>';
+    foreach (kepoli_seed_recipe_common_mistakes($post) as $item) {
+        $html .= '<li>' . esc_html($item) . '</li>';
+    }
+    $html .= '</ul></section>';
     $html .= '<h2 id="cum-servesti">Cum servesti</h2>';
     $html .= '<p>' . esc_html(kepoli_seed_recipe_serving_text($post)) . '</p>';
     $html .= '<h2 id="cum-pastrezi">Cum pastrezi</h2>';
     $html .= '<p>' . esc_html(kepoli_seed_recipe_storage_text($post)) . '</p>';
     $html .= kepoli_seed_render_faq_html(kepoli_seed_recipe_faq($post), 'intrebari-frecvente');
-    $html .= '<section class="related-posts"><h2 id="legaturi-utile">Legaturi utile</h2><ul>';
-    $html .= '<li><a href="' . esc_url($category_link) . '">Mai multe retete din ' . esc_html($category_name) . '</a></li>';
+    $html .= '<section class="related-posts"><h2 id="legaturi-utile">Legaturi utile</h2><p>Continua din aceeasi zona culinara cu retete si ghiduri care completeaza firesc preparatul de mai sus.</p><ul>';
+    $html .= '<li><a href="' . esc_url($category_link) . '">Mai multe retete din ' . esc_html($category_name) . '</a> - archivea categoriei te ajuta sa compari preparate apropiate ca gust, tehnica sau moment de servire.</li>';
     foreach (array_merge($post['related'] ?? [], $post['related_articles'] ?? []) as $slug) {
-        $html .= '<li><a href="' . esc_url(kepoli_seed_link($slug, $post_ids)) . '">' . esc_html(kepoli_seed_slug_to_title($slug)) . '</a></li>';
+        $html .= '<li><a href="' . esc_url(kepoli_seed_link($slug, $post_ids)) . '">' . esc_html(kepoli_seed_post_title($slug, $posts)) . '</a>';
+        $related_excerpt = kepoli_seed_post_excerpt($slug, $posts);
+        if ($related_excerpt !== '') {
+            $html .= ' - ' . esc_html(wp_trim_words($related_excerpt, 18, '...'));
+        }
+        $html .= '</li>';
     }
     $html .= '</ul></section>';
     $html .= '<p><em>Nota: verifica mereu alergenii si adapteaza reteta la ingredientele tale.</em></p>';
@@ -442,14 +626,18 @@ function kepoli_seed_recipe_content(array $post, array $post_ids, array $categor
     return $html;
 }
 
-function kepoli_seed_article_content(array $post, array $post_ids, array $category_ids): string
+function kepoli_seed_article_content(array $post, array $post_ids, array $category_ids, array $posts): string
 {
     $category_id = $category_ids[$post['category']] ?? 0;
     $category_link = $category_id ? get_category_link($category_id) : home_url('/');
     $html = '<p>' . esc_html($post['excerpt']) . '</p>';
     $html .= '<p>Acest ghid completeaza colectia de <a href="' . esc_url(home_url('/retete/')) . '">retete Kepoli</a> si arhiva de <a href="' . esc_url($category_link) . '">articole culinare</a>.</p>';
     $html .= kepoli_seed_article_takeaways_html($post['takeaways'] ?? []);
-    $html .= '<p>Citeste-l cap-coada daca planifici o masa, o sesiune de gatit sau o lista de cumparaturi. Daca esti deja in bucatarie, foloseste subtitlurile pentru partea care te intereseaza acum.</p>';
+    $html .= '<section><h2>Ce gasesti in ghid</h2>';
+    foreach (kepoli_seed_article_context_paragraphs($post) as $paragraph) {
+        $html .= '<p>' . esc_html($paragraph) . '</p>';
+    }
+    $html .= '</section>';
 
     $index = 0;
     foreach ($post['sections'] as $section) {
@@ -462,11 +650,14 @@ function kepoli_seed_article_content(array $post, array $post_ids, array $catego
     }
 
     $html .= kepoli_seed_render_faq_html($post['faq'] ?? []);
-    $html .= '<section class="related-posts"><h2>Retete pe acelasi fir</h2><ul>';
-    foreach ($post['related'] ?? [] as $slug) {
-        $html .= '<li><a href="' . esc_url(kepoli_seed_link($slug, $post_ids)) . '">' . esc_html(kepoli_seed_slug_to_title($slug)) . '</a></li>';
-    }
-    $html .= '</ul></section>';
+    $html .= '<section><h2>Ce aplici mai intai</h2><p>' . esc_html(kepoli_seed_article_wrapup($post)) . '</p></section>';
+    $html .= kepoli_seed_render_related_links(
+        'Retete pe acelasi fir',
+        'Porneste de la aceste retete daca vrei sa transformi ideile din articol in ceva concret de pus pe masa.',
+        $post['related'] ?? [],
+        $post_ids,
+        $posts
+    );
 
     return $html;
 }
@@ -840,7 +1031,7 @@ foreach ($posts as $index => $post) {
 foreach ($posts as $post) {
     $post_id = $post_ids[$post['slug']];
     if ($post['kind'] === 'recipe') {
-        $content = kepoli_seed_recipe_content($post, $post_ids, $category_ids);
+        $content = kepoli_seed_recipe_content($post, $post_ids, $category_ids, $posts);
         $prep_minutes = kepoli_seed_duration_minutes($post['prep']);
         $cook_minutes = kepoli_seed_duration_minutes($post['cook']);
         update_post_meta($post_id, '_kepoli_recipe_json', wp_json_encode([
@@ -853,7 +1044,7 @@ foreach ($posts as $post) {
             'steps' => $post['steps'],
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     } else {
-        $content = kepoli_seed_article_content($post, $post_ids, $category_ids);
+        $content = kepoli_seed_article_content($post, $post_ids, $category_ids, $posts);
     }
 
     wp_update_post(wp_slash([
@@ -878,7 +1069,7 @@ foreach (['despre-kepoli', 'despre-autor', 'contact', 'politica-de-confidentiali
 
 update_option('default_category', $category_ids['ciorbe-si-supe'] ?? 1);
 update_option('posts_per_page', 9);
-update_option('kepoli_seed_version', '2026-04-22-image-plan');
+update_option('kepoli_seed_version', '2026-04-22-seo-content-enhancement');
 flush_rewrite_rules(false);
 
 echo "Seeded " . count($posts) . " posts and " . count($pages) . " pages.\n";

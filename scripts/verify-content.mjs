@@ -9,15 +9,21 @@ const imagePlan = fs.existsSync('content/image-plan.json')
 
 const failures = [];
 const slugs = new Set();
+const seoTitles = new Set();
 const categorySlugs = new Set(categories.map((category) => category.slug));
 const imagePlanBySlug = new Map();
 
 for (const post of posts) {
   if (slugs.has(post.slug)) failures.push(`Duplicate post slug: ${post.slug}`);
   slugs.add(post.slug);
+  if (seoTitles.has(post.seo_title)) failures.push(`Duplicate SEO title: ${post.seo_title}`);
+  seoTitles.add(post.seo_title);
   if (!categorySlugs.has(post.category)) failures.push(`Unknown category for ${post.slug}: ${post.category}`);
   if (!post.excerpt || post.excerpt.length < 70) failures.push(`Short excerpt: ${post.slug}`);
   if (!post.meta_description || post.meta_description.length < 70) failures.push(`Thin meta description: ${post.slug}`);
+  if (!post.seo_title || post.seo_title.length < 24) failures.push(`SEO title too short: ${post.slug}`);
+  if (post.seo_title && post.seo_title.length > 68) failures.push(`SEO title too long: ${post.slug}`);
+  if (post.meta_description === post.excerpt) failures.push(`Meta description duplicates excerpt exactly: ${post.slug}`);
 
   if (post.kind === 'recipe') {
     for (const key of ['ingredients', 'steps', 'related', 'related_articles']) {
