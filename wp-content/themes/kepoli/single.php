@@ -31,9 +31,9 @@ get_header();
                     <div class="entry-meta-row" aria-label="<?php esc_attr_e('Informatii articol', 'kepoli'); ?>">
                         <span class="entry-meta-row__item"><?php echo kepoli_icon('calendar'); ?><strong><?php echo esc_html(get_the_date()); ?></strong></span>
                         <span class="entry-meta-row__item"><?php echo kepoli_icon('clock'); ?><strong><?php echo esc_html(kepoli_read_time()); ?></strong></span>
-                        <span class="entry-meta-row__item"><?php echo kepoli_icon('user'); ?><strong><?php echo esc_html(get_the_author()); ?></strong></span>
+                        <span class="entry-meta-row__item entry-meta-row__item--author"><?php echo kepoli_icon('user'); ?><strong><?php echo esc_html(get_the_author()); ?></strong></span>
                         <?php if ($updated_label !== '') : ?>
-                            <span class="entry-meta-row__item"><?php echo kepoli_icon('refresh'); ?><strong><?php echo esc_html($updated_label); ?></strong></span>
+                            <span class="entry-meta-row__item entry-meta-row__item--updated"><?php echo kepoli_icon('refresh'); ?><strong><?php echo esc_html($updated_label); ?></strong></span>
                         <?php endif; ?>
                     </div>
                     <div class="share-tools share-tools--minimal" aria-label="<?php esc_attr_e('Actiuni articol', 'kepoli'); ?>">
@@ -122,20 +122,27 @@ get_header();
                     </div>
                     <div class="related-grid">
                         <?php foreach ($related_posts as $related) : ?>
+                            <?php
+                            $related_category = kepoli_primary_category($related->ID);
+                            $show_related_category = $related_category && $related_category->slug !== 'articole';
+                            ?>
                             <article <?php post_class('related-card ' . kepoli_post_tone_class($related->ID), $related->ID); ?>>
                                 <a class="related-card__media" href="<?php echo esc_url(get_permalink($related)); ?>">
                                     <?php echo kepoli_post_media_markup($related->ID, 'related'); ?>
                                 </a>
                                 <div class="related-card__body">
+                                    <div class="related-card__eyebrow content-chip-row">
+                                        <span class="content-chip content-chip--muted"><?php echo esc_html(kepoli_post_kind_label($related->ID)); ?></span>
+                                        <?php if ($show_related_category) : ?>
+                                            <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($related_category)); ?>"><?php echo esc_html($related_category->name); ?></a>
+                                        <?php endif; ?>
+                                    </div>
                                     <div class="post-card__meta">
-                                        <?php echo esc_html(get_the_date('j M Y', $related)); ?> / <?php echo esc_html(kepoli_read_time($related->ID)); ?>
+                                        <span><?php echo esc_html(get_the_date('j M Y', $related)); ?></span>
+                                        <span><?php echo esc_html(kepoli_read_time($related->ID)); ?></span>
                                     </div>
                                     <h3><a href="<?php echo esc_url(get_permalink($related)); ?>"><?php echo esc_html(get_the_title($related)); ?></a></h3>
                                     <p><?php echo esc_html(wp_trim_words(get_the_excerpt($related), 24, '...')); ?></p>
-                                    <a class="post-card__link" href="<?php echo esc_url(get_permalink($related)); ?>">
-                                        <span><?php echo get_post_meta($related->ID, '_kepoli_post_kind', true) === 'article' ? esc_html__('Citeste articolul', 'kepoli') : esc_html__('Citeste reteta', 'kepoli'); ?></span>
-                                        <?php echo kepoli_icon('arrow-right'); ?>
-                                    </a>
                                 </div>
                             </article>
                         <?php endforeach; ?>

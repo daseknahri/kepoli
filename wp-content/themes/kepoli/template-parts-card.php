@@ -6,30 +6,24 @@
 $category = kepoli_primary_category();
 $tone_class = kepoli_post_tone_class();
 $kind_label = kepoli_post_kind_label();
+$show_category = $category && $category->slug !== 'articole';
 ?>
 <article <?php post_class('post-card ' . $tone_class); ?>>
     <a class="post-card__visual" href="<?php the_permalink(); ?>" aria-label="<?php the_title_attribute(); ?>">
         <?php echo kepoli_post_media_markup(get_the_ID(), 'card'); ?>
     </a>
     <div class="post-card__body">
-        <div class="post-card__eyebrow">
-            <span><?php echo esc_html($kind_label); ?></span>
-            <?php if ($category) : ?>
-                <span><?php echo esc_html($category->name); ?></span>
+        <div class="post-card__eyebrow content-chip-row">
+            <span class="content-chip content-chip--muted"><?php echo esc_html($kind_label); ?></span>
+            <?php if ($show_category) : ?>
+                <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($category)); ?>"><?php echo esc_html($category->name); ?></a>
             <?php endif; ?>
         </div>
         <div class="post-card__meta">
-            <?php
-            echo esc_html(get_the_date('j M Y'));
-            echo ' / ';
-            echo esc_html(kepoli_read_time());
-            ?>
+            <span><?php echo esc_html(get_the_date('j M Y')); ?></span>
+            <span><?php echo esc_html(kepoli_read_time()); ?></span>
         </div>
         <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
         <p><?php echo esc_html(wp_trim_words(get_the_excerpt(), 22, '...')); ?></p>
-        <a class="post-card__link" href="<?php the_permalink(); ?>">
-            <span><?php esc_html_e('Deschide', 'kepoli'); ?></span>
-            <?php echo kepoli_icon('arrow-right'); ?>
-        </a>
     </div>
 </article>

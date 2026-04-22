@@ -51,12 +51,18 @@ $article_list = new WP_Query([
     </div>
     <div class="home-cluster">
         <?php if ($featured_recipe) : ?>
+            <?php $featured_recipe_category = kepoli_primary_category($featured_recipe->ID); ?>
             <article class="lead-story <?php echo esc_attr(kepoli_post_tone_class($featured_recipe->ID)); ?>">
                 <a class="lead-story__media" href="<?php echo esc_url(get_permalink($featured_recipe)); ?>">
                     <?php echo kepoli_post_media_markup($featured_recipe->ID, 'related'); ?>
                 </a>
                 <div class="lead-story__body">
                     <p class="eyebrow"><?php esc_html_e('Reteta recomandata', 'kepoli'); ?></p>
+                    <?php if ($featured_recipe_category && $featured_recipe_category->slug !== 'articole') : ?>
+                        <div class="lead-story__chips content-chip-row">
+                            <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($featured_recipe_category)); ?>"><?php echo esc_html($featured_recipe_category->name); ?></a>
+                        </div>
+                    <?php endif; ?>
                     <h3><a href="<?php echo esc_url(get_permalink($featured_recipe)); ?>"><?php echo esc_html(get_the_title($featured_recipe)); ?></a></h3>
                     <p><?php echo esc_html(get_the_excerpt($featured_recipe)); ?></p>
                     <div class="meta-strip meta-strip--inline">
@@ -73,13 +79,20 @@ $article_list = new WP_Query([
                 <a class="section-link" href="<?php echo esc_url(home_url('/retete/')); ?>"><?php esc_html_e('Vezi tot', 'kepoli'); ?></a>
             </div>
             <?php while ($recipe_list->have_posts()) : $recipe_list->the_post(); ?>
+                <?php $compact_category = kepoli_primary_category(); ?>
                 <article <?php post_class('compact-post ' . kepoli_post_tone_class()); ?>>
                     <a class="compact-post__media" href="<?php the_permalink(); ?>">
                         <?php echo kepoli_post_media_markup(get_the_ID(), 'related'); ?>
                     </a>
                     <div class="compact-post__body">
+                        <?php if ($compact_category && $compact_category->slug !== 'articole') : ?>
+                            <div class="more-list__chips content-chip-row">
+                                <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($compact_category)); ?>"><?php echo esc_html($compact_category->name); ?></a>
+                            </div>
+                        <?php endif; ?>
                         <div class="post-card__meta">
-                            <?php echo esc_html(get_the_date('j M Y')); ?> / <?php echo esc_html(kepoli_read_time()); ?>
+                            <span><?php echo esc_html(get_the_date('j M Y')); ?></span>
+                            <span><?php echo esc_html(kepoli_read_time()); ?></span>
                         </div>
                         <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
                         <p><?php echo esc_html(wp_trim_words(get_the_excerpt(), 12, '...')); ?></p>
@@ -119,12 +132,18 @@ $article_list = new WP_Query([
     </div>
     <div class="home-cluster home-cluster--reverse">
         <?php if ($featured_article) : ?>
+            <?php $featured_article_category = kepoli_primary_category($featured_article->ID); ?>
             <article class="lead-story <?php echo esc_attr(kepoli_post_tone_class($featured_article->ID)); ?>">
                 <a class="lead-story__media" href="<?php echo esc_url(get_permalink($featured_article)); ?>">
                     <?php echo kepoli_post_media_markup($featured_article->ID, 'related'); ?>
                 </a>
                 <div class="lead-story__body">
                     <p class="eyebrow"><?php esc_html_e('Articol recomandat', 'kepoli'); ?></p>
+                    <?php if ($featured_article_category && $featured_article_category->slug !== 'articole') : ?>
+                        <div class="lead-story__chips content-chip-row">
+                            <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($featured_article_category)); ?>"><?php echo esc_html($featured_article_category->name); ?></a>
+                        </div>
+                    <?php endif; ?>
                     <h3><a href="<?php echo esc_url(get_permalink($featured_article)); ?>"><?php echo esc_html(get_the_title($featured_article)); ?></a></h3>
                     <p><?php echo esc_html(get_the_excerpt($featured_article)); ?></p>
                     <div class="meta-strip meta-strip--inline">
@@ -141,13 +160,20 @@ $article_list = new WP_Query([
                 <a class="section-link" href="<?php echo esc_url(home_url('/articole/')); ?>"><?php esc_html_e('Vezi tot', 'kepoli'); ?></a>
             </div>
             <?php while ($article_list->have_posts()) : $article_list->the_post(); ?>
+                <?php $compact_category = kepoli_primary_category(); ?>
                 <article <?php post_class('compact-post ' . kepoli_post_tone_class()); ?>>
                     <a class="compact-post__media" href="<?php the_permalink(); ?>">
                         <?php echo kepoli_post_media_markup(get_the_ID(), 'related'); ?>
                     </a>
                     <div class="compact-post__body">
+                        <?php if ($compact_category && $compact_category->slug !== 'articole') : ?>
+                            <div class="more-list__chips content-chip-row">
+                                <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($compact_category)); ?>"><?php echo esc_html($compact_category->name); ?></a>
+                            </div>
+                        <?php endif; ?>
                         <div class="post-card__meta">
-                            <?php echo esc_html(get_the_date('j M Y')); ?> / <?php echo esc_html(kepoli_read_time()); ?>
+                            <span><?php echo esc_html(get_the_date('j M Y')); ?></span>
+                            <span><?php echo esc_html(kepoli_read_time()); ?></span>
                         </div>
                         <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
                         <p><?php echo esc_html(wp_trim_words(get_the_excerpt(), 14, '...')); ?></p>

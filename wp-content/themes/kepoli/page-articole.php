@@ -18,6 +18,7 @@ $featured_article = kepoli_latest_post_by_kind('article');
     <?php kepoli_render_browse_links(); ?>
 </header>
 <?php if ($featured_article) : ?>
+    <?php $featured_article_category = kepoli_primary_category($featured_article->ID); ?>
     <section class="section section--tight">
         <div class="section__header section__header--compact">
             <div>
@@ -31,6 +32,11 @@ $featured_article = kepoli_latest_post_by_kind('article');
             </a>
             <div class="lead-story__body">
                 <p class="eyebrow"><?php esc_html_e('Articol recomandat', 'kepoli'); ?></p>
+                <?php if ($featured_article_category && $featured_article_category->slug !== 'articole') : ?>
+                    <div class="lead-story__chips content-chip-row">
+                        <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($featured_article_category)); ?>"><?php echo esc_html($featured_article_category->name); ?></a>
+                    </div>
+                <?php endif; ?>
                 <h3><a href="<?php echo esc_url(get_permalink($featured_article)); ?>"><?php echo esc_html(get_the_title($featured_article)); ?></a></h3>
                 <p><?php echo esc_html(get_the_excerpt($featured_article)); ?></p>
                 <div class="meta-strip meta-strip--inline">

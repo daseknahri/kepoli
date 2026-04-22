@@ -43,6 +43,7 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
     </div>
 </section>
 <?php if ($featured_recipe) : ?>
+    <?php $featured_recipe_category = kepoli_primary_category($featured_recipe->ID); ?>
     <section class="section section--tight">
         <div class="section__header section__header--compact">
             <div>
@@ -56,6 +57,11 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
             </a>
             <div class="lead-story__body">
                 <p class="eyebrow"><?php esc_html_e('Reteta recomandata', 'kepoli'); ?></p>
+                <?php if ($featured_recipe_category && $featured_recipe_category->slug !== 'articole') : ?>
+                    <div class="lead-story__chips content-chip-row">
+                        <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($featured_recipe_category)); ?>"><?php echo esc_html($featured_recipe_category->name); ?></a>
+                    </div>
+                <?php endif; ?>
                 <h3><a href="<?php echo esc_url(get_permalink($featured_recipe)); ?>"><?php echo esc_html(get_the_title($featured_recipe)); ?></a></h3>
                 <p><?php echo esc_html(get_the_excerpt($featured_recipe)); ?></p>
                 <div class="meta-strip meta-strip--inline">
