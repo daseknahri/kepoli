@@ -2,6 +2,14 @@ import fs from 'node:fs';
 
 const posts = JSON.parse(fs.readFileSync('content/posts.json', 'utf8'));
 const pages = JSON.parse(fs.readFileSync('content/pages.json', 'utf8'));
+const themeFiles = new Map([
+  ['single', fs.readFileSync('wp-content/themes/kepoli/single.php', 'utf8')],
+  ['archive', fs.readFileSync('wp-content/themes/kepoli/archive.php', 'utf8')],
+  ['search', fs.readFileSync('wp-content/themes/kepoli/search.php', 'utf8')],
+  ['page', fs.readFileSync('wp-content/themes/kepoli/page.php', 'utf8')],
+  ['page-retete', fs.readFileSync('wp-content/themes/kepoli/page-retete.php', 'utf8')],
+  ['page-articole', fs.readFileSync('wp-content/themes/kepoli/page-articole.php', 'utf8')],
+]);
 
 const failures = [];
 const notes = [];
@@ -26,6 +34,20 @@ function requireIncludes(slug, label, patterns) {
   for (const pattern of patterns) {
     if (!pattern.test(content)) {
       failures.push(`Page ${slug} is missing ${label}: ${pattern}`);
+    }
+  }
+}
+
+function requireThemeIncludes(fileKey, label, patterns) {
+  const content = themeFiles.get(fileKey);
+  if (!content) {
+    failures.push(`Missing theme file for audit: ${fileKey}`);
+    return;
+  }
+
+  for (const pattern of patterns) {
+    if (!pattern.test(content)) {
+      failures.push(`Theme file ${fileKey} is missing ${label}: ${pattern}`);
     }
   }
 }
@@ -84,6 +106,12 @@ requireIncludes('disclaimer-culinar', 'culinary disclaimer coverage', [
   /Alergeni/i,
   /Siguranta alimentara/i,
 ]);
+
+for (const fileKey of ['single', 'archive', 'search', 'page', 'page-retete', 'page-articole']) {
+  requireThemeIncludes(fileKey, 'reader trust links', [
+    /kepoli_render_reader_trust_links\s*\(/,
+  ]);
+}
 
 const riskyClaims = [
   /\bdetox\b/i,

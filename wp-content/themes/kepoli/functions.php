@@ -251,6 +251,48 @@ function kepoli_render_browse_links(string $class = 'browse-links'): void
     echo '</div>';
 }
 
+function kepoli_reader_trust_items(): array
+{
+    return [
+        [
+            'label' => __('Despre Kepoli', 'kepoli'),
+            'url' => home_url('/despre-kepoli/'),
+            'meta' => __('Cine scrie si cum lucram', 'kepoli'),
+            'class' => 'tone-guides',
+        ],
+        [
+            'label' => __('Isalune Merovik', 'kepoli'),
+            'url' => kepoli_author_page_url(),
+            'meta' => __('Pagina autoarei si date editoriale', 'kepoli'),
+            'class' => 'tone-default',
+        ],
+        [
+            'label' => __('Politica editoriala', 'kepoli'),
+            'url' => home_url('/politica-editoriala/'),
+            'meta' => __('Originalitate, corecturi si independenta', 'kepoli'),
+            'class' => 'tone-guides',
+        ],
+        [
+            'label' => __('Contact', 'kepoli'),
+            'url' => home_url('/contact/'),
+            'meta' => __('Intrebari, corecturi si colaborari', 'kepoli'),
+            'class' => 'tone-default',
+        ],
+    ];
+}
+
+function kepoli_render_reader_trust_links(string $class = 'browse-links browse-links--trust'): void
+{
+    echo '<div class="' . esc_attr($class) . '" aria-label="' . esc_attr__('Transparenta Kepoli', 'kepoli') . '">';
+    foreach (kepoli_reader_trust_items() as $item) {
+        echo '<a class="browse-link ' . esc_attr($item['class']) . '" href="' . esc_url($item['url']) . '">';
+        echo '<strong>' . esc_html($item['label']) . '</strong>';
+        echo '<span>' . esc_html($item['meta']) . '</span>';
+        echo '</a>';
+    }
+    echo '</div>';
+}
+
 function kepoli_category_card_meta(WP_Term $category): array
 {
     $map = [

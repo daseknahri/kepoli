@@ -11,6 +11,7 @@ $featured_article = kepoli_latest_post_by_kind('article');
     <p class="eyebrow"><?php esc_html_e('Articole', 'kepoli'); ?></p>
     <h1><?php esc_html_e('Ghiduri de bucatarie', 'kepoli'); ?></h1>
     <p><?php esc_html_e('Organizare, ingrediente, tehnici si idei pentru mese romanesti bine asezate.', 'kepoli'); ?></p>
+    <?php kepoli_render_reader_trust_links(); ?>
 </header>
 <?php if ($featured_article) : ?>
     <section class="section section--tight">

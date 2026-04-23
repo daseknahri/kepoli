@@ -13,6 +13,7 @@ $found_posts = isset($GLOBALS['wp_query']) ? (int) $GLOBALS['wp_query']->found_p
     <div class="meta-strip" aria-label="<?php esc_attr_e('Rezumat cautare', 'kepoli'); ?>">
         <span class="meta-strip__item"><?php echo esc_html(sprintf(_n('%d rezultat', '%d rezultate', $found_posts, 'kepoli'), $found_posts)); ?></span>
     </div>
+    <?php kepoli_render_reader_trust_links(); ?>
     <?php get_search_form(); ?>
 </header>
 <section class="section section--tight">

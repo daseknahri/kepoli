@@ -18,6 +18,7 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
     <p class="eyebrow"><?php esc_html_e('Retete', 'kepoli'); ?></p>
     <h1><?php esc_html_e('Retete romanesti', 'kepoli'); ?></h1>
     <p><?php esc_html_e('Alege o categorie sau porneste de la cele mai noi retete Kepoli.', 'kepoli'); ?></p>
+    <?php kepoli_render_reader_trust_links(); ?>
 </header>
 <section class="category-band">
     <div class="section">

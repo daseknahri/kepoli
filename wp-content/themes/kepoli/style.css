@@ -996,6 +996,10 @@ h3 {
   gap: 10px;
 }
 
+.browse-links--trust {
+  margin-top: 18px;
+}
+
 .browse-link {
   min-height: 38px;
   display: inline-flex;
@@ -1378,6 +1382,17 @@ h3 {
 .entry-meta-row__item strong {
   color: var(--ink);
   font-weight: 700;
+}
+
+.entry-meta-row__item a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.entry-meta-row__item a:hover,
+.entry-meta-row__item a:focus-visible {
+  color: var(--clay);
 }
 
 .entry-meta-row__item .kepoli-icon {
@@ -2775,7 +2790,10 @@ h3 {
   }
 
   .post-card p {
-    display: none;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .content-chip {
@@ -2906,8 +2924,6 @@ h3 {
     gap: 8px 12px;
   }
 
-  .entry-meta-row__item--author,
-  .entry-meta-row__item--updated,
   .more-list__chips--sidebar {
     display: none;
   }
@@ -3002,7 +3018,13 @@ h3 {
     font-size: 1rem;
   }
 
-  .related-card__body p,
+  .related-card__body p {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   .post-navigation-simple__body span {
     display: none;
   }

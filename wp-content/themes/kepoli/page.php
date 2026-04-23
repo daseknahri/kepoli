@@ -10,6 +10,7 @@ get_header();
             <header class="entry-header">
                 <?php kepoli_breadcrumbs(); ?>
                 <h1 class="entry-title"><?php the_title(); ?></h1>
+                <?php kepoli_render_reader_trust_links(); ?>
             </header>
             <div class="entry-content">
                 <?php the_content(); ?>

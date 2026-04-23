@@ -162,7 +162,7 @@ $article_list = new WP_Query([
 
 <section class="section section--tight">
     <div class="author-strip">
-        <div class="author-strip__photo" style="--author-image: url('<?php echo esc_url($hero_image); ?>'); ?>"></div>
+        <div class="author-strip__photo" style="--author-image: url('<?php echo esc_url(kepoli_asset_uri('writer-photo', 'svg')); ?>');"></div>
         <div class="author-strip__copy">
             <p class="eyebrow"><?php esc_html_e('Autoare', 'kepoli'); ?></p>
             <h2><?php esc_html_e('Isalune Merovik', 'kepoli'); ?></h2>

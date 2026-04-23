@@ -31,7 +31,7 @@ get_header();
                     <div class="entry-meta-row" aria-label="<?php esc_attr_e('Informatii articol', 'kepoli'); ?>">
                         <span class="entry-meta-row__item"><?php echo kepoli_icon('calendar'); ?><strong><?php echo esc_html(get_the_date()); ?></strong></span>
                         <span class="entry-meta-row__item"><?php echo kepoli_icon('clock'); ?><strong><?php echo esc_html(kepoli_read_time()); ?></strong></span>
-                        <span class="entry-meta-row__item entry-meta-row__item--author"><?php echo kepoli_icon('user'); ?><strong><?php echo esc_html(get_the_author()); ?></strong></span>
+                        <span class="entry-meta-row__item entry-meta-row__item--author"><?php echo kepoli_icon('user'); ?><strong><a href="<?php echo esc_url(kepoli_author_page_url()); ?>" rel="author"><?php echo esc_html(get_the_author()); ?></a></strong></span>
                         <?php if ($updated_label !== '') : ?>
                             <span class="entry-meta-row__item entry-meta-row__item--updated"><?php echo kepoli_icon('refresh'); ?><strong><?php echo esc_html($updated_label); ?></strong></span>
                         <?php endif; ?>
@@ -58,6 +58,7 @@ get_header();
                         <?php endforeach; ?>
                     </div>
                 </div>
+                <?php kepoli_render_reader_trust_links(); ?>
                 <?php if ($is_recipe) : ?>
                     <nav class="entry-jumpnav" aria-label="<?php esc_attr_e('Navigatie reteta', 'kepoli'); ?>">
                         <a href="#ingrediente"><?php echo kepoli_icon('ingredients'); ?><span><?php esc_html_e('Ingrediente', 'kepoli'); ?></span></a>
