@@ -28,6 +28,10 @@
                     ]);
                     ?>
                 </nav>
+                <div class="site-utility-links" aria-label="<?php esc_attr_e('Legaturi editoriale', 'kepoli'); ?>">
+                    <a href="<?php echo esc_url(kepoli_author_page_url()); ?>"><?php esc_html_e('Autor', 'kepoli'); ?></a>
+                    <a href="<?php echo esc_url(home_url('/contact/')); ?>"><?php esc_html_e('Contact', 'kepoli'); ?></a>
+                </div>
             </div>
         </div>
         <div class="site-header__cluster">

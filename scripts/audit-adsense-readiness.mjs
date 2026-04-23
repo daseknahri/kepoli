@@ -3,6 +3,7 @@ import fs from 'node:fs';
 const posts = JSON.parse(fs.readFileSync('content/posts.json', 'utf8'));
 const pages = JSON.parse(fs.readFileSync('content/pages.json', 'utf8'));
 const themeFiles = new Map([
+  ['header', fs.readFileSync('wp-content/themes/kepoli/header.php', 'utf8')],
   ['single', fs.readFileSync('wp-content/themes/kepoli/single.php', 'utf8')],
   ['archive', fs.readFileSync('wp-content/themes/kepoli/archive.php', 'utf8')],
   ['search', fs.readFileSync('wp-content/themes/kepoli/search.php', 'utf8')],
@@ -105,6 +106,11 @@ requireIncludes('disclaimer-culinar', 'culinary disclaimer coverage', [
   /medic|nutritionist|dietetician/i,
   /Alergeni/i,
   /Siguranta alimentara/i,
+]);
+
+requireThemeIncludes('header', 'editorial utility links', [
+  /kepoli_author_page_url\s*\(/,
+  /home_url\('\/contact\/'\)/,
 ]);
 
 for (const fileKey of ['single', 'archive', 'search', 'page', 'page-retete', 'page-articole']) {
