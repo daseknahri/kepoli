@@ -324,6 +324,111 @@ function kepoli_category_card_meta(WP_Term $category): array
     ];
 }
 
+function kepoli_archive_count_label(WP_Term $category): string
+{
+    if ($category->slug === 'articole') {
+        return sprintf(_n('%d ghid publicat', '%d ghiduri publicate', $category->count, 'kepoli'), $category->count);
+    }
+
+    return sprintf(_n('%d reteta publicata', '%d retete publicate', $category->count, 'kepoli'), $category->count);
+}
+
+function kepoli_archive_guidance_items(): array
+{
+    $category = get_queried_object();
+    if (!$category instanceof WP_Term || $category->taxonomy !== 'category') {
+        return [];
+    }
+
+    $map = [
+        'ciorbe-si-supe' => [
+            [
+                'title' => __('Ce compari aici', 'kepoli'),
+                'body' => __('Uita-te la dreseala, aciditate si timpul de fierbere blanda ca sa alegi reteta potrivita pentru masa ta.', 'kepoli'),
+            ],
+            [
+                'title' => __('Cand alegi reteta', 'kepoli'),
+                'body' => __('Supele mai limpezi merg bine pentru zile obisnuite, iar ciorbele bogate merita cand vrei ceva mai satios si de stat la masa.', 'kepoli'),
+            ],
+            [
+                'title' => __('Ce gasesti in pagina', 'kepoli'),
+                'body' => __('Fiecare reteta include imagine, timpi clari, repere de textura si recomandari utile pentru servire sau pastrare.', 'kepoli'),
+            ],
+        ],
+        'feluri-principale' => [
+            [
+                'title' => __('Cum te orientezi', 'kepoli'),
+                'body' => __('Alege dupa timpul real pe care il ai: unele retete cer foc lung si rabdare, altele merg direct pentru pranz sau cina.', 'kepoli'),
+            ],
+            [
+                'title' => __('Ce conteaza cel mai mult', 'kepoli'),
+                'body' => __('Rumenirea, consistenta sosului si garnitura potrivita schimba mai mult rezultatul decat adaugarea de ingrediente in plus.', 'kepoli'),
+            ],
+            [
+                'title' => __('Ce gasesti in pagina', 'kepoli'),
+                'body' => __('Retetele vin cu timpi, portii, repere de servire si trimiteri utile catre alte feluri care merg natural impreuna.', 'kepoli'),
+            ],
+        ],
+        'patiserie-si-deserturi' => [
+            [
+                'title' => __('Ce urmaresti', 'kepoli'),
+                'body' => __('La deserturi conteaza textura: dospirea, temperatura ingredientelor si focul bun fac diferenta mai repede decat pare.', 'kepoli'),
+            ],
+            [
+                'title' => __('Cum alegi mai usor', 'kepoli'),
+                'body' => __('Daca vrei ceva rapid, mergi spre compozitii simple; pentru aluaturi si cozonaci, cauta retetele cu timp de odihna mai generos.', 'kepoli'),
+            ],
+            [
+                'title' => __('Ce gasesti in pagina', 'kepoli'),
+                'body' => __('Kepoli marcheaza reperele de framantare, prajire, coacere si pastrare ca sa nu ramai doar cu o lista scurta de pasi.', 'kepoli'),
+            ],
+        ],
+        'conserve-si-garnituri' => [
+            [
+                'title' => __('Ce conteaza aici', 'kepoli'),
+                'body' => __('Sezonul, sarea, borcanele curate si ritmul de lucru sunt mai importante decat sa incarci reteta cu prea multe artificii.', 'kepoli'),
+            ],
+            [
+                'title' => __('Cum alegi reteta', 'kepoli'),
+                'body' => __('Porneste de la ce vrei sa completezi la masa: unele merg langa mancaruri grele, altele rezolva o gustare sau o masa rece.', 'kepoli'),
+            ],
+            [
+                'title' => __('Ce gasesti in pagina', 'kepoli'),
+                'body' => __('Fiecare preparat are repere de echilibru, servire si pastrare, nu doar lista de ingrediente si un timp orientativ.', 'kepoli'),
+            ],
+        ],
+        'articole' => [
+            [
+                'title' => __('De unde sa pornesti', 'kepoli'),
+                'body' => __('Alege ghidul dupa problema reala pe care o ai: ingrediente, planificare, tehnici sau pastrarea mancarii gata facute.', 'kepoli'),
+            ],
+            [
+                'title' => __('Cum folosesti categoria', 'kepoli'),
+                'body' => __('Articolele sunt gandite sa te duca apoi spre retete potrivite, nu sa ramana texte izolate fara aplicare practica.', 'kepoli'),
+            ],
+            [
+                'title' => __('Ce vezi in jurul continutului', 'kepoli'),
+                'body' => __('Linkurile de autor, politica editoriala si contactul raman vizibile pentru ca cititorul sa stie cine raspunde de continut.', 'kepoli'),
+            ],
+        ],
+    ];
+
+    return $map[$category->slug] ?? [
+        [
+            'title' => __('Ce gasesti aici', 'kepoli'),
+            'body' => __('Continutul este organizat pentru rasfoire rapida, cu imagini, context practic si trimiteri utile spre pagini inrudite.', 'kepoli'),
+        ],
+        [
+            'title' => __('Cum te orientezi', 'kepoli'),
+            'body' => __('Porneste de la descrierea categoriei si apoi compara titlurile, timpii si extrasele ca sa alegi pagina potrivita.', 'kepoli'),
+        ],
+        [
+            'title' => __('Transparenta', 'kepoli'),
+            'body' => __('Linkurile de autor, contact si politica editoriala raman aproape de continut pentru orientare rapida.', 'kepoli'),
+        ],
+    ];
+}
+
 function kepoli_attachment_image_url(int $attachment_id, string $size = 'large'): string
 {
     if ($attachment_id <= 0) {

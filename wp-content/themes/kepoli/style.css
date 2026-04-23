@@ -1012,6 +1012,12 @@ h3 {
   font-size: 1.1rem;
 }
 
+.home-proof {
+  padding-top: 34px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid rgba(230, 217, 200, 0.72);
+}
+
 .browse-links {
   margin-top: 22px;
   display: flex;
@@ -1083,6 +1089,39 @@ h3 {
 .search-header h1 {
   max-width: 860px;
   margin: 0 0 12px;
+}
+
+.archive-guide {
+  margin-top: 18px;
+  padding-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  border-top: 1px solid rgba(230, 217, 200, 0.72);
+}
+
+.archive-guide__item {
+  min-width: 0;
+  padding-right: 18px;
+  border-right: 1px solid rgba(230, 217, 200, 0.72);
+}
+
+.archive-guide__item:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+.archive-guide__item h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  line-height: 1.28;
+}
+
+.archive-guide__item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.55;
 }
 
 .meta-strip {
@@ -2716,6 +2755,23 @@ h3 {
     font-size: 1.08rem;
   }
 
+  .archive-guide {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .archive-guide__item {
+    padding-right: 0;
+    padding-top: 12px;
+    border-right: 0;
+    border-top: 1px solid rgba(230, 217, 200, 0.72);
+  }
+
+  .archive-guide__item:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
   .entry-recipe-snapshot {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2807,6 +2863,11 @@ h3 {
 
   .home-hero h1 {
     font-size: 3rem;
+  }
+
+  .home-proof {
+    padding-top: 28px;
+    padding-bottom: 32px;
   }
 
   .section {

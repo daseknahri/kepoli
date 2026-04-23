@@ -4,6 +4,7 @@ const posts = JSON.parse(fs.readFileSync('content/posts.json', 'utf8'));
 const pages = JSON.parse(fs.readFileSync('content/pages.json', 'utf8'));
 const themeFiles = new Map([
   ['header', fs.readFileSync('wp-content/themes/kepoli/header.php', 'utf8')],
+  ['front-page', fs.readFileSync('wp-content/themes/kepoli/front-page.php', 'utf8')],
   ['single', fs.readFileSync('wp-content/themes/kepoli/single.php', 'utf8')],
   ['archive', fs.readFileSync('wp-content/themes/kepoli/archive.php', 'utf8')],
   ['search', fs.readFileSync('wp-content/themes/kepoli/search.php', 'utf8')],
@@ -113,11 +114,20 @@ requireThemeIncludes('header', 'editorial utility links', [
   /home_url\('\/contact\/'\)/,
 ]);
 
+requireThemeIncludes('front-page', 'homepage trust links', [
+  /kepoli_render_reader_trust_links\s*\(/,
+]);
+
 for (const fileKey of ['single', 'archive', 'search', 'page', 'page-retete', 'page-articole']) {
   requireThemeIncludes(fileKey, 'reader trust links', [
     /kepoli_render_reader_trust_links\s*\(/,
   ]);
 }
+
+requireThemeIncludes('archive', 'archive guidance support', [
+  /kepoli_archive_guidance_items\s*\(/,
+  /archive-guide/,
+]);
 
 requireThemeIncludes('single', 'recipe snapshot support', [
   /kepoli_recipe_snapshot_items\s*\(/,

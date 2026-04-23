@@ -30,14 +30,22 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
         </div>
         <div class="category-list category-list--showcase">
             <?php foreach ($recipe_categories as $category) : ?>
-                <?php $category_meta = kepoli_category_card_meta($category); ?>
+                <?php
+                $category_meta = kepoli_category_card_meta($category);
+                $category_description = trim(wp_strip_all_tags((string) $category->description));
+                if ($category_description === '') {
+                    $category_description = $category_meta['description'];
+                } else {
+                    $category_description = wp_trim_words($category_description, 18, '...');
+                }
+                ?>
                 <a class="category-card <?php echo esc_attr(kepoli_tone_class($category->slug)); ?>" href="<?php echo esc_url(get_category_link($category)); ?>">
                     <span class="category-card__top">
                         <span class="category-card__icon" aria-hidden="true"><?php echo esc_html($category_meta['icon']); ?></span>
                         <span class="category-card__count"><?php echo esc_html(sprintf(_n('%d reteta', '%d retete', $category->count, 'kepoli'), $category->count)); ?></span>
                     </span>
                     <strong><?php echo esc_html($category->name); ?></strong>
-                    <span class="category-card__description"><?php echo esc_html($category_meta['description']); ?></span>
+                    <span class="category-card__description"><?php echo esc_html($category_description); ?></span>
                 </a>
             <?php endforeach; ?>
         </div>

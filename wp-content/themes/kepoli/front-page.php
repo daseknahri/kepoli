@@ -32,12 +32,23 @@ $article_list = new WP_Query([
 <section class="home-hero" style="--hero-image: url('<?php echo esc_url($hero_image); ?>');">
     <div class="home-hero__inner">
         <p class="eyebrow"><?php esc_html_e('Kepoli', 'kepoli'); ?></p>
-        <h1><?php esc_html_e('Retete romanesti cu gust de acasa.', 'kepoli'); ?></h1>
-        <p><?php esc_html_e('Retete, ghiduri si idei de sezon scrise simplu, pentru mese bune si navigare clara.', 'kepoli'); ?></p>
+        <h1><?php esc_html_e('Retete romanesti si ghiduri pentru gatit acasa.', 'kepoli'); ?></h1>
+        <p><?php esc_html_e('Pagini clare, imagini utile si explicatii practice pentru cititorii care ajung direct din cautare, recomandari sau social.', 'kepoli'); ?></p>
         <div class="button-row">
             <a class="button" href="<?php echo esc_url(home_url('/retete/')); ?>"><?php esc_html_e('Vezi retetele', 'kepoli'); ?></a>
         </div>
     </div>
+</section>
+
+<section class="section section--tight home-proof">
+    <div class="section__header section__header--compact">
+        <div>
+            <p class="eyebrow"><?php esc_html_e('Transparenta', 'kepoli'); ?></p>
+            <h2><?php esc_html_e('Cine scrie, cum lucram, unde ne poti verifica', 'kepoli'); ?></h2>
+        </div>
+        <p><?php esc_html_e('Kepoli este construit pentru cititorii care intra direct intr-o pagina si vor sa vada repede autorul, regulile editoriale si cum pot cere clarificari.', 'kepoli'); ?></p>
+    </div>
+    <?php kepoli_render_reader_trust_links('browse-links browse-links--trust home-proof__links'); ?>
 </section>
 
 <section class="section">
@@ -98,14 +109,30 @@ $article_list = new WP_Query([
         </div>
         <div class="category-list category-list--showcase">
             <?php foreach ($categories as $category) : ?>
-                <?php $category_meta = kepoli_category_card_meta($category); ?>
+                <?php
+                $category_meta = kepoli_category_card_meta($category);
+                $category_description = trim(wp_strip_all_tags((string) $category->description));
+                if ($category_description === '') {
+                    $category_description = $category_meta['description'];
+                } else {
+                    $category_description = wp_trim_words($category_description, 18, '...');
+                }
+                ?>
                 <a class="category-card <?php echo esc_attr(kepoli_tone_class($category->slug)); ?>" href="<?php echo esc_url(get_category_link($category)); ?>">
                     <span class="category-card__top">
                         <span class="category-card__icon" aria-hidden="true"><?php echo esc_html($category_meta['icon']); ?></span>
-                        <span class="category-card__count"><?php echo esc_html(sprintf(_n('%d articol', '%d articole', $category->count, 'kepoli'), $category->count)); ?></span>
+                        <span class="category-card__count">
+                            <?php
+                            echo esc_html(
+                                $category->slug === 'articole'
+                                    ? sprintf(_n('%d articol', '%d articole', $category->count, 'kepoli'), $category->count)
+                                    : sprintf(_n('%d reteta', '%d retete', $category->count, 'kepoli'), $category->count)
+                            );
+                            ?>
+                        </span>
                     </span>
                     <strong><?php echo esc_html($category->name); ?></strong>
-                    <span class="category-card__description"><?php echo esc_html($category_meta['description']); ?></span>
+                    <span class="category-card__description"><?php echo esc_html($category_description); ?></span>
                 </a>
             <?php endforeach; ?>
         </div>
