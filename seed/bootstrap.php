@@ -535,13 +535,14 @@ function kepoli_seed_render_faq_html(array $items, string $heading_id = ''): str
     return $html;
 }
 
-function kepoli_seed_article_takeaways_html(array $takeaways): string
+function kepoli_seed_article_takeaways_html(array $takeaways, string $heading = 'Pe scurt', string $heading_id = ''): string
 {
     if ($takeaways === []) {
         return '';
     }
 
-    $html = '<section><h2>Pe scurt</h2><ul>';
+    $id_attr = $heading_id !== '' ? ' id="' . esc_attr($heading_id) . '"' : '';
+    $html = '<section><h2' . $id_attr . '>' . esc_html($heading) . '</h2><ul>';
     foreach ($takeaways as $takeaway) {
         $html .= '<li>' . esc_html($takeaway) . '</li>';
     }
@@ -565,6 +566,7 @@ function kepoli_seed_recipe_content(array $post, array $post_ids, array $categor
     $html .= '<p>' . esc_html($post['excerpt']) . '</p>';
     $html .= '<p>Reteta face parte din categoria <a href="' . esc_url($category_link) . '">' . esc_html($category_name) . '</a> si este scrisa pentru gatit acasa, cu pasi clari si ingrediente usor de verificat.</p>';
     $html .= '[kepoli_ad slot="after_intro"]';
+    $html .= kepoli_seed_article_takeaways_html($post['takeaways'] ?? [], 'Ce merita sa stii', 'ce-merita-sa-stii');
     $html .= '<section><h2 id="de-ce-merita">De ce merita reteta</h2>';
     foreach (kepoli_seed_recipe_value_paragraphs($post) as $paragraph) {
         $html .= '<p>' . esc_html($paragraph) . '</p>';

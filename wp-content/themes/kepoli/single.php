@@ -75,6 +75,7 @@ get_header();
                 <?php kepoli_render_reader_trust_links(); ?>
                 <?php if ($is_recipe) : ?>
                     <nav class="entry-jumpnav" aria-label="<?php esc_attr_e('Navigatie reteta', 'kepoli'); ?>">
+                        <a href="#ce-merita-sa-stii"><?php echo kepoli_icon('tips'); ?><span><?php esc_html_e('Repere', 'kepoli'); ?></span></a>
                         <a href="#ingrediente"><?php echo kepoli_icon('ingredients'); ?><span><?php esc_html_e('Ingrediente', 'kepoli'); ?></span></a>
                         <a href="#mod-de-preparare"><?php echo kepoli_icon('steps'); ?><span><?php esc_html_e('Preparare', 'kepoli'); ?></span></a>
                         <a href="#inainte-sa-incepi"><?php echo kepoli_icon('prep'); ?><span><?php esc_html_e('Inainte', 'kepoli'); ?></span></a>

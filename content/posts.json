@@ -29,7 +29,12 @@
     "servings": "6 portii",
     "ingredients": ["700 g piept sau pulpe de pui", "2 morcovi", "1 pastarnac", "1 bucata telina", "1 ceapa", "250 g smantana grasa", "3 galbenusuri", "4 catei usturoi", "2 linguri otet", "patrunjel", "sare si piper"],
     "steps": ["Fierbe puiul cu legumele intregi si sare pana carnea se desprinde usor.", "Strecoara supa, pastreaza morcovul si taie carnea fasii.", "Amesteca smantana cu galbenusurile si cateva polonice de supa fierbinte.", "Toarna amestecul in oala la foc mic, fara clocot puternic.", "Adauga puiul, morcovul taiat, usturoiul pisat, otetul si patrunjelul."],
-    "notes": "Tempereaza smantana inainte de a o pune in oala pentru o textura fina.",
+    "notes": "Tempereaza smantana inainte de a o pune in oala pentru o textura fina, apoi potriveste usturoiul si otetul treptat ca sa ramai cu gust rotund, nu agresiv.",
+    "takeaways": [
+      "Fierberea blanda iti pastreaza supa limpede si carnea frageda.",
+      "Dreseala merge doar dupa temperarea smantanii si a galbenusurilor.",
+      "Otetul si usturoiul se ajusteaza la final, dupa ce gusti supa calda."
+    ],
     "related": ["ciorba-de-perisoare", "ciorba-de-burta", "supa-de-pui-cu-galuste"],
     "related_articles": ["cum-alegi-ingredientele-pentru-retete-romanesti"],
     "seo_title": "Ciorba radauteana cremoasa cu pui",
@@ -47,7 +52,12 @@
     "servings": "8 portii",
     "ingredients": ["1 kg burta prefiarta", "1 os de vita", "2 morcovi", "1 ceapa", "1 bucata telina", "300 g smantana grasa", "4 galbenusuri", "6 catei usturoi", "otet dupa gust", "ardei iute", "sare"],
     "steps": ["Fierbe osul de vita cu legumele pentru o supa concentrata.", "Strecoara supa si adauga burta taiata fasii.", "Lasa burta sa fiarba pana devine foarte frageda.", "Amesteca smantana cu galbenusurile si supa fierbinte, apoi toarna in oala.", "Adauga usturoi pisat, otet, sare si serveste cu ardei iute."],
-    "notes": "Nu lasa ciorba sa clocoteasca dupa dres, ca sa nu se taie smantana.",
+    "notes": "Nu lasa ciorba sa clocoteasca dupa dres, ca sa nu se taie smantana, si lasa burta sa fiarba bland pana devine cu adevarat frageda, nu doar moale la suprafata.",
+    "takeaways": [
+      "Supa concentrata din os tine ciorba departe de gustul fad.",
+      "Burta are nevoie de timp bland, nu de foc grabit.",
+      "Dupa dreseala, mentii doar abur usor ca sa nu se taie."
+    ],
     "related": ["ciorba-radauteana", "ciorba-de-fasole-cu-afumatura", "tochitura-moldoveneasca"],
     "related_articles": ["tehnici-simple-pentru-aluaturi-si-baze"],
     "seo_title": "Ciorba de burta reteta traditionala",
@@ -65,7 +75,12 @@
     "servings": "8 portii",
     "ingredients": ["500 g fasole boabe", "400 g ciolan afumat", "2 cepe", "2 morcovi", "1 ardei", "2 linguri pasta de rosii", "1 lingurita cimbru", "2 foi dafin", "patrunjel", "sare si piper"],
     "steps": ["Inmoaie fasolea peste noapte si schimb-o in doua ape la inceputul fierberii.", "Fierbe ciolanul separat pana carnea se desprinde usor.", "Caleste ceapa, morcovul si ardeiul, apoi adauga pasta de rosii.", "Pune fasolea, supa de afumatura, carnea si aromele in aceeasi oala.", "Fierbe pana boabele sunt moi si termina cu patrunjel proaspat."],
-    "notes": "Adauga sarea spre final, dupa ce fasolea este aproape fiarta.",
+    "notes": "Adauga sarea spre final, dupa ce fasolea este aproape fiarta, iar daca vrei zeama rotunda lasa boabele si afumatura sa mai stea impreuna cateva clocote blande.",
+    "takeaways": [
+      "Fasolea inmuiata si schimbata in ape fierbe mai curat si mai egal.",
+      "Afumatura da baza gustului, dar nu trebuie sa acopere legumele.",
+      "Sarea intra la final, cand boabele sunt deja aproape fragede."
+    ],
     "related": ["iahnie-de-fasole", "varza-calita-cu-carnati", "muraturi-asortate"],
     "related_articles": ["calendarul-gusturilor-de-sezon"],
     "seo_title": "Ciorba de fasole cu afumatura",
@@ -83,7 +98,12 @@
     "servings": "6 portii",
     "ingredients": ["1 pui mic sau 4 pulpe", "2 morcovi", "1 ceapa", "1 pastarnac", "1 bucata telina", "2 oua", "8 linguri gris", "patrunjel", "sare", "piper boabe"],
     "steps": ["Fierbe puiul la foc mic si spumeaza supa pentru claritate.", "Adauga legumele intregi si piperul, apoi continua fierberea lent.", "Bate ouale cu un praf de sare si adauga grisul pana obtii o compozitie moale.", "Formeaza galuste cu lingura in supa care clocoteste foarte usor.", "Acopera oala si fierbe galustele 12-15 minute, apoi adauga patrunjel."],
-    "notes": "Pentru galuste pufoase, lasa compozitia cu gris sa se odihneasca 10 minute.",
+    "notes": "Pentru galuste pufoase, lasa compozitia cu gris sa se odihneasca 10 minute si fierbe supa doar bland dupa ce le-ai pus, ca sa nu se intareasca.",
+    "takeaways": [
+      "Spumarea atenta si focul mic tin zeama limpede.",
+      "Compozitia de galuste trebuie sa ramana moale, nu tare.",
+      "Capacul si fierberea blanda le ajuta sa creasca frumos."
+    ],
     "related": ["ciorba-radauteana", "supa-crema-de-legume-de-iarna", "tocanita-de-pui-cu-mamaliga"],
     "related_articles": ["meniu-romanesc-de-duminica"],
     "seo_title": "Supa de pui cu galuste pufoase",
@@ -101,7 +121,12 @@
     "servings": "4 portii",
     "ingredients": ["2 cartofi", "2 morcovi", "1 pastarnac", "1 felie telina", "1 ceapa", "4 catei usturoi", "2 linguri ulei", "800 ml supa de legume", "sare", "piper", "crutoane"],
     "steps": ["Taie legumele cuburi si rumeneste-le usor in ulei.", "Adauga supa calda si fierbe pana legumele sunt foarte moi.", "Paseaza fin cu blenderul si ajusteaza textura cu supa.", "Potriveste gustul cu sare, piper si usturoi copt.", "Serveste cu crutoane si putin ulei deasupra."],
-    "notes": "Pentru o supa mai bogata, adauga o lingura de smantana la final.",
+    "notes": "Pentru o supa mai bogata, adauga o lingura de smantana la final, dar paseaza doar dupa ce legumele sunt complet moi ca sa obtii textura catifelata.",
+    "takeaways": [
+      "Legumele usor rumenite dau gust mai adanc decat fierberea directa.",
+      "Blenderul intra doar cand radacinoasele sunt complet moi.",
+      "Textura se ajusteaza cu supa calda, nu cu apa rece."
+    ],
     "related": ["supa-de-pui-cu-galuste", "salata-de-vinete", "mamaliga-cu-branza-si-smantana"],
     "related_articles": ["cum-pastrezi-mancarea-gatita"],
     "seo_title": "Supa crema de legume de iarna",
@@ -119,7 +144,12 @@
     "servings": "10 portii",
     "ingredients": ["1 kg carne tocata de porc", "250 g orez", "2 cepe", "2 verze murate", "300 g afumatura", "500 ml suc de rosii", "cimbru", "foi de dafin", "piper", "sare cu grija"],
     "steps": ["Caleste ceapa si amestec-o cu orezul, carnea, piperul si cimbrul.", "Desfa varza in foi si taie nervurile groase.", "Ruleaza sarmalele strans, dar lasa loc orezului sa se umfle.", "Aseaza varza tocata si afumatura intre straturi.", "Fierbe lent cu suc de rosii si apa pana sarmalele sunt fragede."],
-    "notes": "Sarmalele sunt mai bune a doua zi, dupa ce aromele au stat impreuna.",
+    "notes": "Sarmalele sunt mai bune a doua zi, dupa ce aromele au stat impreuna, iar umplutura apuca sa traga din sosul cu varza si afumatura.",
+    "takeaways": [
+      "Umplutura nu se indeasa prea tare daca vrei sarmale fragede.",
+      "Straturile cu varza tocata si afumatura dau gust oalei intregi.",
+      "Reincalzirea lenta a doua zi rotunjeste sosul si umplutura."
+    ],
     "related": ["mamaliga-cu-branza-si-smantana", "varza-calita-cu-carnati", "muraturi-asortate"],
     "related_articles": ["meniu-romanesc-de-duminica"],
     "seo_title": "Sarmale in foi de varza murata",
@@ -137,7 +167,12 @@
     "servings": "4 portii",
     "ingredients": ["250 g malai", "1 l apa", "1 lingurita sare", "40 g unt", "250 g branza telemea", "200 g smantana", "piper proaspat"],
     "steps": ["Fierbe apa cu sarea intr-un ceaun sau vas cu fund gros.", "Adauga malaiul in ploaie, amestecand continuu.", "Fierbe mamaliga la foc mic pana se ingroasa si se desprinde de vas.", "Incorporeaza untul pentru textura mai fina.", "Serveste in straturi cu branza sfaramata si smantana."],
-    "notes": "Amesteca des la inceput ca sa eviti cocoloasele, apoi lasa mamaliga sa fiarba la foc mic pana capata textura legata si gust de malai gatit.",
+    "notes": "Amesteca des la inceput ca sa eviti cocoloasele, apoi lasa mamaliga sa fiarba la foc mic pana capata textura legata si gust de malai gatit; straturile se asaza cel mai bine cat timp mamaliga e fierbinte.",
+    "takeaways": [
+      "Malaiul turnat in ploaie te scapa de cocoloase.",
+      "Focul mic dupa ingrosare lasa mamaliga sa se lege frumos.",
+      "Branza sarata si smantana rece echilibreaza fiecare lingura."
+    ],
     "related": ["tochitura-moldoveneasca", "tocanita-de-pui-cu-mamaliga", "sarmale-in-foi-de-varza"],
     "related_articles": ["ghidul-camarii-romanesti"],
     "seo_title": "Mamaliga cu branza si smantana",
@@ -155,7 +190,12 @@
     "servings": "4 portii",
     "ingredients": ["700 g pulpa de porc", "250 g carnati afumati", "4 catei usturoi", "200 ml vin alb", "300 ml suc de rosii", "1 lingurita boia", "cimbru", "sare", "piper", "mamaliga pentru servit"],
     "steps": ["Taie carnea cuburi si rumeneste-o bine in grasimea proprie.", "Adauga carnatii taiati si usturoiul.", "Stinge cu vin si lasa alcoolul sa se evapore.", "Adauga sucul de rosii, boiaua si cimbrul.", "Fierbe pana sosul scade si carnea este frageda, apoi serveste cu mamaliga."],
-    "notes": "Rumenirea lenta da gustul principal, asa ca nu grabi primul pas.",
+    "notes": "Rumenirea lenta da gustul principal, asa ca nu grabi primul pas, iar sosul trebuie lasat sa scada pana leaga carnea, nu doar sa o acopere.",
+    "takeaways": [
+      "Carnea capata gust in rumenirea lunga, nu in sosul de final.",
+      "Vinul si rosiile trebuie lasate sa scada pana sosul se leaga.",
+      "Mamaliga si muraturile echilibreaza grasimea mai bine decat o garnitura grea."
+    ],
     "related": ["mamaliga-cu-branza-si-smantana", "varza-calita-cu-carnati", "muraturi-asortate"],
     "related_articles": ["meniu-romanesc-de-duminica"],
     "seo_title": "Tochitura moldoveneasca cu mamaliga",
@@ -173,7 +213,12 @@
     "servings": "4 portii",
     "ingredients": ["800 g pulpe de pui", "2 cepe", "1 ardei gras", "400 ml rosii pasate", "2 catei usturoi", "1 lingurita boia", "1 foaie dafin", "patrunjel", "sare", "piper"],
     "steps": ["Rumeneste puiul pe toate partile si scoate-l pe o farfurie.", "Caleste ceapa si ardeiul in aceeasi tigaie.", "Adauga usturoiul, boiaua si rosiile pasate.", "Pune puiul inapoi si fierbe acoperit pana carnea este frageda.", "Presara patrunjel si serveste cu mamaliga."],
-    "notes": "Daca sosul scade prea mult, adauga cate putina apa fierbinte.",
+    "notes": "Daca sosul scade prea mult, adauga cate putina apa fierbinte si lasa tocanita sa mearga bland pana puiul si ceapa se leaga intr-un sos rotund.",
+    "takeaways": [
+      "Rumenirea puiului de la inceput sustine gustul intregii tigai.",
+      "Ceapa si ardeiul au nevoie de timp sa se topeasca in sos.",
+      "Mamaliga prinde cel mai bine sosul cand il lasi usor legat."
+    ],
     "related": ["ostropel-de-pui", "supa-de-pui-cu-galuste", "mamaliga-cu-branza-si-smantana"],
     "related_articles": ["cum-pastrezi-mancarea-gatita"],
     "seo_title": "Tocanita de pui cu mamaliga",
@@ -191,7 +236,12 @@
     "servings": "4 portii",
     "ingredients": ["700 g pulpe de pui", "5 catei usturoi", "400 ml suc de rosii", "1 lingura faina", "2 linguri ulei", "1 foaie dafin", "patrunjel", "sare", "piper"],
     "steps": ["Rumeneste puiul in ulei si scoate-l deoparte.", "Caleste usturoiul feliat foarte scurt, fara sa se arda.", "Adauga faina, amesteca, apoi toarna sucul de rosii.", "Pune puiul in sos si fierbe pana se patrunde.", "Potriveste gustul si presara patrunjel."],
-    "notes": "Usturoiul trebuie doar parfumat, nu rumenit intens; daca se arde, sosul devine amar si acopera gustul bun al rosiilor.",
+    "notes": "Usturoiul trebuie doar parfumat, nu rumenit intens; daca se arde, sosul devine amar si acopera gustul bun al rosiilor, iar un scurt repaus la final ii rotunjeste gustul.",
+    "takeaways": [
+      "Usturoiul se parfumeaza scurt, nu se rumeneste tare.",
+      "Faina intra doar cat sa lege sosul, nu sa-l incarce.",
+      "Putin repaus la final rotunjeste gustul de rosii si usturoi."
+    ],
     "related": ["tocanita-de-pui-cu-mamaliga", "ardei-umpluti", "supa-de-pui-cu-galuste"],
     "related_articles": ["cum-alegi-ingredientele-pentru-retete-romanesti"],
     "seo_title": "Ostropel de pui cu usturoi",
@@ -209,7 +259,12 @@
     "servings": "6 portii",
     "ingredients": ["8 ardei grasi", "700 g carne tocata", "120 g orez", "2 cepe", "500 ml suc de rosii", "1 ou", "cimbru", "dafin", "sare", "piper"],
     "steps": ["Scoate cotoarele ardeilor si curata semintele.", "Caleste ceapa si amestec-o cu orezul, carnea, oul si condimentele.", "Umple ardeii fara sa presezi prea tare compozitia.", "Aseaza-i in oala cu suc de rosii, apa si dafin.", "Fierbe la foc mic pana orezul si carnea sunt gatite."],
-    "notes": "Lasa spatiu in ardei pentru ca orezul se umfla in timpul fierberii.",
+    "notes": "Lasa spatiu in ardei pentru ca orezul se umfla in timpul fierberii, iar dupa ce opresti focul lasa-i cateva minute in sos ca sa se aseze gustul.",
+    "takeaways": [
+      "Compozitia aerata si spatiul lasat in ardei ajuta orezul sa lucreze.",
+      "Sosul de rosii trebuie sa acopere fara sa dilueze gustul umpluturii.",
+      "Sunt mai buni dupa o pauza scurta, cand ardeii si sosul se aseaza."
+    ],
     "related": ["sarmale-in-foi-de-varza", "ostropel-de-pui", "salata-de-vinete"],
     "related_articles": ["calendarul-gusturilor-de-sezon"],
     "seo_title": "Ardei umpluti cu carne si orez",
@@ -227,7 +282,12 @@
     "servings": "5 portii",
     "ingredients": ["1 varza mare", "350 g carnati afumati", "1 ceapa", "300 ml suc de rosii", "2 linguri ulei", "cimbru", "boia", "dafin", "piper"],
     "steps": ["Taie varza fideluta si freac-o usor cu sare.", "Rumeneste carnatii si scoate-i deoparte.", "Caleste ceapa, apoi adauga varza si gateste pana scade.", "Pune sucul de rosii, condimentele si carnatii.", "Lasa la cuptor sau pe foc mic pana varza devine frageda."],
-    "notes": "Daca folosesti varza murata, gusta inainte de a adauga sare.",
+    "notes": "Daca folosesti varza murata, gusta inainte de a adauga sare, iar daca mergi pe varza dulce lasa-i timp suficient sa se inmoaie si sa prinda gust.",
+    "takeaways": [
+      "Varza are nevoie de timp sa se inmoaie si sa-si piarda asperitatea.",
+      "Carnatii se rumenesc separat ca sa lase gust, nu doar grasime.",
+      "Cuptorul sau focul mic dau dulceata pe care tigaia grabita o rateaza."
+    ],
     "related": ["sarmale-in-foi-de-varza", "ciorba-de-fasole-cu-afumatura", "muraturi-asortate"],
     "related_articles": ["calendarul-gusturilor-de-sezon"],
     "seo_title": "Varza calita cu carnati afumati",
@@ -245,7 +305,12 @@
     "servings": "6 portii",
     "ingredients": ["500 g fasole boabe", "3 cepe", "2 morcovi", "3 linguri bulion", "2 foi dafin", "1 lingurita boia", "ulei", "sare", "piper", "patrunjel"],
     "steps": ["Inmoaie fasolea si schimb-o in primele ape de fierbere.", "Fierbe fasolea cu morcovii si dafinul pana devine moale.", "Caleste multa ceapa cu boia si bulion.", "Amesteca fasolea scursa cu sosul si putina zeama.", "Fierbe impreuna pana iahnia se leaga si termina cu verdeata."],
-    "notes": "Pentru textura mai cremoasa, zdrobeste cateva boabe in sos si mai fierbe cateva minute, pana iahnia se leaga natural.",
+    "notes": "Pentru textura mai cremoasa, zdrobeste cateva boabe in sos si mai fierbe cateva minute, pana iahnia se leaga natural si ceapa apuca sa se topeasca bine in bulion.",
+    "takeaways": [
+      "Fasolea bine fiarta si ceapa multa fac textura, nu blenderul.",
+      "Bulionul si boiaua se gatesc separat ca sa nu para crude.",
+      "Zdrobirea catorva boabe leaga sosul natural."
+    ],
     "related": ["ciorba-de-fasole-cu-afumatura", "muraturi-asortate", "mamaliga-cu-branza-si-smantana"],
     "related_articles": ["ghidul-camarii-romanesti"],
     "seo_title": "Iahnie de fasole cu ceapa",
@@ -263,7 +328,12 @@
     "servings": "2 cozonaci",
     "ingredients": ["1 kg faina", "400 ml lapte", "250 g zahar", "5 galbenusuri", "150 g unt", "50 g drojdie proaspata", "coaja de lamaie", "400 g nuca", "3 linguri cacao", "vanilie"],
     "steps": ["Pregateste maiaua din drojdie, lapte caldut si putin zahar.", "Framanta faina cu galbenusurile, laptele aromat si untul topit.", "Lasa aluatul la dospit pana isi dubleaza volumul.", "Intinde foile si umple-le cu nuca, cacao, zahar si lapte.", "Ruleaza, mai lasa la crescut in tavi si coace pana cozonacii sunt rumeni."],
-    "notes": "Ingredientele la temperatura camerei ajuta aluatul sa creasca uniform.",
+    "notes": "Ingredientele la temperatura camerei ajuta aluatul sa creasca uniform, iar cozonacul se feliaza frumos doar dupa racire completa, cand miezul s-a asezat.",
+    "takeaways": [
+      "Ingredientele caldute si dospirea reala conteaza mai mult decat framantarea agresiva.",
+      "Umplutura trebuie sa ramana tartinabila, nu lichida.",
+      "Cozonacul se taie bine doar dupa racire completa."
+    ],
     "related": ["cornulete-fragede", "gogosi-pufoase", "placinta-cu-mere"],
     "related_articles": ["tehnici-simple-pentru-aluaturi-si-baze"],
     "seo_title": "Cozonac cu nuca pufos de casa",
@@ -281,7 +351,12 @@
     "servings": "6 portii",
     "ingredients": ["500 g branza de vaci", "2 oua", "80 g zahar", "250 g faina", "1 lingurita praf de copt", "coaja de lamaie", "ulei pentru prajit", "smantana", "dulceata"],
     "steps": ["Scurge bine branza si amestec-o cu ouale, zaharul si aromele.", "Adauga faina si praful de copt pana obtii un aluat moale.", "Formeaza inele si bilute, pudrand mainile cu faina.", "Prajeste papanasii la foc mediu pana sunt aurii.", "Serveste cu smantana si dulceata."],
-    "notes": "Nu adauga prea multa faina; papanasii trebuie sa ramana fragezi.",
+    "notes": "Nu adauga prea multa faina; papanasii trebuie sa ramana fragezi, iar branza bine scursa te ajuta sa-i modelezi fara sa-i faci grei.",
+    "takeaways": [
+      "Branza bine scursa tine aluatul fraged si usor de modelat.",
+      "Faina intra cu masura; altfel ies densi, nu pufosi.",
+      "Prajirea la foc mediu lasa interiorul gatit si exteriorul auriu."
+    ],
     "related": ["clatite-cu-dulceata", "gogosi-pufoase", "salam-de-biscuiti"],
     "related_articles": ["cum-alegi-ingredientele-pentru-retete-romanesti"],
     "seo_title": "Papanasi prajiti cu smantana",
@@ -299,7 +374,12 @@
     "servings": "12 bucati",
     "ingredients": ["700 g faina", "250 g unt", "200 g iaurt", "1 ou", "1.5 kg mere", "180 g zahar", "2 lingurite scortisoara", "gris", "zahar pudra"],
     "steps": ["Framanta rapid faina cu untul, iaurtul si oul.", "Da aluatul la rece cat pregatesti umplutura.", "Caleste merele rase cu zahar si scortisoara pana scad.", "Intinde doua foi si presara putin gris sub umplutura.", "Coace placinta pana devine aurie si pudreaz-o dupa racire."],
-    "notes": "Raceste umplutura inainte de asamblare pentru foi mai fragede.",
+    "notes": "Raceste umplutura inainte de asamblare pentru foi mai fragede, iar dupa coacere lasa placinta sa se linisteasca putin daca vrei felii curate.",
+    "takeaways": [
+      "Umplutura scazuta si racita protejeaza foile de umezeala.",
+      "Grisul presarat discret ajuta baza sa ramana frageda.",
+      "Se feliaza cel mai curat dupa ce apuca sa se linisteasca putin."
+    ],
     "related": ["cozonac-cu-nuca", "cornulete-fragede", "clatite-cu-dulceata"],
     "related_articles": ["calendarul-gusturilor-de-sezon"],
     "seo_title": "Placinta cu mere si scortisoara",
@@ -317,7 +397,12 @@
     "servings": "20 gogosi",
     "ingredients": ["600 g faina", "250 ml lapte", "80 g zahar", "2 oua", "50 g unt", "25 g drojdie proaspata", "coaja de lamaie", "vanilie", "ulei", "zahar pudra"],
     "steps": ["Activeaza drojdia in lapte caldut cu zahar.", "Framanta aluatul cu oua, unt si arome.", "Lasa-l la dospit pana devine aerat.", "Intinde foaia si decupeaza gogosile.", "Prajeste-le la foc mediu si pudreaza-le calde."],
-    "notes": "Uleiul prea incins rumeneste exteriorul inainte sa se coaca mijlocul.",
+    "notes": "Uleiul prea incins rumeneste exteriorul inainte sa se coaca mijlocul, iar gogosile au nevoie de aluat bine dospit, nu doar de un cronometru respectat.",
+    "takeaways": [
+      "Aluatul bine dospit trebuie sa arate aerat, nu doar sa stea la cald.",
+      "Uleiul prea fierbinte coloreaza repede si lasa miezul greu.",
+      "Zaharul pudra intra la final, dupa ce excesul de ulei s-a dus."
+    ],
     "related": ["papanasi-prajiti", "cozonac-cu-nuca", "cornulete-fragede"],
     "related_articles": ["tehnici-simple-pentru-aluaturi-si-baze"],
     "seo_title": "Gogosi pufoase de casa reteta simpla",
@@ -335,7 +420,12 @@
     "servings": "12 clatite",
     "ingredients": ["3 oua", "500 ml lapte", "220 g faina", "2 linguri ulei", "1 praf sare", "vanilie", "apa minerala dupa nevoie", "dulceata"],
     "steps": ["Bate ouale cu laptele, sarea si vanilia.", "Adauga faina treptat pana obtii un aluat fin.", "Subtiaza cu apa minerala pentru clatite elastice.", "Coace fiecare clatita intr-o tigaie incinsa unsa foarte usor.", "Umple cu dulceata si ruleaza."],
-    "notes": "Lasa aluatul 15 minute la odihna pentru textura mai buna si subtiaza-l treptat daca faina a absorbit prea mult lichid.",
+    "notes": "Lasa aluatul 15 minute la odihna pentru textura mai buna si subtiaza-l treptat daca faina a absorbit prea mult lichid, ca sa nu te trezesti cu clatite groase si rigide.",
+    "takeaways": [
+      "Odihna aluatului face clatitele mai elastice si mai usor de rulat.",
+      "Tigaia bine incinsa cere doar o urma de grasime.",
+      "Consistenta se regleaza treptat cu lapte sau apa minerala, nu dintr-o data."
+    ],
     "related": ["papanasi-prajiti", "placinta-cu-mere", "salam-de-biscuiti"],
     "related_articles": ["cum-pastrezi-mancarea-gatita"],
     "seo_title": "Clatite cu dulceata simple",
@@ -353,7 +443,12 @@
     "servings": "2 rulouri",
     "ingredients": ["500 g biscuiti simpli", "180 g unt", "180 ml lapte", "120 g zahar", "3 linguri cacao", "100 g nuca", "esenta rom", "stafide optional"],
     "steps": ["Rupe biscuitii in bucati mici si amesteca-i cu nuca.", "Fierbe laptele cu zaharul, cacaoa si untul.", "Toarna sosul cald peste biscuiti si adauga aroma de rom.", "Modeleaza compozitia in rulouri stranse in folie.", "Raceste cel putin 4 ore inainte de feliere."],
-    "notes": "Nu zdrobi toti biscuitii fin; bucatile dau textura frumoasa la taiere.",
+    "notes": "Nu zdrobi toti biscuitii fin; bucatile dau textura frumoasa la taiere, iar compozitia trebuie sa ramana suficient de moale cat sa se lege, nu uscata si sfaramicioasa.",
+    "takeaways": [
+      "Biscuitii rupti neuniform dau feliei aspect bun si muscatura placuta.",
+      "Sosul cald trebuie turnat treptat, nu dintr-o data.",
+      "Racirea lunga este etapa care face ruloul sa stea."
+    ],
     "related": ["clatite-cu-dulceata", "papanasi-prajiti", "cornulete-fragede"],
     "related_articles": ["ghidul-camarii-romanesti"],
     "seo_title": "Salam de biscuiti fara coacere",
@@ -371,7 +466,12 @@
     "servings": "40 cornulete",
     "ingredients": ["500 g faina", "250 g untura sau unt", "150 g smantana", "1 ou", "1 lingura otet", "gem dens", "nuca macinata", "zahar pudra vanilat"],
     "steps": ["Framanta un aluat fraged din faina, grasime, smantana, ou si otet.", "Raceste aluatul 30 de minute.", "Intinde foi subtiri si taie triunghiuri.", "Umple cu gem si nuca, apoi ruleaza cornuletele.", "Coace pana marginile sunt usor aurii si pudreaza-le calde."],
-    "notes": "Foloseste gem dens ca sa nu curga in tava si raceste aluatul inainte de intindere pentru cornulete mai fragede.",
+    "notes": "Foloseste gem dens ca sa nu curga in tava si raceste aluatul inainte de intindere pentru cornulete mai fragede; dupa coacere, muta-le bland si pudreaza-le cat sunt inca usor calde.",
+    "takeaways": [
+      "Aluatul rece se intinde mai usor si ramane fraged dupa coacere.",
+      "Gemul dens protejeaza tava si marginile cornuleterelor.",
+      "Le pudrezi calde, dar le muti atent ca sa nu se rupa."
+    ],
     "related": ["cozonac-cu-nuca", "placinta-cu-mere", "gogosi-pufoase"],
     "related_articles": ["tehnici-simple-pentru-aluaturi-si-baze"],
     "seo_title": "Cornulete fragede cu gem",
@@ -389,7 +489,12 @@
     "servings": "10 borcane mici",
     "ingredients": ["3 kg vinete coapte", "2 kg ardei kapia copti", "1 kg ceapa", "700 ml bulion", "500 ml ulei", "foi de dafin", "sare", "piper"],
     "steps": ["Coace vinetele si ardeii, apoi curata-i si lasa-i la scurs.", "Trece legumele prin masina sau toaca-le marunt.", "Caleste ceapa in ulei pana devine dulce si translucida.", "Adauga vinetele, ardeii, bulionul si aromele.", "Fierbe incet, amestecand des, apoi pune zacusca fierbinte in borcane sterilizate."],
-    "notes": "Zacusca este gata cand uleiul se ridica usor la suprafata, iar compozitia cade greu de pe lingura si nu mai pare apoasa.",
+    "notes": "Zacusca este gata cand uleiul se ridica usor la suprafata, iar compozitia cade greu de pe lingura si nu mai pare apoasa; fierberea lunga cere rabdare si amestecat atent.",
+    "takeaways": [
+      "Legumele bine scurse tin zacusca departe de textura apoasa.",
+      "Fierberea lenta cu amestecat des concentreaza gustul.",
+      "Borcanele curate si umplerea la cald sustin pastrarea buna."
+    ],
     "related": ["salata-de-vinete", "muraturi-asortate", "ardei-umpluti"],
     "related_articles": ["calendarul-gusturilor-de-sezon"],
     "seo_title": "Zacusca de vinete pentru iarna",
@@ -407,7 +512,12 @@
     "servings": "4 borcane mari",
     "ingredients": ["castraveti", "gogonele", "conopida", "morcovi", "hrean", "usturoi", "marar uscat", "boabe mustar", "sare neiodata", "apa"],
     "steps": ["Spala legumele si borcanele foarte bine.", "Aseaza legumele strans cu hrean, usturoi si marar.", "Fierbe saramura din 1 lingura sare neiodata la 1 litru de apa.", "Toarna saramura fierbinte peste legume.", "Inchide borcanele si lasa-le sa fermenteze la loc racoros."],
-    "notes": "Hreanul ajuta muraturile sa ramana crocante, iar sarea neiodata sustine fermentarea curata si gustul echilibrat.",
+    "notes": "Hreanul ajuta muraturile sa ramana crocante, iar sarea neiodata sustine fermentarea curata si gustul echilibrat; tine borcanele la racoare si verifica in primele zile nivelul saramurii.",
+    "takeaways": [
+      "Legumele curate si bine asezate se pastreaza mai stabil in borcan.",
+      "Saramura corecta valoreaza mai mult decat un amestec mare de condimente.",
+      "Primele zile de fermentare cer atentie, nu uitare pe raft."
+    ],
     "related": ["sarmale-in-foi-de-varza", "iahnie-de-fasole", "tochitura-moldoveneasca"],
     "related_articles": ["cum-pastrezi-mancarea-gatita"],
     "seo_title": "Muraturi asortate in saramura",
@@ -425,7 +535,12 @@
     "servings": "6 portii",
     "ingredients": ["4 vinete mari", "1 ceapa mica", "80 ml ulei", "zeama de lamaie", "sare", "rosii pentru servit"],
     "steps": ["Coace vinetele pe flacara, plita sau in cuptor pana se inmoaie.", "Curata-le si lasa-le la scurs pe tocator inclinat.", "Toaca vinetele cu tocator de lemn sau plastic.", "Incorporeaza uleiul treptat, ca la maioneza.", "Adauga ceapa tocata fin, sare si putina lamaie."],
-    "notes": "Scurgerea corecta elimina gustul amar si excesul de lichid, iar incorporarea treptata a uleiului da textura mai fina.",
+    "notes": "Scurgerea corecta elimina gustul amar si excesul de lichid, iar incorporarea treptata a uleiului da textura mai fina si mai aerata, nu grea.",
+    "takeaways": [
+      "Scurgerea buna iti da gust curat si textura aerata.",
+      "Uleiul se incorporeaza treptat, altfel salata se ingreuneaza.",
+      "Ceapa si lamaia intra la final, doar cat sa ridice gustul."
+    ],
     "related": ["zacusca-de-vinete", "ardei-umpluti", "supa-crema-de-legume-de-iarna"],
     "related_articles": ["cum-alegi-ingredientele-pentru-retete-romanesti"],
     "seo_title": "Salata de vinete coapte reteta clasica",
