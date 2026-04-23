@@ -433,6 +433,27 @@ function kepoli_post_featured_image_markup(int $post_id = 0, string $size = 'lar
     );
 }
 
+function kepoli_post_card_media_markup(int $post_id = 0, string $context = 'card'): string
+{
+    $post_id = $post_id ?: get_the_ID();
+    $size = match ($context) {
+        'related' => 'large',
+        'sidebar' => 'thumbnail',
+        default => 'medium_large',
+    };
+    $featured_image = kepoli_post_featured_image_markup($post_id, $size, ['class' => 'post-media__image']);
+
+    if ($featured_image !== '') {
+        return sprintf(
+            '%1$s<span class="post-media__shade"></span><img class="post-media__mark" src="%2$s" alt="">',
+            $featured_image,
+            esc_url(kepoli_asset_uri('kepoli-icon'))
+        );
+    }
+
+    return kepoli_post_media_markup($post_id, $context);
+}
+
 function kepoli_post_media_mode(int $post_id = 0): string
 {
     $post_id = $post_id ?: get_the_ID();

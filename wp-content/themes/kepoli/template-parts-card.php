@@ -10,7 +10,7 @@ $show_category = $category && $category->slug !== 'articole';
 ?>
 <article <?php post_class('post-card ' . $tone_class); ?>>
     <a class="post-card__visual" href="<?php the_permalink(); ?>" aria-label="<?php the_title_attribute(); ?>">
-        <?php echo kepoli_post_media_markup(get_the_ID(), 'card'); ?>
+        <?php echo kepoli_post_card_media_markup(get_the_ID(), 'card'); ?>
     </a>
     <div class="post-card__body">
         <div class="post-card__eyebrow content-chip-row">

@@ -130,7 +130,7 @@ get_header();
                             ?>
                             <article <?php post_class('related-card ' . kepoli_post_tone_class($related->ID), $related->ID); ?>>
                                 <a class="related-card__media" href="<?php echo esc_url(get_permalink($related)); ?>">
-                                    <?php echo kepoli_post_media_markup($related->ID, 'related'); ?>
+                                    <?php echo kepoli_post_card_media_markup($related->ID, 'related'); ?>
                                 </a>
                                 <div class="related-card__body">
                                     <div class="related-card__eyebrow content-chip-row">

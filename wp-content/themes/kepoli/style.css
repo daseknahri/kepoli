@@ -616,6 +616,13 @@ h3 {
   transition: transform 260ms ease;
 }
 
+.post-card__visual > .post-media__image,
+.related-card__media > .post-media__image,
+.more-list__media > .post-media__image {
+  position: relative;
+  z-index: 0;
+}
+
 .post-media__shade,
 .post-media__fill {
   position: absolute;
@@ -1889,6 +1896,7 @@ h3 {
 
 .more-list__media {
   display: block;
+  position: relative;
   aspect-ratio: 1 / 0.86;
   overflow: hidden;
   border-radius: var(--radius);
@@ -1898,6 +1906,14 @@ h3 {
 .more-list__media .post-media {
   min-height: 100%;
   height: 100%;
+}
+
+.more-list__media .post-media__mark {
+  right: 8px;
+  bottom: 8px;
+  width: 24px;
+  height: 24px;
+  padding: 4px;
 }
 
 .more-list__body {

@@ -23,7 +23,7 @@
             ?>
             <li>
                 <a class="more-list__post-link" href="<?php the_permalink(); ?>">
-                    <div class="more-list__media"><?php echo kepoli_post_media_markup(get_the_ID(), 'sidebar'); ?></div>
+                    <div class="more-list__media"><?php echo kepoli_post_card_media_markup(get_the_ID(), 'sidebar'); ?></div>
                     <span class="more-list__body">
                         <span class="more-list__chips more-list__chips--sidebar content-chip-row">
                             <span class="content-chip content-chip--muted"><?php echo esc_html(kepoli_post_kind_label()); ?></span>
