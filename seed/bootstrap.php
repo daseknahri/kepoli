@@ -888,10 +888,14 @@ function kepoli_seed_import_featured_image(int $post_id, array $image): void
     ]), true);
 
     kepoli_seed_apply_attachment_meta((int) $attachment_id, $image);
+    update_post_meta((int) $attachment_id, '_kepoli_seed_image_filename', $filename);
+    update_post_meta((int) $attachment_id, '_kepoli_seed_image_slug', sanitize_title((string) ($image['slug'] ?? '')));
     if ($source_hash !== '') {
         update_post_meta((int) $attachment_id, '_kepoli_seed_image_hash', $source_hash);
     }
-    set_post_thumbnail($post_id, (int) $attachment_id);
+    if (!set_post_thumbnail($post_id, (int) $attachment_id)) {
+        update_post_meta($post_id, '_thumbnail_id', (int) $attachment_id);
+    }
 }
 
 function kepoli_seed_delete_placeholder_posts(array $expected_slugs): void

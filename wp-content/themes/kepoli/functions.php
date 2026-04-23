@@ -132,10 +132,10 @@ add_filter('pre_get_document_title', 'kepoli_document_title');
 
 function kepoli_social_image_url(): string
 {
-    if (is_singular() && has_post_thumbnail(get_the_ID())) {
-        $thumb = get_the_post_thumbnail_url(get_the_ID(), 'large');
-        if (is_string($thumb) && $thumb !== '') {
-            return $thumb;
+    if (is_singular()) {
+        $image = kepoli_post_featured_image_url(get_the_ID(), 'large');
+        if ($image !== '') {
+            return $image;
         }
     }
 
@@ -149,8 +149,8 @@ function kepoli_social_image_url(): string
 
 function kepoli_social_image_alt(): string
 {
-    if (is_singular() && has_post_thumbnail(get_the_ID())) {
-        $alt = trim((string) get_post_meta((int) get_post_thumbnail_id(get_the_ID()), '_wp_attachment_image_alt', true));
+    if (is_singular()) {
+        $alt = kepoli_post_featured_image_alt(get_the_ID());
         if ($alt !== '') {
             return $alt;
         }
@@ -282,11 +282,162 @@ function kepoli_category_card_meta(WP_Term $category): array
     ];
 }
 
+function kepoli_attachment_image_url(int $attachment_id, string $size = 'large'): string
+{
+    if ($attachment_id <= 0) {
+        return '';
+    }
+
+    $url = wp_get_attachment_image_url($attachment_id, $size);
+    if (!is_string($url) || $url === '') {
+        $url = wp_get_attachment_url($attachment_id);
+    }
+
+    return is_string($url) ? $url : '';
+}
+
+function kepoli_post_featured_image_id(int $post_id = 0): int
+{
+    static $cache = [];
+
+    $post_id = $post_id ?: get_the_ID();
+    if (!$post_id) {
+        return 0;
+    }
+
+    if (isset($cache[$post_id])) {
+        return $cache[$post_id];
+    }
+
+    $thumbnail_id = (int) get_post_thumbnail_id($post_id);
+    if ($thumbnail_id && kepoli_attachment_image_url($thumbnail_id, 'full') !== '') {
+        $cache[$post_id] = $thumbnail_id;
+        return $cache[$post_id];
+    }
+
+    $filename = sanitize_file_name((string) get_post_meta($post_id, '_kepoli_image_plan_filename', true));
+    if ($filename !== '') {
+        $ids = get_posts([
+            'post_type' => 'attachment',
+            'post_status' => 'inherit',
+            'posts_per_page' => 1,
+            'fields' => 'ids',
+            'no_found_rows' => true,
+            'meta_key' => '_kepoli_seed_image_filename',
+            'meta_value' => $filename,
+        ]);
+
+        if (!empty($ids) && kepoli_attachment_image_url((int) $ids[0], 'full') !== '') {
+            $cache[$post_id] = (int) $ids[0];
+            return $cache[$post_id];
+        }
+    }
+
+    $slug = sanitize_title((string) get_post_field('post_name', $post_id));
+    if ($slug !== '') {
+        $ids = get_posts([
+            'post_type' => 'attachment',
+            'post_status' => 'inherit',
+            'posts_per_page' => 1,
+            'fields' => 'ids',
+            'no_found_rows' => true,
+            'meta_key' => '_kepoli_seed_image_slug',
+            'meta_value' => $slug,
+        ]);
+
+        if (!empty($ids) && kepoli_attachment_image_url((int) $ids[0], 'full') !== '') {
+            $cache[$post_id] = (int) $ids[0];
+            return $cache[$post_id];
+        }
+    }
+
+    $attached_images = get_posts([
+        'post_type' => 'attachment',
+        'post_status' => 'inherit',
+        'post_parent' => $post_id,
+        'post_mime_type' => 'image',
+        'posts_per_page' => 1,
+        'fields' => 'ids',
+        'orderby' => 'ID',
+        'order' => 'ASC',
+        'no_found_rows' => true,
+    ]);
+
+    $cache[$post_id] = !empty($attached_images) && kepoli_attachment_image_url((int) $attached_images[0], 'full') !== ''
+        ? (int) $attached_images[0]
+        : 0;
+    return $cache[$post_id];
+}
+
+function kepoli_post_featured_image_url(int $post_id = 0, string $size = 'large'): string
+{
+    return kepoli_attachment_image_url(kepoli_post_featured_image_id($post_id), $size);
+}
+
+function kepoli_post_featured_image_alt(int $post_id = 0): string
+{
+    $post_id = $post_id ?: get_the_ID();
+    if (!$post_id) {
+        return '';
+    }
+
+    $image_id = kepoli_post_featured_image_id($post_id);
+    if ($image_id) {
+        $alt = trim((string) get_post_meta($image_id, '_wp_attachment_image_alt', true));
+        if ($alt !== '') {
+            return $alt;
+        }
+    }
+
+    return trim((string) get_post_meta($post_id, '_kepoli_image_plan_alt', true));
+}
+
+function kepoli_post_featured_image_caption(int $post_id = 0): string
+{
+    $image_id = kepoli_post_featured_image_id($post_id);
+    if ($image_id) {
+        $caption = wp_get_attachment_caption($image_id);
+        if (is_string($caption) && $caption !== '') {
+            return $caption;
+        }
+    }
+
+    $post_id = $post_id ?: get_the_ID();
+    return $post_id ? trim((string) get_post_meta($post_id, '_kepoli_image_plan_caption', true)) : '';
+}
+
+function kepoli_post_featured_image_markup(int $post_id = 0, string $size = 'large', array $attr = []): string
+{
+    $post_id = $post_id ?: get_the_ID();
+    $image_id = kepoli_post_featured_image_id($post_id);
+    if (!$image_id) {
+        return '';
+    }
+
+    $markup = wp_get_attachment_image($image_id, $size, false, $attr);
+    if (is_string($markup) && $markup !== '') {
+        return $markup;
+    }
+
+    $url = kepoli_attachment_image_url($image_id, $size);
+    if ($url === '') {
+        return '';
+    }
+
+    $classes = isset($attr['class']) ? ' class="' . esc_attr((string) $attr['class']) . '"' : '';
+    return sprintf(
+        '<img src="%1$s" alt="%2$s"%3$s>',
+        esc_url($url),
+        esc_attr(kepoli_post_featured_image_alt($post_id)),
+        $classes
+    );
+}
+
 function kepoli_post_media_mode(int $post_id = 0): string
 {
     $post_id = $post_id ?: get_the_ID();
 
-    if (has_post_thumbnail($post_id)) {
+    if (kepoli_post_featured_image_id($post_id)) {
         return 'photo';
     }
 
@@ -297,11 +448,9 @@ function kepoli_post_media_url(int $post_id = 0, string $size = 'large'): string
 {
     $post_id = $post_id ?: get_the_ID();
 
-    if (has_post_thumbnail($post_id)) {
-        $thumb = get_the_post_thumbnail_url($post_id, $size);
-        if (is_string($thumb) && $thumb !== '') {
-            return $thumb;
-        }
+    $image = kepoli_post_featured_image_url($post_id, $size);
+    if ($image !== '') {
+        return $image;
     }
 
     if (kepoli_post_kind($post_id) === 'article') {
@@ -317,12 +466,14 @@ function kepoli_post_media_markup(int $post_id = 0, string $context = 'card'): s
     $mode = kepoli_post_media_mode($post_id);
     $media_class = 'post-media post-media--' . sanitize_html_class($context) . ' post-media--' . sanitize_html_class($mode) . ' ' . kepoli_post_tone_class($post_id);
     $image = kepoli_post_media_url($post_id, $context === 'related' ? 'large' : 'medium_large');
+    $image_alt = $mode === 'photo' && kepoli_post_featured_image_id($post_id) ? kepoli_post_featured_image_alt($post_id) : '';
 
     if ($mode === 'photo') {
         return sprintf(
-            '<div class="%1$s"><img class="post-media__image" src="%2$s" alt=""><span class="post-media__shade"></span><img class="post-media__mark" src="%3$s" alt=""></div>',
+            '<div class="%1$s"><img class="post-media__image" src="%2$s" alt="%3$s"><span class="post-media__shade"></span><img class="post-media__mark" src="%4$s" alt=""></div>',
             esc_attr($media_class),
             esc_url($image),
+            esc_attr($image_alt),
             esc_url(kepoli_asset_uri('kepoli-icon'))
         );
     }

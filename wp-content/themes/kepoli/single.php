@@ -86,11 +86,14 @@ get_header();
                     </nav>
                 <?php endif; ?>
             </header>
-            <?php if (has_post_thumbnail()) : ?>
+            <?php
+            $featured_image = kepoli_post_featured_image_markup(get_the_ID(), 'large', ['class' => 'entry-featured-media__image']);
+            if ($featured_image !== '') :
+                ?>
                 <figure class="entry-featured-media">
-                    <?php the_post_thumbnail('large', ['class' => 'entry-featured-media__image']); ?>
+                    <?php echo $featured_image; ?>
                     <?php
-                    $featured_caption = wp_get_attachment_caption(get_post_thumbnail_id());
+                    $featured_caption = kepoli_post_featured_image_caption(get_the_ID());
                     if ($featured_caption) :
                         ?>
                         <figcaption><?php echo esc_html($featured_caption); ?></figcaption>
