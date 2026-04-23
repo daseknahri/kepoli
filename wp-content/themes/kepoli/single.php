@@ -11,6 +11,7 @@ get_header();
     $updated_label = kepoli_post_updated_label();
     $share_links = kepoli_share_links();
     $article_headings = !$is_recipe ? kepoli_article_heading_index() : [];
+    $recipe_snapshot = $is_recipe ? kepoli_recipe_snapshot_items() : [];
     $share_icons = ['facebook' => 'facebook', 'whatsapp' => 'whatsapp', 'email' => 'email', 'copy' => 'link', 'print' => 'print'];
     ?>
     <article <?php post_class('content-layout content-layout--single-post ' . ($is_recipe ? 'content-layout--recipe' : 'content-layout--article')); ?> data-reading-progress-source>
@@ -58,6 +59,19 @@ get_header();
                         <?php endforeach; ?>
                     </div>
                 </div>
+                <?php if ($recipe_snapshot) : ?>
+                    <div class="entry-recipe-snapshot" aria-label="<?php esc_attr_e('Detalii rapide reteta', 'kepoli'); ?>">
+                        <?php foreach ($recipe_snapshot as $item) : ?>
+                            <div class="entry-recipe-snapshot__item">
+                                <span class="entry-recipe-snapshot__label">
+                                    <?php echo kepoli_icon($item['icon']); ?>
+                                    <span><?php echo esc_html($item['label']); ?></span>
+                                </span>
+                                <strong><?php echo esc_html($item['value']); ?></strong>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
                 <?php kepoli_render_reader_trust_links(); ?>
                 <?php if ($is_recipe) : ?>
                     <nav class="entry-jumpnav" aria-label="<?php esc_attr_e('Navigatie reteta', 'kepoli'); ?>">

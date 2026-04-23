@@ -119,6 +119,11 @@ for (const fileKey of ['single', 'archive', 'search', 'page', 'page-retete', 'pa
   ]);
 }
 
+requireThemeIncludes('single', 'recipe snapshot support', [
+  /kepoli_recipe_snapshot_items\s*\(/,
+  /entry-recipe-snapshot/,
+]);
+
 const riskyClaims = [
   /\bdetox\b/i,
   /\bmiracol(?:oasa|os|ul)?\b/i,

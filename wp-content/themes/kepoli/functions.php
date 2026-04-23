@@ -925,6 +925,74 @@ function kepoli_recipe_data(int $post_id = 0): array
     return is_array($data) ? $data : [];
 }
 
+function kepoli_format_iso_duration(string $duration): string
+{
+    $duration = strtoupper(trim($duration));
+    if ($duration === '') {
+        return '';
+    }
+
+    if (!preg_match('/^PT(?:(\d+)H)?(?:(\d+)M)?$/', $duration, $matches)) {
+        return $duration;
+    }
+
+    $hours = isset($matches[1]) ? (int) $matches[1] : 0;
+    $minutes = isset($matches[2]) ? (int) $matches[2] : 0;
+    $parts = [];
+
+    if ($hours > 0) {
+        $parts[] = sprintf('%d h', $hours);
+    }
+
+    if ($minutes > 0 || !$parts) {
+        $parts[] = sprintf('%d min', $minutes);
+    }
+
+    return implode(' ', $parts);
+}
+
+function kepoli_recipe_snapshot_items(int $post_id = 0): array
+{
+    $data = kepoli_recipe_data($post_id);
+    if (!$data) {
+        return [];
+    }
+
+    $items = [];
+    $candidates = [
+        [
+            'label' => __('Pregatire', 'kepoli'),
+            'value' => trim((string) ($data['prep'] ?? kepoli_format_iso_duration((string) ($data['prep_iso'] ?? '')))),
+            'icon' => 'prep',
+        ],
+        [
+            'label' => __('Gatire', 'kepoli'),
+            'value' => trim((string) ($data['cook'] ?? kepoli_format_iso_duration((string) ($data['cook_iso'] ?? '')))),
+            'icon' => 'clock',
+        ],
+        [
+            'label' => __('Total', 'kepoli'),
+            'value' => trim((string) ($data['total_label'] ?? kepoli_format_iso_duration((string) ($data['total_iso'] ?? '')))),
+            'icon' => 'refresh',
+        ],
+        [
+            'label' => __('Portii', 'kepoli'),
+            'value' => trim((string) ($data['servings'] ?? '')),
+            'icon' => 'ingredients',
+        ],
+    ];
+
+    foreach ($candidates as $candidate) {
+        if ($candidate['value'] === '') {
+            continue;
+        }
+
+        $items[] = $candidate;
+    }
+
+    return $items;
+}
+
 function kepoli_recipe_json_ld(): void
 {
     if (!is_singular('post') || kepoli_post_kind() !== 'recipe') {
