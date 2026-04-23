@@ -67,10 +67,7 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
                 <p class="eyebrow"><?php esc_html_e('Reteta recomandata', 'kepoli'); ?></p>
                 <h3><a href="<?php echo esc_url(get_permalink($featured_recipe)); ?>"><?php echo esc_html(get_the_title($featured_recipe)); ?></a></h3>
                 <p><?php echo esc_html(get_the_excerpt($featured_recipe)); ?></p>
-                <div class="meta-strip meta-strip--inline">
-                    <span class="meta-strip__item"><?php echo esc_html(get_the_date('j M Y', $featured_recipe)); ?></span>
-                    <span class="meta-strip__item"><?php echo esc_html(kepoli_read_time($featured_recipe->ID)); ?></span>
-                </div>
+                <?php echo kepoli_render_post_card_meta($featured_recipe->ID, 'meta-strip meta-strip--inline', 'meta-strip__item'); ?>
             </div>
         </article>
     </section>

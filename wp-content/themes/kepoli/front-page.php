@@ -69,10 +69,7 @@ $article_list = new WP_Query([
                     <p class="eyebrow"><?php esc_html_e('Reteta recomandata', 'kepoli'); ?></p>
                     <h3><a href="<?php echo esc_url(get_permalink($featured_recipe)); ?>"><?php echo esc_html(get_the_title($featured_recipe)); ?></a></h3>
                     <p><?php echo esc_html(get_the_excerpt($featured_recipe)); ?></p>
-                    <div class="meta-strip meta-strip--inline">
-                        <span class="meta-strip__item"><?php echo esc_html(get_the_date('j M Y', $featured_recipe)); ?></span>
-                        <span class="meta-strip__item"><?php echo esc_html(kepoli_read_time($featured_recipe->ID)); ?></span>
-                    </div>
+                    <?php echo kepoli_render_post_card_meta($featured_recipe->ID, 'meta-strip meta-strip--inline', 'meta-strip__item'); ?>
                 </div>
             </article>
         <?php endif; ?>
@@ -86,10 +83,7 @@ $article_list = new WP_Query([
                         <?php echo kepoli_post_media_markup(get_the_ID(), 'related'); ?>
                     </a>
                     <div class="compact-post__body">
-                        <div class="post-card__meta">
-                            <span><?php echo esc_html(get_the_date('j M Y')); ?></span>
-                            <span><?php echo esc_html(kepoli_read_time()); ?></span>
-                        </div>
+                        <?php echo kepoli_render_post_card_meta(); ?>
                         <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
                         <p><?php echo esc_html(wp_trim_words(get_the_excerpt(), 12, '...')); ?></p>
                     </div>
@@ -157,10 +151,7 @@ $article_list = new WP_Query([
                     <p class="eyebrow"><?php esc_html_e('Articol recomandat', 'kepoli'); ?></p>
                     <h3><a href="<?php echo esc_url(get_permalink($featured_article)); ?>"><?php echo esc_html(get_the_title($featured_article)); ?></a></h3>
                     <p><?php echo esc_html(get_the_excerpt($featured_article)); ?></p>
-                    <div class="meta-strip meta-strip--inline">
-                        <span class="meta-strip__item"><?php echo esc_html(get_the_date('j M Y', $featured_article)); ?></span>
-                        <span class="meta-strip__item"><?php echo esc_html(kepoli_read_time($featured_article->ID)); ?></span>
-                    </div>
+                    <?php echo kepoli_render_post_card_meta($featured_article->ID, 'meta-strip meta-strip--inline', 'meta-strip__item'); ?>
                 </div>
             </article>
         <?php endif; ?>
@@ -174,10 +165,7 @@ $article_list = new WP_Query([
                         <?php echo kepoli_post_media_markup(get_the_ID(), 'related'); ?>
                     </a>
                     <div class="compact-post__body">
-                        <div class="post-card__meta">
-                            <span><?php echo esc_html(get_the_date('j M Y')); ?></span>
-                            <span><?php echo esc_html(kepoli_read_time()); ?></span>
-                        </div>
+                        <?php echo kepoli_render_post_card_meta(); ?>
                         <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
                         <p><?php echo esc_html(wp_trim_words(get_the_excerpt(), 14, '...')); ?></p>
                     </div>

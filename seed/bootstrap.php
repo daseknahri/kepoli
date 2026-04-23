@@ -175,6 +175,11 @@ function kepoli_seed_post_excerpt(string $slug, array $posts): string
     return trim((string) ($post['excerpt'] ?? ''));
 }
 
+function kepoli_seed_post_intro(array $post): string
+{
+    return trim((string) ($post['intro'] ?? $post['excerpt'] ?? ''));
+}
+
 function kepoli_seed_recipe_matches(array $post, array $needles): bool
 {
     $haystack = strtolower(
@@ -563,7 +568,7 @@ function kepoli_seed_recipe_content(array $post, array $post_ids, array $categor
     $total_label = $total >= 60 ? floor($total / 60) . ' ora ' . ($total % 60 ? ($total % 60) . ' min' : '') : $total . ' min';
 
     $html = '';
-    $html .= '<p>' . esc_html($post['excerpt']) . '</p>';
+    $html .= '<p>' . esc_html(kepoli_seed_post_intro($post)) . '</p>';
     $html .= '<p>Reteta face parte din categoria <a href="' . esc_url($category_link) . '">' . esc_html($category_name) . '</a> si este scrisa pentru gatit acasa, cu pasi clari si ingrediente usor de verificat.</p>';
     $html .= '[kepoli_ad slot="after_intro"]';
     $html .= kepoli_seed_article_takeaways_html($post['takeaways'] ?? [], 'Ce merita sa stii', 'ce-merita-sa-stii');
@@ -634,7 +639,7 @@ function kepoli_seed_article_content(array $post, array $post_ids, array $catego
 {
     $category_id = $category_ids[$post['category']] ?? 0;
     $category_link = $category_id ? get_category_link($category_id) : home_url('/');
-    $html = '<p>' . esc_html($post['excerpt']) . '</p>';
+    $html = '<p>' . esc_html(kepoli_seed_post_intro($post)) . '</p>';
     $html .= '<p>Acest ghid completeaza colectia de <a href="' . esc_url(home_url('/retete/')) . '">retete Kepoli</a> si arhiva de <a href="' . esc_url($category_link) . '">articole culinare</a>.</p>';
     $html .= kepoli_seed_article_takeaways_html($post['takeaways'] ?? []);
     $html .= '<section><h2>Ce gasesti in ghid</h2>';
@@ -1005,7 +1010,7 @@ foreach ($posts as $index => $post) {
         'post_excerpt' => $post['excerpt'],
         'comment_status' => 'closed',
         'ping_status' => 'closed',
-        'post_content' => '<p>' . esc_html($post['excerpt']) . '</p>',
+        'post_content' => '<p>' . esc_html(kepoli_seed_post_intro($post)) . '</p>',
         'post_date' => $date,
         'post_date_gmt' => get_gmt_from_date($date),
     ];

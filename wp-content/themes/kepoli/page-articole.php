@@ -29,10 +29,7 @@ $featured_article = kepoli_latest_post_by_kind('article');
                 <p class="eyebrow"><?php esc_html_e('Articol recomandat', 'kepoli'); ?></p>
                 <h3><a href="<?php echo esc_url(get_permalink($featured_article)); ?>"><?php echo esc_html(get_the_title($featured_article)); ?></a></h3>
                 <p><?php echo esc_html(get_the_excerpt($featured_article)); ?></p>
-                <div class="meta-strip meta-strip--inline">
-                    <span class="meta-strip__item"><?php echo esc_html(get_the_date('j M Y', $featured_article)); ?></span>
-                    <span class="meta-strip__item"><?php echo esc_html(kepoli_read_time($featured_article->ID)); ?></span>
-                </div>
+                <?php echo kepoli_render_post_card_meta($featured_article->ID, 'meta-strip meta-strip--inline', 'meta-strip__item'); ?>
             </div>
         </article>
     </section>

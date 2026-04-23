@@ -31,7 +31,7 @@
                                 <span class="content-chip content-chip--category"><?php echo esc_html($category->name); ?></span>
                             <?php endif; ?>
                         </span>
-                        <span class="more-list__eyebrow"><?php echo esc_html(get_the_date('j M Y')); ?> / <?php echo esc_html(kepoli_read_time()); ?></span>
+                        <span class="more-list__eyebrow"><?php echo esc_html(implode(' / ', kepoli_post_card_meta_items())); ?></span>
                         <strong><?php the_title(); ?></strong>
                     </span>
                 </a>

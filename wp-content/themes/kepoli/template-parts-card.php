@@ -19,10 +19,7 @@ $show_category = $category && $category->slug !== 'articole';
                 <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($category)); ?>"><?php echo esc_html($category->name); ?></a>
             <?php endif; ?>
         </div>
-        <div class="post-card__meta">
-            <span><?php echo esc_html(get_the_date('j M Y')); ?></span>
-            <span><?php echo esc_html(kepoli_read_time()); ?></span>
-        </div>
+        <?php echo kepoli_render_post_card_meta(); ?>
         <h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
         <p><?php echo esc_html(wp_trim_words(get_the_excerpt(), 22, '...')); ?></p>
     </div>

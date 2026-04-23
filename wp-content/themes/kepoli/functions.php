@@ -1141,6 +1141,62 @@ function kepoli_recipe_snapshot_items(int $post_id = 0): array
     return $items;
 }
 
+function kepoli_post_card_meta_items(int $post_id = 0): array
+{
+    $post_id = $post_id ?: get_the_ID();
+
+    if (kepoli_post_kind($post_id) === 'recipe') {
+        $data = kepoli_recipe_data($post_id);
+        $items = [];
+        $total = trim((string) ($data['total_label'] ?? kepoli_format_iso_duration((string) ($data['total_iso'] ?? ''))));
+        $servings = trim((string) ($data['servings'] ?? ''));
+
+        if ($total !== '') {
+            $items[] = sprintf(__('Total %s', 'kepoli'), $total);
+        } elseif (!empty($data['prep_iso'])) {
+            $prep = kepoli_format_iso_duration((string) $data['prep_iso']);
+            if ($prep !== '') {
+                $items[] = sprintf(__('Pregatire %s', 'kepoli'), $prep);
+            }
+        }
+
+        if ($servings !== '') {
+            $items[] = $servings;
+        }
+
+        if ($items !== []) {
+            return $items;
+        }
+    }
+
+    return [
+        get_the_date('j M Y', $post_id),
+        kepoli_read_time($post_id),
+    ];
+}
+
+function kepoli_render_post_card_meta(int $post_id = 0, string $class = 'post-card__meta', string $item_class = ''): string
+{
+    $items = array_values(array_filter(kepoli_post_card_meta_items($post_id), static function ($item) {
+        return trim((string) $item) !== '';
+    }));
+
+    if ($items === []) {
+        return '';
+    }
+
+    $html = '<div class="' . esc_attr(trim($class)) . '">';
+    $item_attr = $item_class !== '' ? ' class="' . esc_attr($item_class) . '"' : '';
+
+    foreach ($items as $item) {
+        $html .= '<span' . $item_attr . '>' . esc_html($item) . '</span>';
+    }
+
+    $html .= '</div>';
+
+    return $html;
+}
+
 function kepoli_recipe_json_ld(): void
 {
     if (!is_singular('post') || kepoli_post_kind() !== 'recipe') {

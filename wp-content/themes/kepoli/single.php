@@ -155,10 +155,7 @@ get_header();
                                             <a class="content-chip content-chip--category" href="<?php echo esc_url(get_category_link($related_category)); ?>"><?php echo esc_html($related_category->name); ?></a>
                                         <?php endif; ?>
                                     </div>
-                                    <div class="post-card__meta">
-                                        <span><?php echo esc_html(get_the_date('j M Y', $related)); ?></span>
-                                        <span><?php echo esc_html(kepoli_read_time($related->ID)); ?></span>
-                                    </div>
+                                    <?php echo kepoli_render_post_card_meta($related->ID); ?>
                                     <h3><a href="<?php echo esc_url(get_permalink($related)); ?>"><?php echo esc_html(get_the_title($related)); ?></a></h3>
                                     <p><?php echo esc_html(wp_trim_words(get_the_excerpt($related), 24, '...')); ?></p>
                                 </div>

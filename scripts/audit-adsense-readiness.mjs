@@ -4,6 +4,7 @@ const posts = JSON.parse(fs.readFileSync('content/posts.json', 'utf8'));
 const pages = JSON.parse(fs.readFileSync('content/pages.json', 'utf8'));
 const themeFiles = new Map([
   ['header', fs.readFileSync('wp-content/themes/kepoli/header.php', 'utf8')],
+  ['functions', fs.readFileSync('wp-content/themes/kepoli/functions.php', 'utf8')],
   ['front-page', fs.readFileSync('wp-content/themes/kepoli/front-page.php', 'utf8')],
   ['single', fs.readFileSync('wp-content/themes/kepoli/single.php', 'utf8')],
   ['archive', fs.readFileSync('wp-content/themes/kepoli/archive.php', 'utf8')],
@@ -11,7 +12,10 @@ const themeFiles = new Map([
   ['page', fs.readFileSync('wp-content/themes/kepoli/page.php', 'utf8')],
   ['page-retete', fs.readFileSync('wp-content/themes/kepoli/page-retete.php', 'utf8')],
   ['page-articole', fs.readFileSync('wp-content/themes/kepoli/page-articole.php', 'utf8')],
+  ['template-parts-card', fs.readFileSync('wp-content/themes/kepoli/template-parts-card.php', 'utf8')],
+  ['template-parts-sidebar', fs.readFileSync('wp-content/themes/kepoli/template-parts-sidebar.php', 'utf8')],
 ]);
+const seedBootstrap = fs.readFileSync('seed/bootstrap.php', 'utf8');
 
 const failures = [];
 const notes = [];
@@ -50,6 +54,14 @@ function requireThemeIncludes(fileKey, label, patterns) {
   for (const pattern of patterns) {
     if (!pattern.test(content)) {
       failures.push(`Theme file ${fileKey} is missing ${label}: ${pattern}`);
+    }
+  }
+}
+
+function requireSeedIncludes(label, patterns) {
+  for (const pattern of patterns) {
+    if (!pattern.test(seedBootstrap)) {
+      failures.push(`Seed bootstrap is missing ${label}: ${pattern}`);
     }
   }
 }
@@ -120,8 +132,14 @@ requireThemeIncludes('header', 'editorial utility links', [
   /home_url\('\/contact\/'\)/,
 ]);
 
+requireThemeIncludes('functions', 'card meta helpers', [
+  /function kepoli_post_card_meta_items\s*\(/,
+  /function kepoli_render_post_card_meta\s*\(/,
+]);
+
 requireThemeIncludes('front-page', 'homepage trust links', [
   /kepoli_render_reader_trust_links\s*\(/,
+  /kepoli_render_post_card_meta\s*\(/,
 ]);
 
 for (const fileKey of ['single', 'archive', 'search', 'page', 'page-retete', 'page-articole']) {
@@ -129,6 +147,16 @@ for (const fileKey of ['single', 'archive', 'search', 'page', 'page-retete', 'pa
     /kepoli_render_reader_trust_links\s*\(/,
   ]);
 }
+
+for (const fileKey of ['template-parts-card', 'single', 'page-retete', 'page-articole']) {
+  requireThemeIncludes(fileKey, 'editorial card metadata', [
+    /kepoli_render_post_card_meta\s*\(/,
+  ]);
+}
+
+requireThemeIncludes('template-parts-sidebar', 'sidebar metadata helper', [
+  /kepoli_post_card_meta_items\s*\(/,
+]);
 
 requireThemeIncludes('page', 'page trust navigation', [
   /kepoli_page_resource_links\s*\(/,
@@ -142,6 +170,11 @@ requireThemeIncludes('archive', 'archive guidance support', [
 requireThemeIncludes('single', 'recipe snapshot support', [
   /kepoli_recipe_snapshot_items\s*\(/,
   /entry-recipe-snapshot/,
+]);
+
+requireSeedIncludes('distinct intro support', [
+  /function kepoli_seed_post_intro\s*\(/,
+  /kepoli_seed_post_intro\(\$post\)/,
 ]);
 
 const riskyClaims = [
