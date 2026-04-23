@@ -429,6 +429,49 @@ function kepoli_archive_guidance_items(): array
     ];
 }
 
+function kepoli_page_resource_links(): array
+{
+    if (!is_page()) {
+        return [];
+    }
+
+    $page_id = get_queried_object_id();
+    if (!$page_id) {
+        return [];
+    }
+
+    $slug = (string) get_post_field('post_name', $page_id);
+    $clusters = [
+        'despre-autor' => ['despre-kepoli', 'politica-editoriala', 'contact', 'publicitate-si-consimtamant'],
+        'contact' => ['despre-kepoli', 'despre-autor', 'politica-editoriala', 'politica-de-confidentialitate', 'politica-de-cookies'],
+        'politica-de-confidentialitate' => ['politica-de-cookies', 'publicitate-si-consimtamant', 'termeni-si-conditii', 'contact'],
+        'politica-de-cookies' => ['politica-de-confidentialitate', 'publicitate-si-consimtamant', 'contact'],
+        'publicitate-si-consimtamant' => ['politica-de-confidentialitate', 'politica-de-cookies', 'politica-editoriala', 'contact'],
+        'politica-editoriala' => ['despre-kepoli', 'despre-autor', 'publicitate-si-consimtamant', 'contact'],
+        'disclaimer-culinar' => ['politica-editoriala', 'termeni-si-conditii', 'contact'],
+        'termeni-si-conditii' => ['politica-de-confidentialitate', 'politica-de-cookies', 'contact'],
+    ];
+
+    if (!isset($clusters[$slug])) {
+        return [];
+    }
+
+    $items = [];
+    foreach ($clusters[$slug] as $target_slug) {
+        $page = get_page_by_path($target_slug, OBJECT, 'page');
+        if (!$page instanceof WP_Post) {
+            continue;
+        }
+
+        $items[] = [
+            'label' => get_the_title($page),
+            'url' => get_permalink($page),
+        ];
+    }
+
+    return $items;
+}
+
 function kepoli_attachment_image_url(int $attachment_id, string $size = 'large'): string
 {
     if ($attachment_id <= 0) {

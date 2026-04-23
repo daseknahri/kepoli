@@ -75,6 +75,7 @@ requireIncludes('despre-autor', 'editorial accountability', [
 
 requireIncludes('contact', 'direct contact details', [
   /mailto:/i,
+  /linkul paginii|browser|titlul exact/i,
 ]);
 
 requireIncludes('politica-de-confidentialitate', 'Google advertising disclosure', [
@@ -88,6 +89,7 @@ requireIncludes('politica-de-cookies', 'cookie consent disclosure', [
   /Cookie-uri publicitare/i,
   /consimtamant/i,
   /Google/i,
+  /continutul editorial/i,
 ]);
 
 requireIncludes('publicitate-si-consimtamant', 'EEA consent disclosure', [
@@ -95,12 +97,16 @@ requireIncludes('publicitate-si-consimtamant', 'EEA consent disclosure', [
   /Romania/i,
   /consimtamant/i,
   /EEA|Spatiul Economic European/i,
+  /nepersonalizate/i,
+  /continutul editorial/i,
 ]);
 
 requireIncludes('politica-editoriala', 'editorial quality disclosures', [
   /Originalitate/i,
   /promisiuni exagerate/i,
   /sponsorizate|comerciale/i,
+  /subiecte/i,
+  /Titluri|titlurile/i,
 ]);
 
 requireIncludes('disclaimer-culinar', 'culinary disclaimer coverage', [
@@ -123,6 +129,10 @@ for (const fileKey of ['single', 'archive', 'search', 'page', 'page-retete', 'pa
     /kepoli_render_reader_trust_links\s*\(/,
   ]);
 }
+
+requireThemeIncludes('page', 'page trust navigation', [
+  /kepoli_page_resource_links\s*\(/,
+]);
 
 requireThemeIncludes('archive', 'archive guidance support', [
   /kepoli_archive_guidance_items\s*\(/,
