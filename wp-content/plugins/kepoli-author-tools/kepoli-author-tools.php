@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.6.0
+ * Version: 1.7.0
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.6.0';
+    private const VERSION = '1.7.0';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -189,6 +189,7 @@ final class Kepoli_Author_Tools
             <div class="kepoli-automation-actions">
                 <button type="button" class="button button-primary" data-kepoli-complete-setup><?php esc_html_e('Completeaza automat', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-suggest-category><?php esc_html_e('Sugereaza categorie', 'kepoli-author-tools'); ?></button>
+                <button type="button" class="button" data-kepoli-suggest-tags><?php esc_html_e('Sugereaza taguri', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-extract-recipe><?php esc_html_e('Extrage schema reteta', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-generate-excerpt><?php esc_html_e('Genereaza excerpt', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-generate-meta><?php esc_html_e('Genereaza meta description', 'kepoli-author-tools'); ?></button>

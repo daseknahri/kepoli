@@ -83,6 +83,22 @@
     return Array.from(document.querySelectorAll('#categorychecklist input[type="checkbox"][name="post_category[]"]'));
   }
 
+  function tagField() {
+    return document.querySelector('textarea[name="tax_input[post_tag]"], #tax-input-post_tag, .tagsdiv textarea.the-tags');
+  }
+
+  function currentTags() {
+    const field = tagField();
+    if (!field) {
+      return [];
+    }
+
+    return String(field.value || '')
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
   function selectedCategoryIds() {
     return categoryInputs()
       .filter((input) => input.checked)
@@ -256,6 +272,105 @@
       caption: shortSentence(`${title} pe Kepoli.`, 120),
       description: shortSentence(`Imagine reprezentativa pentru ${title}, folosita in articolul culinar Kepoli.`, 220)
     };
+  }
+
+  function dedupeTags(tags) {
+    const seen = new Set();
+    return tags.filter((tag) => {
+      const key = tag.toLowerCase();
+      if (!tag || seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+  }
+
+  function suggestedTags() {
+    const posts = (window.kepoliAuthorTools && window.kepoliAuthorTools.relatedPosts) || [];
+    const title = currentTitle();
+    const text = currentContentText();
+    const kind = currentKind();
+    const sourceWords = normalizeWords(`${title} ${text}`);
+    const matchedPosts = posts
+      .map((post) => ({ ...post, score: scorePost(post, sourceWords) }))
+      .filter((post) => post.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
+
+    const tagScores = new Map();
+    const seedTags = kind === 'article'
+      ? ['ingrediente', 'organizare', 'tehnici']
+      : ['retete romanesti'];
+
+    seedTags.forEach((tag) => tagScores.set(tag, (tagScores.get(tag) || 0) + 1));
+
+    matchedPosts.forEach((post) => {
+      (post.tags || []).forEach((tag) => {
+        tagScores.set(tag, (tagScores.get(tag) || 0) + Math.max(1, post.score));
+      });
+    });
+
+    sourceWords.forEach((word) => {
+      matchedPosts.forEach((post) => {
+        (post.tags || []).forEach((tag) => {
+          const normalizedTag = normalizeWords(tag);
+          if (normalizedTag.includes(word)) {
+            tagScores.set(tag, (tagScores.get(tag) || 0) + 2);
+          }
+        });
+      });
+    });
+
+    const titleText = normalizeWords(title).join(' ');
+    const quickTagMap = {
+      ciorba: ['ciorba'],
+      supa: ['supa'],
+      papanasi: ['papanasi', 'desert'],
+      placinta: ['placinta', 'desert'],
+      cozonac: ['cozonac', 'aluat'],
+      zacusca: ['zacusca', 'conserve'],
+      muraturi: ['muraturi', 'conserve'],
+      ghid: ['ingrediente'],
+      meniu: ['meniu', 'familie'],
+      aluat: ['aluat', 'patiserie'],
+      sezon: ['sezon'],
+      pastrare: ['pastrare', 'organizare']
+    };
+
+    Object.keys(quickTagMap).forEach((keyword) => {
+      if (titleText.includes(keyword)) {
+        quickTagMap[keyword].forEach((tag) => {
+          tagScores.set(tag, (tagScores.get(tag) || 0) + 5);
+        });
+      }
+    });
+
+    return dedupeTags(
+      Array.from(tagScores.entries())
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([tag]) => tag)
+        .slice(0, 5)
+    );
+  }
+
+  function applySuggestedTags(force) {
+    const tags = suggestedTags();
+    const field = tagField();
+
+    if (!field || !tags.length) {
+      return tags;
+    }
+
+    if (!force && currentTags().length > 0) {
+      return tags;
+    }
+
+    field.value = tags.join(', ');
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+    return tags;
   }
 
   function suggestedCategory() {
@@ -468,6 +583,7 @@
     setFieldIfEmpty('textarea[name="kepoli_image_description"]', imageMeta.description);
 
     applySuggestedCategory(false);
+    applySuggestedTags(false);
 
     if (currentKind() === 'recipe') {
       fillRecipeSchema(true);
@@ -498,6 +614,7 @@
   function bindAutomationButtons() {
     const setupButton = document.querySelector('[data-kepoli-complete-setup]');
     const categoryButton = document.querySelector('[data-kepoli-suggest-category]');
+    const tagsButton = document.querySelector('[data-kepoli-suggest-tags]');
     const recipeButton = document.querySelector('[data-kepoli-extract-recipe]');
     const excerptButton = document.querySelector('[data-kepoli-generate-excerpt]');
     const metaButton = document.querySelector('[data-kepoli-generate-meta]');
@@ -518,6 +635,17 @@
           suggestion
             ? `Categoria sugerata a fost selectata: ${suggestion.name}.`
             : 'Nu am gasit o categorie suficient de clara in continut.'
+        );
+      });
+    }
+
+    if (tagsButton) {
+      tagsButton.addEventListener('click', () => {
+        const tags = applySuggestedTags(true);
+        setStatus(
+          tags.length
+            ? `Tagurile sugerate au fost completate: ${tags.join(', ')}.`
+            : 'Nu am gasit destule repere pentru taguri clare.'
         );
       });
     }
