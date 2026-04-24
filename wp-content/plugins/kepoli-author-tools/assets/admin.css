@@ -148,6 +148,74 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   background: #f6f1e7;
 }
 
+.kepoli-editor-checklist {
+  padding: 16px;
+  border: 1px solid #d9c8af;
+  background: #fffdf8;
+}
+
+.kepoli-editor-checklist__header h4 {
+  margin: 0 0 6px;
+  color: #252416;
+}
+
+.kepoli-editor-checklist__header p,
+.kepoli-editor-checklist__summary {
+  margin: 0;
+  color: #6b654f;
+}
+
+.kepoli-editor-checklist__items {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.kepoli-editor-checklist__items li {
+  position: relative;
+  padding-left: 28px;
+  color: #252416;
+  line-height: 1.4;
+}
+
+.kepoli-editor-checklist__items li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 18px;
+  height: 18px;
+  border: 1px solid #d9c8af;
+  border-radius: 999px;
+  background: #fbf7ef;
+}
+
+.kepoli-editor-checklist__items li.is-done::before {
+  border-color: #7d8b41;
+  background: #e2ecd0;
+  box-shadow: inset 0 0 0 5px #7d8b41;
+}
+
+.kepoli-editor-checklist__items li.is-missing::before {
+  border-color: #d3b183;
+  background: #fff8ef;
+}
+
+.kepoli-editor-checklist__summary {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.kepoli-editor-checklist__summary.is-ready {
+  color: #3e4f18;
+}
+
+.kepoli-editor-checklist__summary.is-missing {
+  color: #84501f;
+}
+
 .column-kepoli_kind {
   width: 110px;
 }

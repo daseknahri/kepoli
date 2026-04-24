@@ -13,6 +13,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 - The Text editor tab also gets the same quick buttons.
 - The `Kepoli post setup` box lets the writer choose `Reteta` or `Articol`, write an excerpt, write a meta description, add related post slugs, complete featured-image metadata, and complete recipe structured data.
 - The setup box includes automation buttons for `Genereaza excerpt`, `Genereaza meta description`, `Sugereaza linkuri interne`, and `Genereaza meta imagine`.
+- The setup box also shows a live editorial checklist, so the writer can see what is still missing before publishing.
 - If the writer saves a post with empty excerpt, meta description, related slugs, or featured-image metadata, Kepoli fills sensible defaults from the title/content and current post library.
 - Seeded launch posts also read prefixed image metadata from `content/image-plan.json`, so the editor can show ready-made alt text, title, caption, and description even before the featured image is uploaded.
 - The `Kepoli writing tools` box includes quick buttons for inserting a recipe or article writing structure.
@@ -28,7 +29,8 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 6. Add a featured image, then click `Genereaza meta imagine` to prefill alt text, title, caption, and Media Library description.
 7. For recipes, complete servings, prep/cook minutes, ingredients, and steps so Kepoli can output Recipe structured data.
 8. For a long article, click `2 parti` or `3 parti` in the toolbar.
-9. Review the generated fields and inserted page breaks before publishing.
+9. Watch the live checklist in `Kepoli post setup` and complete any missing items.
+10. Review the generated fields and inserted page breaks before publishing. If you publish with missing essentials, Kepoli will show a final warning.
 
 ## Image Workflow For Seeded Posts
 

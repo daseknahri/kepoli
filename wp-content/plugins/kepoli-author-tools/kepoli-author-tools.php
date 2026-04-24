@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.4.3
+ * Version: 1.5.0
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.4.3';
+    private const VERSION = '1.5.0';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -117,6 +117,12 @@ final class Kepoli_Author_Tools
             wp_localize_script('kepoli-author-tools-admin', 'kepoliAuthorTools', [
                 'currentPostId' => self::current_post_id(),
                 'relatedPosts' => self::related_posts_payload(self::current_post_id()),
+                'strings' => [
+                    'checkReady' => __('Setup aproape complet. Mai verifica naturaletea textului inainte de publicare.', 'kepoli-author-tools'),
+                    'checkMissingPrefix' => __('De completat inainte de publicare:', 'kepoli-author-tools'),
+                    'publishConfirmPrefix' => __('Postarea mai are campuri lipsa:', 'kepoli-author-tools'),
+                    'publishConfirmSuffix' => __('Continui totusi publicarea?', 'kepoli-author-tools'),
+                ],
             ]);
         }
     }
@@ -280,6 +286,24 @@ final class Kepoli_Author_Tools
                         <textarea name="kepoli_recipe_steps" rows="6"><?php echo esc_textarea(implode("\n", $recipe['steps'])); ?></textarea>
                     </label>
                 </div>
+            </div>
+
+            <div class="kepoli-editor-checklist" data-kepoli-editor-checklist>
+                <div class="kepoli-editor-checklist__header">
+                    <h4><?php esc_html_e('Checklist editorial', 'kepoli-author-tools'); ?></h4>
+                    <p><?php esc_html_e('Kepoli urmareste in timp real daca postarea are elementele importante pentru publicare.', 'kepoli-author-tools'); ?></p>
+                </div>
+                <ul class="kepoli-editor-checklist__items">
+                    <li data-kepoli-check="title"><?php esc_html_e('Titlu clar', 'kepoli-author-tools'); ?></li>
+                    <li data-kepoli-check="content"><?php esc_html_e('Continut suficient', 'kepoli-author-tools'); ?></li>
+                    <li data-kepoli-check="excerpt"><?php esc_html_e('Excerpt completat', 'kepoli-author-tools'); ?></li>
+                    <li data-kepoli-check="meta"><?php esc_html_e('Meta description completata', 'kepoli-author-tools'); ?></li>
+                    <li data-kepoli-check="featuredImage"><?php esc_html_e('Imagine reprezentativa setata', 'kepoli-author-tools'); ?></li>
+                    <li data-kepoli-check="imageAlt"><?php esc_html_e('Alt text pentru imagine', 'kepoli-author-tools'); ?></li>
+                    <li data-kepoli-check="related"><?php esc_html_e('Linkuri interne alese', 'kepoli-author-tools'); ?></li>
+                    <li data-kepoli-check="recipe"><?php esc_html_e('Schema reteta completata', 'kepoli-author-tools'); ?></li>
+                </ul>
+                <p class="kepoli-editor-checklist__summary" data-kepoli-checklist-summary></p>
             </div>
         </div>
         <?php
