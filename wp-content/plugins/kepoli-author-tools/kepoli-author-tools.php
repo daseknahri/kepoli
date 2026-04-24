@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.5
+ * Version: 1.8.6
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.5';
+    private const VERSION = '1.8.6';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -229,7 +229,7 @@ final class Kepoli_Author_Tools
         $has_image_meta = array_filter($image_meta, static function ($value): bool {
             return trim((string) $value) !== '';
         });
-        $has_seo_details = trim($seo_title) !== '' || trim($related_recipes) !== '' || trim($related_articles) !== '';
+        $has_seo_details = trim($seo_title) !== '' || trim($meta_description) !== '' || trim($related_recipes) !== '' || trim($related_articles) !== '';
 
         wp_nonce_field('kepoli_author_tools_save', 'kepoli_author_tools_nonce');
         ?>
@@ -272,13 +272,6 @@ final class Kepoli_Author_Tools
                 </label>
             </div>
 
-            <div class="kepoli-post-setup__grid kepoli-post-setup__grid--single">
-                <label>
-                    <span><?php esc_html_e('Meta description', 'kepoli-author-tools'); ?></span>
-                    <textarea name="kepoli_meta_description" rows="3" maxlength="180" placeholder="<?php esc_attr_e('Rezumat scurt pentru Google si distribuire sociala.', 'kepoli-author-tools'); ?>"><?php echo esc_textarea($meta_description); ?></textarea>
-                </label>
-            </div>
-
             <details class="kepoli-setup-section kepoli-seo-fields" <?php echo $has_seo_details ? ' open' : ''; ?>>
                 <summary><?php esc_html_e('Detalii SEO si legaturi', 'kepoli-author-tools'); ?></summary>
                 <p><?php esc_html_e('Aceste campuri sunt optionale pentru lucru manual. Daca le lasi goale, Kepoli incearca sa le completeze automat.', 'kepoli-author-tools'); ?></p>
@@ -286,6 +279,12 @@ final class Kepoli_Author_Tools
                     <label>
                         <span><?php esc_html_e('SEO title optional', 'kepoli-author-tools'); ?></span>
                         <input type="text" name="kepoli_seo_title" value="<?php echo esc_attr($seo_title); ?>" placeholder="<?php esc_attr_e('Daca ramane gol, se foloseste titlul postarii.', 'kepoli-author-tools'); ?>">
+                    </label>
+                </div>
+                <div class="kepoli-post-setup__grid kepoli-post-setup__grid--single">
+                    <label>
+                        <span><?php esc_html_e('Meta description', 'kepoli-author-tools'); ?></span>
+                        <textarea name="kepoli_meta_description" rows="3" maxlength="180" placeholder="<?php esc_attr_e('Rezumat scurt pentru Google si distribuire sociala.', 'kepoli-author-tools'); ?>"><?php echo esc_textarea($meta_description); ?></textarea>
                     </label>
                 </div>
                 <div class="kepoli-post-setup__grid">
