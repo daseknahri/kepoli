@@ -190,6 +190,65 @@ function kepoli_social_image_alt(): string
     return kepoli_current_description() ?: kepoli_brand_description();
 }
 
+function kepoli_schema_image_object(string $url, array $dimensions = [], string $caption = ''): array
+{
+    $image = [
+        '@type' => 'ImageObject',
+        'url' => $url,
+    ];
+
+    [$width, $height] = array_pad($dimensions, 2, 0);
+    if ((int) $width > 0 && (int) $height > 0) {
+        $image['width'] = (int) $width;
+        $image['height'] = (int) $height;
+    }
+
+    if (trim($caption) !== '') {
+        $image['caption'] = trim($caption);
+    }
+
+    return $image;
+}
+
+function kepoli_schema_asset_image_object(string $basename, string $fallback_extension = 'svg', string $caption = ''): array
+{
+    return kepoli_schema_image_object(
+        kepoli_asset_uri($basename, $fallback_extension),
+        kepoli_asset_dimensions($basename),
+        $caption
+    );
+}
+
+function kepoli_social_image_schema_object(): array
+{
+    if (is_singular('post')) {
+        $image_id = kepoli_post_featured_image_id(get_the_ID());
+        if ($image_id) {
+            $image = wp_get_attachment_image_src($image_id, 'large');
+            $url = is_array($image) ? (string) $image[0] : kepoli_post_featured_image_url(get_the_ID(), 'large');
+            $dimensions = is_array($image) ? [(int) $image[1], (int) $image[2]] : [];
+            $caption = kepoli_post_featured_image_caption(get_the_ID()) ?: kepoli_post_featured_image_alt(get_the_ID());
+
+            if ($url !== '') {
+                return kepoli_schema_image_object($url, $dimensions, $caption);
+            }
+        }
+    }
+
+    return kepoli_schema_asset_image_object('kepoli-social-cover', 'jpg', kepoli_current_description());
+}
+
+function kepoli_schema_publisher(): array
+{
+    return [
+        '@type' => 'Organization',
+        '@id' => home_url('/#organization'),
+        'name' => 'Kepoli',
+        'url' => home_url('/'),
+        'logo' => kepoli_schema_asset_image_object('kepoli-icon', 'svg', 'Kepoli'),
+    ];
+}
+
 function kepoli_current_url(): string
 {
     if (is_singular()) {
@@ -1888,21 +1947,20 @@ function kepoli_recipe_json_ld(): void
         '@type' => 'Recipe',
         'name' => get_the_title(),
         'description' => wp_strip_all_tags(get_the_excerpt()),
-        'image' => [kepoli_social_image_url()],
-        'mainEntityOfPage' => get_permalink(),
+        'image' => [kepoli_social_image_schema_object()],
+        'mainEntityOfPage' => [
+            '@type' => 'WebPage',
+            '@id' => get_permalink(),
+        ],
+        'inLanguage' => get_bloginfo('language') ?: 'ro-RO',
         'author' => [
             '@type' => 'Person',
             'name' => $author_name ?: 'Isalune Merovik',
+            'url' => kepoli_author_page_url(),
         ],
-        'publisher' => [
-            '@type' => 'Organization',
-            'name' => 'Kepoli',
-            'logo' => [
-                '@type' => 'ImageObject',
-                'url' => kepoli_asset_uri('kepoli-icon'),
-            ],
-        ],
+        'publisher' => kepoli_schema_publisher(),
         'datePublished' => get_the_date('c'),
+        'dateModified' => get_the_modified_date('c'),
         'recipeCategory' => $data['category'] ?? '',
         'recipeCuisine' => 'Romanian',
         'recipeYield' => $data['servings'] ?? '',
@@ -1933,8 +1991,12 @@ function kepoli_article_json_ld(): void
         '@type' => 'Article',
         'headline' => get_the_title(),
         'description' => kepoli_current_description(),
-        'mainEntityOfPage' => get_permalink(),
-        'image' => [kepoli_social_image_url()],
+        'mainEntityOfPage' => [
+            '@type' => 'WebPage',
+            '@id' => get_permalink(),
+        ],
+        'image' => [kepoli_social_image_schema_object()],
+        'inLanguage' => get_bloginfo('language') ?: 'ro-RO',
         'datePublished' => get_the_date('c'),
         'dateModified' => get_the_modified_date('c'),
         'author' => [
@@ -1942,15 +2004,13 @@ function kepoli_article_json_ld(): void
             'name' => $author_name,
             'url' => kepoli_author_page_url(),
         ],
-        'publisher' => [
-            '@type' => 'Organization',
-            'name' => 'Kepoli',
-            'logo' => [
-                '@type' => 'ImageObject',
-                'url' => kepoli_asset_uri('kepoli-icon'),
-            ],
-        ],
+        'publisher' => kepoli_schema_publisher(),
     ];
+
+    $keywords = wp_get_post_tags(get_the_ID(), ['fields' => 'names']);
+    if ($keywords) {
+        $schema['keywords'] = implode(', ', $keywords);
+    }
 
     echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
 }
@@ -1966,42 +2026,39 @@ function kepoli_site_json_ld(): void
         '@context' => 'https://schema.org',
         '@graph' => [
             [
-            '@type' => 'Organization',
-            '@id' => home_url('/#organization'),
-            'name' => 'Kepoli',
-            'url' => home_url('/'),
-            'email' => kepoli_env('SITE_EMAIL', 'contact@kepoli.com'),
-            'description' => kepoli_brand_description(),
-            'logo' => [
-                '@type' => 'ImageObject',
-                'url' => kepoli_asset_uri('kepoli-wordmark'),
-            ],
+                '@type' => 'Organization',
+                '@id' => home_url('/#organization'),
+                'name' => 'Kepoli',
+                'url' => home_url('/'),
+                'email' => kepoli_env('SITE_EMAIL', 'contact@kepoli.com'),
+                'description' => kepoli_brand_description(),
+                'logo' => kepoli_schema_asset_image_object('kepoli-wordmark', 'svg', 'Kepoli'),
             ],
             [
-            '@type' => 'WebSite',
-            '@id' => home_url('/#website'),
-            'url' => home_url('/'),
-            'name' => 'Kepoli',
-            'alternateName' => 'kepoli.com',
-            'description' => kepoli_brand_description(),
-            'inLanguage' => 'ro-RO',
-            'publisher' => ['@id' => home_url('/#organization')],
-            'potentialAction' => [
-                '@type' => 'SearchAction',
-                'target' => home_url('/?s={search_term_string}'),
-                'query-input' => 'required name=search_term_string',
-            ],
+                '@type' => 'WebSite',
+                '@id' => home_url('/#website'),
+                'url' => home_url('/'),
+                'name' => 'Kepoli',
+                'alternateName' => 'kepoli.com',
+                'description' => kepoli_brand_description(),
+                'inLanguage' => get_bloginfo('language') ?: 'ro-RO',
+                'publisher' => ['@id' => home_url('/#organization')],
+                'potentialAction' => [
+                    '@type' => 'SearchAction',
+                    'target' => home_url('/?s={search_term_string}'),
+                    'query-input' => 'required name=search_term_string',
+                ],
             ],
             [
-            '@type' => 'Person',
-            '@id' => kepoli_author_page_url() . '#person',
-            'name' => 'Isalune Merovik',
-            'url' => kepoli_author_page_url(),
-            'email' => kepoli_env('WRITER_EMAIL', 'isalunemerovik@gmail.com'),
-            'image' => kepoli_social_image_url(),
-            'worksFor' => ['@id' => home_url('/#organization')],
-            'jobTitle' => 'Autor culinar',
-            'description' => 'Autoare Kepoli. Scrie retete romanesti, articole culinare si ghiduri practice pentru gatit acasa.',
+                '@type' => 'Person',
+                '@id' => kepoli_author_page_url() . '#person',
+                'name' => 'Isalune Merovik',
+                'url' => kepoli_author_page_url(),
+                'email' => kepoli_env('WRITER_EMAIL', 'isalunemerovik@gmail.com'),
+                'image' => kepoli_schema_asset_image_object('writer-photo', 'jpg', 'Isalune Merovik'),
+                'worksFor' => ['@id' => home_url('/#organization')],
+                'jobTitle' => 'Autor culinar',
+                'description' => 'Autoare Kepoli. Scrie retete romanesti, articole culinare si ghiduri practice pentru gatit acasa.',
             ],
         ],
     ];
@@ -2076,6 +2133,8 @@ function kepoli_collection_json_ld(): void
         'name' => is_category() ? single_cat_title('', false) : (is_page() ? get_the_title() : get_bloginfo('name')),
         'description' => kepoli_current_description(),
         'url' => kepoli_current_url(),
+        'inLanguage' => get_bloginfo('language') ?: 'ro-RO',
+        'isPartOf' => ['@id' => home_url('/#website')],
         'mainEntity' => [
             '@type' => 'ItemList',
             'itemListOrder' => 'https://schema.org/ItemListOrderAscending',
