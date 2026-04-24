@@ -23,6 +23,15 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   color: #252416;
 }
 
+.kepoli-author-guide__intro {
+  margin: 0 0 10px;
+}
+
+.kepoli-author-guide__note {
+  margin: 10px 0 0;
+  color: #6b654f;
+}
+
 .kepoli-publish-companion {
   color: #252416;
 }
@@ -128,24 +137,10 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   margin-bottom: 12px;
 }
 
-.kepoli-author-guide ol {
-  margin-left: 18px;
-}
-
-.kepoli-author-guide li + li {
-  margin-top: 7px;
-}
-
-.kepoli-author-guide p:last-child {
-  margin-bottom: 0;
-  color: #6b654f;
-}
-
 .kepoli-template-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 12px;
 }
 
 .kepoli-automation-actions {
@@ -327,26 +322,52 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
 }
 
 .kepoli-editor-checklist {
-  padding: 16px;
   border: 1px solid #d9c8af;
   background: #fffdf8;
 }
 
-.kepoli-editor-checklist__header h4 {
-  margin: 0 0 6px;
-  color: #252416;
+.kepoli-editor-checklist__toggle {
+  cursor: pointer;
+  padding: 12px 16px;
 }
 
-.kepoli-editor-checklist__header p,
+.kepoli-editor-checklist__title {
+  display: block;
+  margin: 0 0 4px;
+  color: #252416;
+  font-weight: 700;
+}
+
+.kepoli-editor-checklist[open] .kepoli-editor-checklist__toggle {
+  border-bottom: 1px solid #d9c8af;
+}
+
+.kepoli-editor-checklist__intro,
+.kepoli-editor-checklist__items,
 .kepoli-editor-checklist__summary {
-  margin: 0;
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.kepoli-editor-checklist__intro,
+.kepoli-editor-checklist__summary {
   color: #6b654f;
+}
+
+.kepoli-editor-checklist__summary {
+  display: block;
+}
+
+.kepoli-editor-checklist__intro {
+  margin-top: 12px;
+  margin-bottom: 0;
 }
 
 .kepoli-editor-checklist__items {
   display: grid;
   gap: 8px;
-  margin: 14px 0 12px;
+  margin-top: 14px;
+  margin-bottom: 12px;
   padding: 0;
   list-style: none;
 }

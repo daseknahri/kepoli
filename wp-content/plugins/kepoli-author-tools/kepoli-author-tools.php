@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.3
+ * Version: 1.8.4
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.3';
+    private const VERSION = '1.8.4';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -193,17 +193,12 @@ final class Kepoli_Author_Tools
     {
         ?>
         <div class="kepoli-author-guide">
-            <p><strong><?php esc_html_e('Flux simplu pentru autor', 'kepoli-author-tools'); ?></strong></p>
-            <ol>
-                <li><?php esc_html_e('Scrie titlul in campul de sus.', 'kepoli-author-tools'); ?></li>
-                <li><?php esc_html_e('Scrie articolul sau reteta in editorul mare de continut.', 'kepoli-author-tools'); ?></li>
-                <li><?php esc_html_e('Foloseste butoanele Pauza, 2 parti sau 3 parti din toolbar pentru articole lungi.', 'kepoli-author-tools'); ?></li>
-            </ol>
-            <p><?php esc_html_e('Impartirea foloseste pagini WordPress native, astfel incat cititorii primesc navigare clara intre parti.', 'kepoli-author-tools'); ?></p>
+            <p class="kepoli-author-guide__intro"><strong><?php esc_html_e('Porneste rapid cu o structura gata facuta.', 'kepoli-author-tools'); ?></strong></p>
             <div class="kepoli-template-actions">
                 <button type="button" class="button" data-kepoli-template="recipe"><?php esc_html_e('Structura reteta', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-template="article"><?php esc_html_e('Structura articol', 'kepoli-author-tools'); ?></button>
             </div>
+            <p class="kepoli-author-guide__note"><?php esc_html_e('Pentru articole lungi, foloseste `Pauza`, `2 parti` sau `3 parti` din toolbar.', 'kepoli-author-tools'); ?></p>
         </div>
         <?php
     }
@@ -352,11 +347,12 @@ final class Kepoli_Author_Tools
                 </div>
             </details>
 
-            <div class="kepoli-editor-checklist" data-kepoli-editor-checklist>
-                <div class="kepoli-editor-checklist__header">
-                    <h4><?php esc_html_e('Checklist editorial', 'kepoli-author-tools'); ?></h4>
-                    <p><?php esc_html_e('Kepoli urmareste in timp real daca postarea are elementele importante pentru publicare.', 'kepoli-author-tools'); ?></p>
-                </div>
+            <details class="kepoli-editor-checklist" data-kepoli-editor-checklist>
+                <summary class="kepoli-editor-checklist__toggle">
+                    <span class="kepoli-editor-checklist__title"><?php esc_html_e('Checklist editorial', 'kepoli-author-tools'); ?></span>
+                    <span class="kepoli-editor-checklist__summary" data-kepoli-checklist-summary></span>
+                </summary>
+                <p class="kepoli-editor-checklist__intro"><?php esc_html_e('Deschide lista doar daca vrei sa vezi exact ce mai lipseste.', 'kepoli-author-tools'); ?></p>
                 <ul class="kepoli-editor-checklist__items">
                     <li data-kepoli-check="title"><?php esc_html_e('Titlu clar', 'kepoli-author-tools'); ?></li>
                     <li data-kepoli-check="content"><?php esc_html_e('Continut suficient', 'kepoli-author-tools'); ?></li>
@@ -367,8 +363,7 @@ final class Kepoli_Author_Tools
                     <li data-kepoli-check="related"><?php esc_html_e('Linkuri interne alese', 'kepoli-author-tools'); ?></li>
                     <li data-kepoli-check="recipe"><?php esc_html_e('Schema reteta completata', 'kepoli-author-tools'); ?></li>
                 </ul>
-                <p class="kepoli-editor-checklist__summary" data-kepoli-checklist-summary></p>
-            </div>
+            </details>
         </div>
         <?php
     }

@@ -14,11 +14,12 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 - The `Kepoli post setup` box lets the writer choose `Reteta` or `Articol`, write an excerpt, write a meta description, add related post slugs, complete featured-image metadata, and complete recipe structured data.
 - The setup box keeps one main action in front: `Completeaza automat`. Extra helper actions stay under `Mai multe unelte`, so the editor remains simple for day-to-day use.
 - The image and recipe sections are tucked into simple expandable blocks, so the writer sees the main SEO and linking fields first. `Date reteta` opens automatically only for recipe posts.
+- The editorial checklist is also tucked into a simple expandable block, so the writer sees a short status first and opens the full list only when needed.
 - Kepoli also tries to complete empty setup fields earlier in the flow: after the writer adds a real title, pastes enough content, switches to `Reteta`, or inserts one of the built-in templates. In the same phase, it can also replace the default category with a more likely one until the writer makes a manual category choice.
 - The setup box also shows a live editorial checklist, so the writer can see what is still missing before publishing.
 - If the writer saves a post with empty excerpt, meta description, related slugs, or featured-image metadata, Kepoli fills sensible defaults from the title/content and current post library.
 - Seeded launch posts also read prefixed image metadata from `content/image-plan.json`, so the editor can show ready-made alt text, title, caption, and description even before the featured image is uploaded.
-- The `Kepoli writing tools` box includes quick buttons for inserting a recipe or article writing structure.
+- The `Kepoli writing tools` box stays compact and focuses on two quick-start buttons: `Structura reteta` and `Structura articol`.
 - A side box called `Kepoli publish companion` stays near Publish with one main action, `Pregateste pentru publicare`, plus optional details for category, tags, and the short review list.
 - The `Posts` list includes `Tip Kepoli` and `Setup` columns, plus a Reteta/Articol filter for quick editorial audits.
 
@@ -33,7 +34,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 7. Open `Mai multe unelte` only when you want a specific helper, like `Sugereaza categorie`, `Sugereaza taguri`, `Extrage schema reteta`, or `Genereaza meta imagine`.
 8. Open `Detalii imagine` only when you want to review or refine the featured-image text. For recipes, `Date reteta` opens by itself when `Reteta` is selected.
 9. For a long article, click `2 parti` or `3 parti` in the toolbar.
-10. Watch the live checklist in `Kepoli post setup` and complete any missing items.
+10. Open `Checklist editorial` only when you want the full list of missing items. The closed summary already tells you the current status.
 11. When you are almost done, use `Pregateste pentru publicare` near Publish for one last automatic pass, then open `Vezi detalii` only if you want the category, tags, or the short review list.
 12. Review the generated fields and inserted page breaks before publishing. If you publish with missing essentials, Kepoli will show a final warning.
 
