@@ -32,6 +32,37 @@ function kepoli_asset_uri(string $basename, string $fallback_extension = 'svg'):
     return $uri . "/assets/img/{$basename}.{$fallback_extension}";
 }
 
+function kepoli_asset_dimensions(string $basename): array
+{
+    $dimensions = [
+        'hero-homepage' => [1536, 1024],
+        'kepoli-social-cover' => [1536, 1024],
+        'writer-photo' => [1024, 1024],
+        'kepoli-wordmark' => [760, 360],
+        'kepoli-icon' => [512, 512],
+    ];
+
+    return $dimensions[$basename] ?? [];
+}
+
+function kepoli_dimension_attributes(array $item): string
+{
+    $width = isset($item['width']) ? (int) $item['width'] : 0;
+    $height = isset($item['height']) ? (int) $item['height'] : 0;
+
+    if ($width <= 0 || $height <= 0) {
+        return '';
+    }
+
+    return sprintf(' width="%d" height="%d"', $width, $height);
+}
+
+function kepoli_asset_dimension_attributes(string $basename): string
+{
+    [$width, $height] = array_pad(kepoli_asset_dimensions($basename), 2, 0);
+    return kepoli_dimension_attributes(['width' => $width, 'height' => $height]);
+}
+
 function kepoli_icon(string $name): string
 {
     $icons = [
@@ -418,7 +449,9 @@ function kepoli_category_card_image_data(WP_Term $category): array
 
         foreach ($query->posts as $index => $post) {
             $cover_size = $index === 0 ? 'medium_large' : 'thumbnail';
-            $image_url = get_the_post_thumbnail_url($post, $cover_size);
+            $thumbnail_id = (int) get_post_thumbnail_id($post);
+            $image = $thumbnail_id ? wp_get_attachment_image_src($thumbnail_id, $cover_size) : false;
+            $image_url = is_array($image) ? (string) $image[0] : '';
             if (!$image_url) {
                 continue;
             }
@@ -427,6 +460,8 @@ function kepoli_category_card_image_data(WP_Term $category): array
                 'url' => $image_url,
                 'alt' => kepoli_post_featured_image_alt($post->ID),
                 'title' => get_the_title($post),
+                'width' => is_array($image) ? (int) $image[1] : 0,
+                'height' => is_array($image) ? (int) $image[2] : 0,
             ];
 
             if ($index === 0) {

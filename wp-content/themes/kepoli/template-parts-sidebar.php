@@ -1,5 +1,5 @@
 <section class="author-box">
-    <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'svg')); ?>" alt="<?php esc_attr_e('Isalune Merovik', 'kepoli'); ?>">
+    <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'jpg')); ?>" alt="<?php esc_attr_e('Isalune Merovik', 'kepoli'); ?>"<?php echo kepoli_asset_dimension_attributes('writer-photo'); ?> loading="lazy" decoding="async">
     <div>
         <h2><?php esc_html_e('Isalune Merovik', 'kepoli'); ?></h2>
         <p><?php esc_html_e('Retete romanesti scrise pentru gatit acasa, cu pasi clari si ingrediente accesibile.', 'kepoli'); ?></p>

@@ -7,7 +7,7 @@
 <footer class="site-footer">
     <div class="site-footer__inner">
         <div class="site-footer__brand">
-            <img src="<?php echo esc_url(kepoli_asset_uri('kepoli-wordmark')); ?>" alt="Kepoli">
+            <img src="<?php echo esc_url(kepoli_asset_uri('kepoli-wordmark')); ?>" alt="Kepoli"<?php echo kepoli_asset_dimension_attributes('kepoli-wordmark'); ?> loading="lazy" decoding="async">
             <p><?php esc_html_e('Retete romanesti, ghiduri de bucatarie si idei de sezon scrise pentru gatit linistit acasa.', 'kepoli'); ?></p>
             <p><a href="mailto:<?php echo esc_attr(kepoli_env('SITE_EMAIL', 'contact@kepoli.com')); ?>"><?php echo esc_html(kepoli_env('SITE_EMAIL', 'contact@kepoli.com')); ?></a></p>
             <div class="site-footer__identity">

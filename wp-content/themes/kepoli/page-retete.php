@@ -43,7 +43,7 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
                 <a class="category-card <?php echo esc_attr(kepoli_tone_class($category->slug) . (!empty($category_image['url']) ? ' category-card--with-image' : '')); ?>" href="<?php echo esc_url(get_category_link($category)); ?>">
                     <?php if (!empty($category_image['url'])) : ?>
                         <span class="category-card__visual" aria-hidden="true">
-                            <img src="<?php echo esc_url($category_image['url']); ?>" alt="<?php echo esc_attr($category_image['alt'] ?? ''); ?>" loading="lazy" decoding="async">
+                            <img src="<?php echo esc_url($category_image['url']); ?>" alt="<?php echo esc_attr($category_image['alt'] ?? ''); ?>"<?php echo kepoli_dimension_attributes($category_image); ?> loading="lazy" decoding="async">
                         </span>
                     <?php endif; ?>
                     <span class="category-card__top">
@@ -56,7 +56,7 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
                         <span class="category-card__gallery" aria-hidden="true">
                             <?php foreach ($category_image['gallery'] as $gallery_item) : ?>
                                 <span class="category-card__thumb">
-                                    <img src="<?php echo esc_url($gallery_item['url']); ?>" alt="<?php echo esc_attr($gallery_item['alt'] ?? ''); ?>" loading="lazy" decoding="async">
+                                    <img src="<?php echo esc_url($gallery_item['url']); ?>" alt="<?php echo esc_attr($gallery_item['alt'] ?? ''); ?>"<?php echo kepoli_dimension_attributes($gallery_item); ?> loading="lazy" decoding="async">
                                 </span>
                             <?php endforeach; ?>
                         </span>

@@ -243,6 +243,36 @@ requireThemeIncludes('functions', 'priority image preloads', [
   /hero-homepage',\s*'jpg'/,
 ]);
 
+requireThemeIncludes('functions', 'theme image dimensions', [
+  /function kepoli_asset_dimensions\(string \$basename\): array/,
+  /function kepoli_dimension_attributes\(array \$item\): string/,
+  /function kepoli_asset_dimension_attributes\(string \$basename\): string/,
+  /wp_get_attachment_image_src\(\$thumbnail_id,\s*\$cover_size\)/,
+  /'width'\s*=>\s*is_array\(\$image\)/,
+  /'height'\s*=>\s*is_array\(\$image\)/,
+]);
+
+requireThemeIncludes('header', 'wordmark dimensions', [
+  /kepoli_asset_dimension_attributes\('kepoli-wordmark'\)/,
+]);
+
+requireThemeIncludes('front-page', 'static image dimensions', [
+  /kepoli_asset_dimension_attributes\('hero-homepage'\)/,
+  /kepoli_asset_dimension_attributes\('writer-photo'\)/,
+  /kepoli_dimension_attributes\(\$category_image\)/,
+  /kepoli_dimension_attributes\(\$gallery_item\)/,
+]);
+
+requireThemeIncludes('page-retete', 'category image dimensions', [
+  /kepoli_dimension_attributes\(\$category_image\)/,
+  /kepoli_dimension_attributes\(\$gallery_item\)/,
+]);
+
+requireThemeIncludes('template-parts-sidebar', 'author image dimensions', [
+  /writer-photo',\s*'jpg'/,
+  /kepoli_asset_dimension_attributes\('writer-photo'\)/,
+]);
+
 requireThemeIncludes('functions', 'conditional Google resource hints', [
   /function kepoli_resource_hints\(array \$urls,\s*string \$relation_type\): array/,
   /kepoli_ga_enabled\(\)\s*&&\s*kepoli_env\('GA_MEASUREMENT_ID'\)/,
