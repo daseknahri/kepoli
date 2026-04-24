@@ -1135,6 +1135,32 @@ h3 {
   font-size: 1.1rem;
 }
 
+.author-strip__copy .newsletter-cta--homepage {
+  width: min(100%, 440px);
+  margin: 18px 0 16px;
+  padding: 14px;
+}
+
+.author-strip__copy .newsletter-cta__inner {
+  gap: 10px;
+}
+
+.author-strip__copy .newsletter-cta__title {
+  font-size: clamp(1.25rem, 1.8vw, 1.45rem);
+}
+
+.author-strip__copy .newsletter-cta__copy {
+  font-size: 0.94rem;
+}
+
+.author-strip__copy .newsletter-cta__fine-print {
+  font-size: 0.8rem;
+}
+
+.author-strip__copy .newsletter-cta__submit {
+  min-width: 126px;
+}
+
 .guide-paths {
   margin-top: 28px;
 }

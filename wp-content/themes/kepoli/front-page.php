@@ -53,10 +53,6 @@ $article_list = new WP_Query([
     <?php kepoli_render_reader_trust_links('browse-links browse-links--trust home-proof__links'); ?>
 </section>
 
-<section class="section section--tight">
-    <?php echo kepoli_newsletter_cta('newsletter-cta--compact newsletter-cta--homepage'); ?>
-</section>
-
 <section class="section">
     <div class="section__header">
         <div>
@@ -255,6 +251,7 @@ $article_list = new WP_Query([
             <p class="eyebrow"><?php esc_html_e('Autoare', 'kepoli'); ?></p>
             <h2><?php esc_html_e('Isalune Merovik', 'kepoli'); ?></h2>
             <p><?php esc_html_e('Scriu retete romanesti si ghiduri practice pentru gatit calm, clar si usor de urmat acasa.', 'kepoli'); ?></p>
+            <?php echo kepoli_newsletter_cta('newsletter-cta--compact newsletter-cta--homepage'); ?>
             <a class="button" href="<?php echo esc_url(home_url('/despre-autor/')); ?>"><?php esc_html_e('Citeste povestea', 'kepoli'); ?></a>
         </div>
     </div>
