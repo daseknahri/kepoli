@@ -11,6 +11,7 @@ get_header();
     $updated_label = kepoli_post_updated_label();
     $share_links = kepoli_share_links();
     $article_headings = !$is_recipe ? kepoli_article_heading_index() : [];
+    $article_snapshot = !$is_recipe ? kepoli_article_snapshot_items() : [];
     $recipe_snapshot = $is_recipe ? kepoli_recipe_snapshot_items() : [];
     $post_next_steps = kepoli_post_next_steps();
     $share_icons = ['facebook' => 'facebook', 'whatsapp' => 'whatsapp', 'email' => 'email', 'copy' => 'link', 'print' => 'print'];
@@ -75,6 +76,18 @@ get_header();
                         <?php foreach ($recipe_snapshot as $item) : ?>
                             <div class="entry-recipe-snapshot__item">
                                 <span class="entry-recipe-snapshot__label">
+                                    <?php echo kepoli_icon($item['icon']); ?>
+                                    <span><?php echo esc_html($item['label']); ?></span>
+                                </span>
+                                <strong><?php echo esc_html($item['value']); ?></strong>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php elseif ($article_snapshot) : ?>
+                    <div class="entry-article-snapshot" aria-label="<?php esc_attr_e('Repere rapide ghid', 'kepoli'); ?>">
+                        <?php foreach ($article_snapshot as $item) : ?>
+                            <div class="entry-article-snapshot__item">
+                                <span class="entry-article-snapshot__label">
                                     <?php echo kepoli_icon($item['icon']); ?>
                                     <span><?php echo esc_html($item['label']); ?></span>
                                 </span>

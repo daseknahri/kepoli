@@ -138,6 +138,7 @@ requireThemeIncludes('functions', 'card meta helpers', [
   /function kepoli_category_card_image_data\s*\(/,
   /function kepoli_related_card_reason\s*\(/,
   /function kepoli_post_next_steps\s*\(/,
+  /function kepoli_article_snapshot_items\s*\(/,
   /gallery/,
 ]);
 
@@ -185,6 +186,11 @@ requireThemeIncludes('single', 'recipe snapshot support', [
   /entry-recipe-snapshot/,
 ]);
 
+requireThemeIncludes('single', 'article snapshot support', [
+  /kepoli_article_snapshot_items\s*\(/,
+  /entry-article-snapshot/,
+]);
+
 requireThemeIncludes('single', 'early featured image support', [
   /entry-featured-media--header/,
   /entry-featured-media--header[\s\S]*entry-summary/,
@@ -204,6 +210,11 @@ requireThemeIncludes('single', 'post-end routing block', [
 requireSeedIncludes('distinct intro support', [
   /function kepoli_seed_post_intro\s*\(/,
   /kepoli_seed_post_intro\(\$post\)/,
+]);
+
+requireSeedIncludes('article snapshot meta support', [
+  /function kepoli_seed_article_snapshot_meta\s*\(/,
+  /_kepoli_article_snapshot/,
 ]);
 
 const riskyClaims = [

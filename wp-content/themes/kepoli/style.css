@@ -1715,6 +1715,48 @@ h3 {
   text-wrap: balance;
 }
 
+.entry-article-snapshot {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.entry-article-snapshot__item {
+  min-height: 104px;
+  padding: 14px;
+  border: 1px solid rgba(230, 217, 200, 0.92);
+  border-radius: var(--radius);
+  background: rgba(255, 253, 248, 0.72);
+  box-shadow: 0 1px 0 rgba(255, 253, 248, 0.8);
+}
+
+.entry-article-snapshot__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.entry-article-snapshot__label .kepoli-icon {
+  width: 15px;
+  height: 15px;
+  color: var(--copper);
+}
+
+.entry-article-snapshot__item strong {
+  display: block;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
 .entry-outline {
   margin-top: 14px;
   padding: 14px 0 0;
@@ -2954,6 +2996,10 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .entry-article-snapshot {
+    grid-template-columns: 1fr;
+  }
+
   .entry-jumpnav {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -3285,6 +3331,21 @@ h3 {
     font-size: 0.7rem;
   }
 
+  .entry-article-snapshot {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .entry-article-snapshot__item {
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .entry-article-snapshot__label {
+    margin-bottom: 8px;
+    font-size: 0.7rem;
+  }
+
   .more-list__chips--sidebar {
     display: none;
   }
@@ -3465,6 +3526,10 @@ h3 {
   }
 
   .entry-recipe-snapshot {
+    grid-template-columns: 1fr;
+  }
+
+  .entry-article-snapshot {
     grid-template-columns: 1fr;
   }
 

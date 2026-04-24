@@ -342,6 +342,19 @@ function kepoli_seed_article_wrapup(array $post): string
     return 'Daca vrei sa aplici rapid ideile din ghid, incepe cu doua miscari simple: ' . $first . ' ' . $second . ' In felul acesta, informatia nu ramane doar teorie, ci se transforma mai usor in mese mai bine gandite si retete mai previzibile.';
 }
 
+function kepoli_seed_article_snapshot_meta(array $post): array
+{
+    return [
+        'takeaways' => array_values(array_slice($post['takeaways'] ?? [], 0, 3)),
+        'section_headings' => array_values(array_map(static function ($section) {
+            return (string) ($section['heading'] ?? '');
+        }, $post['sections'] ?? [])),
+        'section_count' => count($post['sections'] ?? []),
+        'faq_count' => count($post['faq'] ?? []),
+        'related_recipe_count' => count($post['related'] ?? []),
+    ];
+}
+
 function kepoli_seed_recipe_intro_guidance(array $post): array
 {
     switch ($post['category']) {
@@ -1058,6 +1071,10 @@ foreach ($posts as $post) {
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     } else {
         $content = kepoli_seed_article_content($post, $post_ids, $category_ids, $posts);
+        update_post_meta($post_id, '_kepoli_article_snapshot', wp_json_encode(
+            kepoli_seed_article_snapshot_meta($post),
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        ));
     }
 
     wp_update_post(wp_slash([

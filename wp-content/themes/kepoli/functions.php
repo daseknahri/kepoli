@@ -1349,6 +1349,89 @@ function kepoli_recipe_snapshot_items(int $post_id = 0): array
     return $items;
 }
 
+function kepoli_article_snapshot_data(int $post_id = 0): array
+{
+    $post_id = $post_id ?: get_the_ID();
+    $json = (string) get_post_meta($post_id, '_kepoli_article_snapshot', true);
+    $data = json_decode($json, true);
+
+    if (is_array($data)) {
+        return $data;
+    }
+
+    $headings = array_column(kepoli_article_heading_index($post_id), 'label');
+
+    return [
+        'takeaways' => [],
+        'section_headings' => $headings,
+        'section_count' => count($headings),
+        'faq_count' => 0,
+        'related_recipe_count' => count(kepoli_related_posts_by_kind($post_id, 'recipe')),
+    ];
+}
+
+function kepoli_article_snapshot_items(int $post_id = 0): array
+{
+    $data = kepoli_article_snapshot_data($post_id);
+    if (!$data) {
+        return [];
+    }
+
+    $takeaways = array_values(array_filter(array_map('trim', $data['takeaways'] ?? [])));
+    $headings = array_values(array_filter(array_map('trim', $data['section_headings'] ?? [])));
+    $section_count = (int) ($data['section_count'] ?? count($headings));
+    $faq_count = (int) ($data['faq_count'] ?? 0);
+    $related_recipe_count = (int) ($data['related_recipe_count'] ?? 0);
+    $items = [];
+
+    if (!empty($takeaways[0])) {
+        $items[] = [
+            'label' => __('Ideea cheie', 'kepoli'),
+            'value' => $takeaways[0],
+            'icon' => 'tips',
+        ];
+    }
+
+    if (!empty($headings[0])) {
+        $items[] = [
+            'label' => __('Pornesti cu', 'kepoli'),
+            'value' => $headings[0],
+            'icon' => 'steps',
+        ];
+    } elseif (!empty($takeaways[1])) {
+        $items[] = [
+            'label' => __('Urmaresti', 'kepoli'),
+            'value' => $takeaways[1],
+            'icon' => 'steps',
+        ];
+    }
+
+    $structure = [];
+    if ($section_count > 0) {
+        $structure[] = sprintf(_n('%d sectiune practica', '%d sectiuni practice', $section_count, 'kepoli'), $section_count);
+    }
+    if ($faq_count > 0) {
+        $structure[] = sprintf(_n('%d raspuns rapid', '%d raspunsuri rapide', $faq_count, 'kepoli'), $faq_count);
+    }
+    if ($structure !== []) {
+        $items[] = [
+            'label' => __('Include', 'kepoli'),
+            'value' => implode(' si ', $structure),
+            'icon' => 'question',
+        ];
+    }
+
+    if ($related_recipe_count > 0) {
+        $items[] = [
+            'label' => __('Aplici cu', 'kepoli'),
+            'value' => sprintf(_n('%d reteta legata', '%d retete legate', $related_recipe_count, 'kepoli'), $related_recipe_count),
+            'icon' => 'arrow-right',
+        ];
+    }
+
+    return $items;
+}
+
 function kepoli_post_card_meta_items(int $post_id = 0): array
 {
     $post_id = $post_id ?: get_the_ID();
