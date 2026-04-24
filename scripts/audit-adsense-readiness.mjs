@@ -8,6 +8,7 @@ const adsenseDocs = fs.readFileSync('docs/adsense-readiness.md', 'utf8');
 const dockerCompose = fs.readFileSync('docker-compose.yml', 'utf8');
 const wordpressDockerfile = fs.readFileSync('docker/wordpress/Dockerfile', 'utf8');
 const apachePerformanceConf = fs.readFileSync('docker/wordpress/kepoli-performance.conf', 'utf8');
+const adtechMuPlugin = fs.readFileSync('wp-content/mu-plugins/kepoli-adtech.php', 'utf8');
 const themeFiles = new Map([
   ['header', fs.readFileSync('wp-content/themes/kepoli/header.php', 'utf8')],
   ['functions', fs.readFileSync('wp-content/themes/kepoli/functions.php', 'utf8')],
@@ -190,11 +191,22 @@ requireTextIncludes('.env.example Google service gates', envExample, [
   /ADSENSE_ENABLE=0/,
   /GA_ENABLE=0/,
   /GA_MEASUREMENT_ID=/,
+  /CANONICAL_REDIRECT_HOSTS=www\.kepoli\.com,api\.kepoli\.com,recipe\.kepoli\.com/,
 ]);
 
 requireTextIncludes('docker compose Google service gates', dockerCompose, [
   /GA_ENABLE:\s*\$\{GA_ENABLE:-0\}/,
   /ADSENSE_ENABLE:\s*\$\{ADSENSE_ENABLE:-0\}/,
+  /CANONICAL_REDIRECT_HOSTS:\s*\$\{CANONICAL_REDIRECT_HOSTS:-www\.kepoli\.com,api\.kepoli\.com,recipe\.kepoli\.com\}/,
+]);
+
+requireTextIncludes('canonical host redirects', adtechMuPlugin, [
+  /function kepoli_mu_redirect_hosts\(string \$canonical_host\): array/,
+  /CANONICAL_REDIRECT_HOSTS/,
+  /www\.' \. \$canonical_host/,
+  /api\.' \. \$canonical_host/,
+  /recipe\.' \. \$canonical_host/,
+  /wp_redirect\(\$scheme \. ':\/\/' \. \$canonical_host \. \$request_uri,\s*301,\s*'Kepoli'\)/,
 ]);
 
 requireTextIncludes('production Apache performance config', `${wordpressDockerfile}\n${apachePerformanceConf}`, [

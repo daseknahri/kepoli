@@ -37,5 +37,6 @@ Before applying:
 Search Console domain variants:
 
 - Use the production host `https://kepoli.com/` unless the extra hosts are intentionally configured.
-- If Search Console lists `www.kepoli.com`, `api.kepoli.com`, or `recipe.kepoli.com` with `robots.txt` not fetched, fix that in DNS/Coolify by either removing those properties from Search Console or routing/redirecting those hosts to `https://kepoli.com/`.
+- If Search Console lists `www.kepoli.com`, `api.kepoli.com`, or `recipe.kepoli.com` with `robots.txt` not fetched, fix that in DNS/Coolify by either removing those properties from Search Console or routing those hosts to the WordPress service.
+- When those hosts reach WordPress, the Kepoli MU plugin redirects them to the canonical `SITE_URL`; keep `CANONICAL_REDIRECT_HOSTS` aligned with any extra Search Console hostnames.
 - The WordPress app can serve robots.txt only for hostnames that reach the `wordpress` service.

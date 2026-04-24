@@ -14,6 +14,48 @@ function kepoli_mu_env(string $key, string $default = ''): string
     return $value === false || $value === '' ? $default : trim((string) $value);
 }
 
+function kepoli_mu_redirect_hosts(string $canonical_host): array
+{
+    $hosts = [
+        'www.' . $canonical_host,
+        'api.' . $canonical_host,
+        'recipe.' . $canonical_host,
+    ];
+
+    $configured_hosts = array_filter(array_map(
+        'trim',
+        explode(',', kepoli_mu_env('CANONICAL_REDIRECT_HOSTS'))
+    ));
+
+    return array_values(array_unique(array_map('strtolower', array_merge($hosts, $configured_hosts))));
+}
+
+add_action('template_redirect', static function (): void {
+    $site_url = kepoli_mu_env('SITE_URL', home_url('/'));
+    $canonical_host = strtolower((string) parse_url($site_url, PHP_URL_HOST));
+    if ($canonical_host === '') {
+        return;
+    }
+
+    $current_host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    $current_host = preg_replace('/:\d+$/', '', $current_host) ?: '';
+    if ($current_host === '' || $current_host === $canonical_host) {
+        return;
+    }
+
+    if (!in_array($current_host, kepoli_mu_redirect_hosts($canonical_host), true)) {
+        return;
+    }
+
+    $scheme = (string) parse_url($site_url, PHP_URL_SCHEME);
+    $scheme = $scheme !== '' ? $scheme : 'https';
+    $request_uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+    $request_uri = str_starts_with($request_uri, '/') ? $request_uri : '/';
+
+    wp_redirect($scheme . '://' . $canonical_host . $request_uri, 301, 'Kepoli');
+    exit;
+}, 0);
+
 add_action('template_redirect', static function (): void {
     $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
     if ($path !== '/ads.txt') {

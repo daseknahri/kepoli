@@ -33,6 +33,7 @@ services:
       SITE_EMAIL: ${SITE_EMAIL:-contact@kepoli.com}
       WRITER_EMAIL: ${WRITER_EMAIL:-isalunemerovik@gmail.com}
       WP_LOCALE: ${WP_LOCALE:-ro_RO}
+      CANONICAL_REDIRECT_HOSTS: ${CANONICAL_REDIRECT_HOSTS:-www.kepoli.com,api.kepoli.com,recipe.kepoli.com}
       ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-ca-pub-8166411196603757}
       ADSENSE_PUB_ID: ${ADSENSE_PUB_ID:-pub-8166411196603757}
       ADSENSE_ENABLE: ${ADSENSE_ENABLE:-0}
@@ -77,6 +78,7 @@ services:
       SITE_EMAIL: ${SITE_EMAIL:-contact@kepoli.com}
       WRITER_EMAIL: ${WRITER_EMAIL:-isalunemerovik@gmail.com}
       WP_LOCALE: ${WP_LOCALE:-ro_RO}
+      CANONICAL_REDIRECT_HOSTS: ${CANONICAL_REDIRECT_HOSTS:-www.kepoli.com,api.kepoli.com,recipe.kepoli.com}
       WP_ADMIN_USER: ${WP_ADMIN_USER:?WP_ADMIN_USER is required}
       WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD:?WP_ADMIN_PASSWORD is required}
       WP_ADMIN_EMAIL: ${WP_ADMIN_EMAIL:?WP_ADMIN_EMAIL is required}

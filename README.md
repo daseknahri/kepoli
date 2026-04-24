@@ -36,6 +36,8 @@ The seed is idempotent: rerunning `docker compose -f docker-compose.yml -f docke
 5. Enable GitHub auto-deploy on push.
 6. Do not enable the `seed` profile for normal Coolify deploys. WordPress self-seeds automatically from the app image.
 
+The `CANONICAL_REDIRECT_HOSTS` value should include any extra hostnames that may reach the app, such as `www.kepoli.com`, `api.kepoli.com`, or `recipe.kepoli.com`. Kepoli redirects those hosts to `SITE_URL` so Search Console and readers see one canonical site.
+
 If you need to manually reseed after launch, run:
 
 ```sh
