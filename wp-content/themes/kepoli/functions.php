@@ -833,6 +833,98 @@ function kepoli_related_card_reason(int $current_post_id = 0, int $related_post_
     return __('Ales editorial pentru a continua lectura intr-un mod util.', 'kepoli');
 }
 
+function kepoli_post_next_steps(int $post_id = 0): array
+{
+    $post_id = $post_id ?: get_the_ID();
+    if (!$post_id) {
+        return ['items' => []];
+    }
+
+    $is_recipe = kepoli_post_kind($post_id) === 'recipe';
+    $category = kepoli_primary_category($post_id);
+    $related_posts = kepoli_related_posts_by_kind($post_id, $is_recipe ? 'article' : 'recipe');
+    $items = [];
+    $seen = [];
+
+    $push_item = static function (string $url, string $eyebrow, string $label, string $meta, string $class = 'tone-default') use (&$items, &$seen): void {
+        $url = trim($url);
+        if ($url === '' || isset($seen[$url])) {
+            return;
+        }
+
+        $seen[$url] = true;
+        $items[] = [
+            'url' => $url,
+            'eyebrow' => $eyebrow,
+            'label' => $label,
+            'meta' => $meta,
+            'class' => $class,
+        ];
+    };
+
+    if ($related_posts) {
+        $primary = $related_posts[0];
+        $push_item(
+            get_permalink($primary),
+            $is_recipe ? __('Ghid recomandat', 'kepoli') : __('Reteta de incercat', 'kepoli'),
+            get_the_title($primary),
+            wp_trim_words(get_the_excerpt($primary), 18, '...'),
+            kepoli_post_tone_class($primary->ID)
+        );
+    }
+
+    if ($category && $category->slug !== 'articole') {
+        $push_item(
+            get_category_link($category),
+            __('Din aceeasi categorie', 'kepoli'),
+            sprintf(__('Mai multe din %s', 'kepoli'), $category->name),
+            kepoli_archive_count_label($category),
+            kepoli_tone_class($category->slug)
+        );
+    }
+
+    if ($is_recipe) {
+        $push_item(
+            home_url('/retete/'),
+            __('Rasfoire rapida', 'kepoli'),
+            __('Toate retetele', 'kepoli'),
+            __('Mergi spre alte retete romanesti pentru urmatoarea masa, desert sau garnitura.', 'kepoli'),
+            'tone-mains'
+        );
+        $push_item(
+            home_url('/articole/'),
+            __('Mai mult context', 'kepoli'),
+            __('Articole utile', 'kepoli'),
+            __('Ingrediente, tehnici si organizare pentru bucataria de acasa.', 'kepoli'),
+            'tone-guides'
+        );
+    } else {
+        $push_item(
+            home_url('/retete/'),
+            __('Pune in practica', 'kepoli'),
+            __('Retete de incercat', 'kepoli'),
+            __('Retete romanesti alese pentru a transforma lectura in ceva concret de pus pe masa.', 'kepoli'),
+            'tone-mains'
+        );
+        $push_item(
+            home_url('/articole/'),
+            __('Continua lectura', 'kepoli'),
+            __('Mai multe ghiduri', 'kepoli'),
+            __('Mai multe articole despre ingrediente, tehnici si planificare simpla.', 'kepoli'),
+            'tone-guides'
+        );
+    }
+
+    return [
+        'eyebrow' => $is_recipe ? __('Dupa reteta', 'kepoli') : __('Dupa articol', 'kepoli'),
+        'title' => $is_recipe ? __('Alege urmatorul pas', 'kepoli') : __('Pune ideile in practica', 'kepoli'),
+        'description' => $is_recipe
+            ? __('Continua cu un ghid util, cu mai multe retete din aceeasi zona sau cu o rasfoire mai larga prin site.', 'kepoli')
+            : __('Treci direct spre o reteta relevanta, spre mai multe retete sau spre alte ghiduri utile.', 'kepoli'),
+        'items' => array_slice($items, 0, 3),
+    ];
+}
+
 function kepoli_post_updated_label(int $post_id = 0): string
 {
     $post_id = $post_id ?: get_the_ID();

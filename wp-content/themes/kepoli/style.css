@@ -2417,6 +2417,65 @@ h3 {
   color: var(--muted);
 }
 
+.entry-next-steps {
+  margin: 28px 0 24px;
+}
+
+.entry-next-steps__header {
+  margin-bottom: 14px;
+  max-width: 42rem;
+}
+
+.entry-next-steps__header h2 {
+  margin: 0 0 8px;
+  font-size: clamp(1.55rem, 2.6vw, 2.15rem);
+  text-wrap: pretty;
+}
+
+.entry-next-steps__header p:last-child {
+  margin: 0;
+  color: var(--muted);
+}
+
+.entry-next-card {
+  position: relative;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.entry-next-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--tone-strong, var(--olive));
+}
+
+.entry-next-card:hover,
+.entry-next-card:focus-visible {
+  transform: translateY(-1px);
+}
+
+.entry-next-card strong {
+  display: block;
+  font-size: 1.08rem;
+  line-height: 1.28;
+}
+
+.entry-next-card span:not(.eyebrow) {
+  display: block;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
 .page-links {
   margin-top: 16px;
   display: flex;

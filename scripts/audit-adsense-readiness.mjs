@@ -137,6 +137,7 @@ requireThemeIncludes('functions', 'card meta helpers', [
   /function kepoli_render_post_card_meta\s*\(/,
   /function kepoli_category_card_image_data\s*\(/,
   /function kepoli_related_card_reason\s*\(/,
+  /function kepoli_post_next_steps\s*\(/,
   /gallery/,
 ]);
 
@@ -192,6 +193,12 @@ requireThemeIncludes('single', 'early featured image support', [
 requireThemeIncludes('single', 'editorial recommendation reasons', [
   /kepoli_related_card_reason\s*\(/,
   /related-card__reason/,
+]);
+
+requireThemeIncludes('single', 'post-end routing block', [
+  /kepoli_post_next_steps\s*\(/,
+  /entry-next-steps/,
+  /entry-next-grid/,
 ]);
 
 requireSeedIncludes('distinct intro support', [

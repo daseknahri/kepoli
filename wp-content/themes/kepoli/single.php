@@ -12,6 +12,7 @@ get_header();
     $share_links = kepoli_share_links();
     $article_headings = !$is_recipe ? kepoli_article_heading_index() : [];
     $recipe_snapshot = $is_recipe ? kepoli_recipe_snapshot_items() : [];
+    $post_next_steps = kepoli_post_next_steps();
     $share_icons = ['facebook' => 'facebook', 'whatsapp' => 'whatsapp', 'email' => 'email', 'copy' => 'link', 'print' => 'print'];
     $featured_image = kepoli_post_featured_image_markup(get_the_ID(), 'large', ['class' => 'entry-featured-media__image']);
     $featured_caption = $featured_image !== '' ? kepoli_post_featured_image_caption(get_the_ID()) : '';
@@ -123,6 +124,24 @@ get_header();
                 'link_after' => '</span>',
             ]);
             ?>
+            <?php if (!empty($post_next_steps['items'])) : ?>
+                <section class="entry-next-steps">
+                    <div class="entry-next-steps__header">
+                        <p class="eyebrow"><?php echo esc_html($post_next_steps['eyebrow']); ?></p>
+                        <h2><?php echo esc_html($post_next_steps['title']); ?></h2>
+                        <p><?php echo esc_html($post_next_steps['description']); ?></p>
+                    </div>
+                    <div class="page-grid entry-next-grid">
+                        <?php foreach ($post_next_steps['items'] as $item) : ?>
+                            <a class="page-panel entry-next-card <?php echo esc_attr($item['class']); ?>" href="<?php echo esc_url($item['url']); ?>">
+                                <span class="eyebrow"><?php echo esc_html($item['eyebrow']); ?></span>
+                                <strong><?php echo esc_html($item['label']); ?></strong>
+                                <span><?php echo esc_html($item['meta']); ?></span>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
             <?php echo kepoli_ad_slot('below_content'); ?>
             <?php
             $related_posts = kepoli_related_posts_by_kind(get_the_ID(), $is_recipe ? 'article' : 'recipe');
