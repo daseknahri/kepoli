@@ -235,6 +235,14 @@ requireThemeIncludes('functions', 'frontend output cleanup', [
   /wp_dequeue_style\('wp-block-library'\)/,
 ]);
 
+requireThemeIncludes('functions', 'robots indexing policy', [
+  /function kepoli_robots_content\(\): string/,
+  /is_search\(\) \|\| is_404\(\)/,
+  /noindex,follow,max-image-preview:large/,
+  /index,follow,max-image-preview:large/,
+  /esc_attr\(kepoli_robots_content\(\)\)/,
+]);
+
 requireThemeIncludes('functions', 'priority image preloads', [
   /function kepoli_priority_image_preloads\(\): void/,
   /rel=\\"preload\\" as=\\"image\\"/,

@@ -1385,6 +1385,15 @@ function kepoli_register_sidebars(): void
 }
 add_action('widgets_init', 'kepoli_register_sidebars');
 
+function kepoli_robots_content(): string
+{
+    if (is_search() || is_404()) {
+        return 'noindex,follow,max-image-preview:large';
+    }
+
+    return 'index,follow,max-image-preview:large';
+}
+
 function kepoli_meta_description(): void
 {
     $description = kepoli_current_description();
@@ -1392,7 +1401,7 @@ function kepoli_meta_description(): void
         printf("<meta name=\"description\" content=\"%s\">\n", esc_attr(wp_trim_words($description, 28, '')));
     }
 
-    printf("<meta name=\"robots\" content=\"max-image-preview:large\">\n");
+    printf("<meta name=\"robots\" content=\"%s\">\n", esc_attr(kepoli_robots_content()));
     printf("<link rel=\"canonical\" href=\"%s\">\n", esc_url(kepoli_current_url()));
 
     if (is_singular('post')) {

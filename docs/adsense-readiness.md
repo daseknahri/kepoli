@@ -13,6 +13,7 @@ Implemented readiness items:
 - Optional Analytics rendering gated by an explicit `GA_ENABLE` switch so it can wait for consent setup.
 - Apache compression and long-lived cache headers for static theme assets in the production container.
 - Priority preload hints for homepage and article LCP images.
+- Search-result and 404 utility pages use `noindex,follow`, while editorial pages remain indexable.
 - `ads.txt` generated only after `ADSENSE_PUB_ID` is configured.
 - Google Site Kit installed for later account connection.
 - Dedicated public page for `Publicitate si consimtamant`.
