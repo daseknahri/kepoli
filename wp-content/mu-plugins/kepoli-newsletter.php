@@ -33,6 +33,11 @@ function kepoli_newsletter_signup_exists(string $email): bool
     return !empty($entries);
 }
 
+function kepoli_newsletter_can_manage(): bool
+{
+    return current_user_can('edit_posts');
+}
+
 function kepoli_newsletter_redirect(string $redirect_to, string $status): void
 {
     $redirect_to = wp_validate_redirect($redirect_to, home_url('/'));
@@ -147,6 +152,67 @@ add_action('pre_get_posts', static function (WP_Query $query): void {
         $query->set('order', 'DESC');
     }
 });
+
+add_action('restrict_manage_posts', static function (): void {
+    global $typenow;
+
+    if ($typenow !== kepoli_newsletter_post_type() || !kepoli_newsletter_can_manage()) {
+        return;
+    }
+
+    $url = wp_nonce_url(
+        admin_url('admin.php?action=kepoli_export_newsletter'),
+        'kepoli_export_newsletter'
+    );
+
+    printf(
+        '<a class="button" href="%1$s">%2$s</a>',
+        esc_url($url),
+        esc_html__('Export CSV', 'kepoli')
+    );
+});
+
+function kepoli_export_newsletter_csv(): void
+{
+    if (!kepoli_newsletter_can_manage()) {
+        wp_die(esc_html__('Nu ai permisiunea pentru acest export.', 'kepoli'));
+    }
+
+    check_admin_referer('kepoli_export_newsletter');
+
+    $entries = get_posts([
+        'post_type' => kepoli_newsletter_post_type(),
+        'post_status' => 'private',
+        'posts_per_page' => -1,
+        'orderby' => 'date',
+        'order' => 'DESC',
+    ]);
+
+    nocache_headers();
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="kepoli-newsletter-' . gmdate('Y-m-d') . '.csv"');
+
+    $output = fopen('php://output', 'w');
+    if ($output === false) {
+        exit;
+    }
+
+    fputcsv($output, ['email', 'source', 'source_url', 'subscribed_at']);
+
+    foreach ($entries as $entry) {
+        fputcsv($output, [
+            (string) get_post_meta($entry->ID, '_kepoli_newsletter_email', true),
+            (string) get_post_meta($entry->ID, '_kepoli_newsletter_source_label', true),
+            (string) get_post_meta($entry->ID, '_kepoli_newsletter_source_url', true),
+            get_post_time('c', true, $entry),
+        ]);
+    }
+
+    fclose($output);
+    exit;
+}
+
+add_action('admin_action_kepoli_export_newsletter', 'kepoli_export_newsletter_csv');
 
 function kepoli_handle_newsletter_signup(): void
 {

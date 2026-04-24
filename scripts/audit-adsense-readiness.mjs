@@ -347,8 +347,11 @@ requireTextIncludes('newsletter storage MU plugin', newsletterMuPlugin, [
   /register_post_type\(kepoli_newsletter_post_type\(\)/,
   /'show_ui'\s*=>\s*true/,
   /'menu_icon'\s*=>\s*'dashicons-email-alt'/,
+  /Export CSV/,
   /admin_post_nopriv_kepoli_newsletter_signup/,
   /admin_post_kepoli_newsletter_signup/,
+  /admin_action_kepoli_export_newsletter/,
+  /check_admin_referer\('kepoli_export_newsletter'\)/,
   /_kepoli_newsletter_email/,
   /_kepoli_newsletter_source_label/,
 ]);

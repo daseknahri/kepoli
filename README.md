@@ -50,7 +50,7 @@ Use only `docker-compose.yml` in Coolify. Do not add `docker-compose.local.yml`;
 
 The theme contains inactive ad placements. Live ad markup is emitted only when `ADSENSE_ENABLE=1`, an AdSense client ID exists, and the matching slot environment variable is set. `ads.txt` is generated only when `ADSENSE_PUB_ID` is configured.
 
-The newsletter signup is a small native WordPress form on the front page and the About Kepoli page. Signups are stored in WordPress admin under `Newsletter`, so you can review emails there and follow up manually from `contact@kepoli.com` without adding a paid newsletter service.
+The newsletter signup is a small native WordPress form on the front page and the About Kepoli page. Signups are stored in WordPress admin under `Newsletter`, where you can review them or export a CSV and follow up manually from `contact@kepoli.com` without adding a paid newsletter service.
 
 Before submitting to AdSense:
 
