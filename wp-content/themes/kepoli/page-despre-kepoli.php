@@ -17,6 +17,7 @@ get_header();
                 <div class="entry-content">
                     <?php the_content(); ?>
                 </div>
+                <?php echo kepoli_newsletter_cta('newsletter-cta--compact newsletter-cta--about'); ?>
                 <div class="page-grid">
                     <section class="page-panel">
                         <p class="eyebrow"><?php esc_html_e('Ce publicam', 'kepoli'); ?></p>

@@ -2580,6 +2580,29 @@ h3 {
   font-size: 0.95rem;
 }
 
+.newsletter-cta {
+  width: min(100%, 520px);
+  margin: 18px 0 28px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.newsletter-cta--homepage {
+  margin: 0 auto;
+}
+
+.newsletter-cta__embed {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.newsletter-cta iframe {
+  display: block;
+  max-width: 100%;
+}
+
 .page-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

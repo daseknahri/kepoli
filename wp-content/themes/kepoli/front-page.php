@@ -53,6 +53,10 @@ $article_list = new WP_Query([
     <?php kepoli_render_reader_trust_links('browse-links browse-links--trust home-proof__links'); ?>
 </section>
 
+<section class="section section--tight">
+    <?php echo kepoli_newsletter_cta('newsletter-cta--compact newsletter-cta--homepage'); ?>
+</section>
+
 <section class="section">
     <div class="section__header">
         <div>

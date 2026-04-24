@@ -19,6 +19,7 @@ const themeFiles = new Map([
   ['archive', fs.readFileSync('wp-content/themes/kepoli/archive.php', 'utf8')],
   ['search', fs.readFileSync('wp-content/themes/kepoli/search.php', 'utf8')],
   ['page', fs.readFileSync('wp-content/themes/kepoli/page.php', 'utf8')],
+  ['page-despre-kepoli', fs.readFileSync('wp-content/themes/kepoli/page-despre-kepoli.php', 'utf8')],
   ['page-retete', fs.readFileSync('wp-content/themes/kepoli/page-retete.php', 'utf8')],
   ['page-articole', fs.readFileSync('wp-content/themes/kepoli/page-articole.php', 'utf8')],
   ['page-despre-autor', fs.readFileSync('wp-content/themes/kepoli/page-despre-autor.php', 'utf8')],
@@ -293,8 +294,6 @@ requireThemeIncludes('functions', 'conditional Google resource hints', [
   /function kepoli_resource_hints\(array \$urls,\s*string \$relation_type\): array/,
   /kepoli_ga_enabled\(\)\s*&&\s*kepoli_env\('GA_MEASUREMENT_ID'\)/,
   /kepoli_ads_enabled\(\)\s*&&\s*kepoli_env\('ADSENSE_CLIENT_ID'\)/,
-  /kepoli_newsletter_cta_id\(\)\s*!==\s*''/,
-  /news\.google\.com/,
 ]);
 
 requireThemeIncludes('functions', 'Analytics consent gate', [
@@ -306,18 +305,32 @@ requireThemeIncludes('functions', 'Analytics consent gate', [
 requireThemeIncludes('functions', 'inline newsletter CTA markup', [
   /function kepoli_newsletter_cta_id\(\): string/,
   /RRM_NEWSLETTER_CTA_ID/,
-  /function kepoli_rrm_newsletter_head\(\): void/,
-  /swg-basic\.js/,
-  /function kepoli_newsletter_cta\(\): string/,
+  /function kepoli_newsletter_cta\(string \$class = ''\): string/,
+  /newsletter-cta/,
   /rrm-inline-cta/,
   /e67fddb0-cd37-468c-b8ae-f11f3fb7d446/,
 ]);
 
-requireThemeIncludes('single', 'inline newsletter placement', [
-  /kepoli_newsletter_cta\(\)/,
+requireThemeIncludes('front-page', 'homepage inline newsletter placement', [
+  /kepoli_newsletter_cta\('newsletter-cta--compact newsletter-cta--homepage'\)/,
+]);
+
+requireThemeIncludes('page-despre-kepoli', 'about page inline newsletter placement', [
+  /kepoli_newsletter_cta\('newsletter-cta--compact newsletter-cta--about'\)/,
+]);
+
+rejectPublicCopy('single post newsletter placement', themeFiles.get('single'), [
+  /kepoli_newsletter_cta\(/,
+]);
+
+requireTextIncludes('compact newsletter styling', themeFiles.get('style') ?? fs.readFileSync('wp-content/themes/kepoli/style.css', 'utf8'), [
+  /\.newsletter-cta\s*\{/,
+  /width:\s*min\(100%,\s*520px\)/,
 ]);
 
 rejectPublicCopy('theme Reader Revenue popup initialization', [...themeFiles.values()].join('\n'), [
+  /swg-basic\.js/,
+  /news\.google\.com/,
   /basicSubscriptions\.init/,
   /isPartOfProductId/,
   /type:\s*['"]NewsArticle['"]/,

@@ -17,7 +17,7 @@ Implemented readiness items:
 - Recipe, article, collection, organization, author, and breadcrumb structured data are emitted with canonical URLs, language, publisher identity, image objects, and image dimensions where available.
 - `ads.txt` generated only after `ADSENSE_PUB_ID` is configured.
 - Google Site Kit installed for later account connection.
-- Reader Revenue Manager is limited to a normal inline newsletter CTA inside posts; the older open-access SWG initialization is not emitted globally.
+- Reader Revenue Manager is limited to a compact inline newsletter CTA on the front page and About Kepoli page; the theme does not emit the popup-prone SWG script or open-access initialization.
 - Dedicated public page for `Publicitate si consimtamant`.
 - Repo checks for risky claim language and key trust-policy pages.
 

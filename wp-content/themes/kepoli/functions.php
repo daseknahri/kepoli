@@ -1419,10 +1419,6 @@ function kepoli_resource_hints(array $urls, string $relation_type): array
         $hints[] = 'https://googleads.g.doubleclick.net';
     }
 
-    if (is_singular('post') && kepoli_newsletter_cta_id() !== '') {
-        $hints[] = 'https://news.google.com';
-    }
-
     if ($relation_type === 'dns-prefetch' || $relation_type === 'preconnect') {
         $urls = array_merge($urls, $hints);
     }
@@ -1626,25 +1622,18 @@ function kepoli_newsletter_cta_id(): string
     return kepoli_env('RRM_NEWSLETTER_CTA_ID', 'e67fddb0-cd37-468c-b8ae-f11f3fb7d446');
 }
 
-function kepoli_rrm_newsletter_head(): void
-{
-    if (!is_singular('post') || kepoli_newsletter_cta_id() === '') {
-        return;
-    }
-
-    echo '<script async type="application/javascript" src="https://news.google.com/swg/js/v1/swg-basic.js"></script>' . "\n";
-}
-add_action('wp_head', 'kepoli_rrm_newsletter_head', 10);
-
-function kepoli_newsletter_cta(): string
+function kepoli_newsletter_cta(string $class = ''): string
 {
     $cta_id = kepoli_newsletter_cta_id();
     if ($cta_id === '') {
         return '';
     }
 
+    $classes = trim('newsletter-cta ' . $class);
+
     return sprintf(
-        '<section class="entry-newsletter-cta" aria-label="%1$s"><div rrm-inline-cta="%2$s"></div></section>',
+        '<section class="%1$s" aria-label="%2$s"><div class="newsletter-cta__embed" rrm-inline-cta="%3$s"></div></section>',
+        esc_attr($classes),
         esc_attr__('Newsletter Kepoli', 'kepoli'),
         esc_attr($cta_id)
     );
