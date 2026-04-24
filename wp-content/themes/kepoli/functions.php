@@ -335,7 +335,7 @@ function kepoli_category_card_image_data(WP_Term $category): array
     $query = new WP_Query([
         'post_type' => 'post',
         'post_status' => 'publish',
-        'posts_per_page' => 1,
+        'posts_per_page' => 3,
         'cat' => $category->term_id,
         'no_found_rows' => true,
         'ignore_sticky_posts' => true,
@@ -350,15 +350,34 @@ function kepoli_category_card_image_data(WP_Term $category): array
     $data = [];
 
     if ($query->have_posts()) {
-        $post = $query->posts[0];
-        $image_url = get_the_post_thumbnail_url($post, 'medium_large');
+        $gallery = [];
 
-        if ($image_url) {
-            $data = [
+        foreach ($query->posts as $index => $post) {
+            $cover_size = $index === 0 ? 'medium_large' : 'thumbnail';
+            $image_url = get_the_post_thumbnail_url($post, $cover_size);
+            if (!$image_url) {
+                continue;
+            }
+
+            $item = [
                 'url' => $image_url,
                 'alt' => kepoli_post_featured_image_alt($post->ID),
-                'sample' => get_the_title($post),
+                'title' => get_the_title($post),
             ];
+
+            if ($index === 0) {
+                $data = [
+                    'url' => $item['url'],
+                    'alt' => $item['alt'],
+                    'sample' => $item['title'],
+                ];
+            }
+
+            $gallery[] = $item;
+        }
+
+        if ($gallery !== []) {
+            $data['gallery'] = $gallery;
         }
     }
 

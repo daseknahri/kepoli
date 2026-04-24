@@ -133,6 +133,15 @@ $article_list = new WP_Query([
                     </span>
                     <strong><?php echo esc_html($category->name); ?></strong>
                     <span class="category-card__description"><?php echo esc_html($category_description); ?></span>
+                    <?php if (!empty($category_image['gallery'])) : ?>
+                        <span class="category-card__gallery" aria-hidden="true">
+                            <?php foreach ($category_image['gallery'] as $gallery_item) : ?>
+                                <span class="category-card__thumb">
+                                    <img src="<?php echo esc_url($gallery_item['url']); ?>" alt="<?php echo esc_attr($gallery_item['alt'] ?? ''); ?>">
+                                </span>
+                            <?php endforeach; ?>
+                        </span>
+                    <?php endif; ?>
                     <?php if (!empty($category_image['sample'])) : ?>
                         <span class="category-card__sample"><?php echo esc_html(sprintf(__('De inceput: %s', 'kepoli'), $category_image['sample'])); ?></span>
                     <?php endif; ?>

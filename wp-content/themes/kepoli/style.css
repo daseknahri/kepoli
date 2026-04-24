@@ -1060,6 +1060,37 @@ h3 {
   color: rgba(255, 253, 248, 0.82);
 }
 
+.category-card__gallery {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 2px;
+}
+
+.category-card__thumb {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 253, 248, 0.94);
+  box-shadow: 0 6px 18px rgba(24, 18, 12, 0.18);
+}
+
+.category-card__thumb + .category-card__thumb {
+  margin-left: -10px;
+}
+
+.category-card__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.category-card:not(.category-card--with-image) .category-card__thumb {
+  border-color: rgba(230, 217, 200, 0.98);
+}
+
 .author-strip {
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
