@@ -12,16 +12,21 @@ const themeFiles = new Map([
   ['page', fs.readFileSync('wp-content/themes/kepoli/page.php', 'utf8')],
   ['page-retete', fs.readFileSync('wp-content/themes/kepoli/page-retete.php', 'utf8')],
   ['page-articole', fs.readFileSync('wp-content/themes/kepoli/page-articole.php', 'utf8')],
+  ['page-despre-autor', fs.readFileSync('wp-content/themes/kepoli/page-despre-autor.php', 'utf8')],
   ['template-parts-card', fs.readFileSync('wp-content/themes/kepoli/template-parts-card.php', 'utf8')],
   ['template-parts-sidebar', fs.readFileSync('wp-content/themes/kepoli/template-parts-sidebar.php', 'utf8')],
 ]);
 const seedBootstrap = fs.readFileSync('seed/bootstrap.php', 'utf8');
 const writerPhotoSvg = fs.readFileSync('wp-content/themes/kepoli/assets/img/writer-photo.svg', 'utf8');
+const obsoleteThemePngs = [
+  'wp-content/themes/kepoli/assets/img/hero-homepage.png',
+  'wp-content/themes/kepoli/assets/img/kepoli-social-cover.png',
+  'wp-content/themes/kepoli/assets/img/writer-photo.png',
+];
 const themeAssetStats = {
   heroJpg: fs.statSync('wp-content/themes/kepoli/assets/img/hero-homepage.jpg').size,
-  heroPng: fs.statSync('wp-content/themes/kepoli/assets/img/hero-homepage.png').size,
+  socialCoverJpg: fs.statSync('wp-content/themes/kepoli/assets/img/kepoli-social-cover.jpg').size,
   writerJpg: fs.statSync('wp-content/themes/kepoli/assets/img/writer-photo.jpg').size,
-  writerPng: fs.statSync('wp-content/themes/kepoli/assets/img/writer-photo.png').size,
   styleCss: fs.statSync('wp-content/themes/kepoli/style.css').size,
   styleMinCss: fs.statSync('wp-content/themes/kepoli/style.min.css').size,
 };
@@ -178,6 +183,14 @@ requireThemeIncludes('functions', 'production stylesheet enqueue', [
   /filemtime\(\$style_path\)/,
 ]);
 
+requireThemeIncludes('functions', 'responsive lazy post media images', [
+  /function kepoli_post_media_image_attrs/,
+  /wp_get_attachment_image\(\$image_id,\s*\$size,\s*false,\s*\$attr\)/,
+  /'loading'\s*=>\s*'lazy'/,
+  /'decoding'\s*=>\s*'async'/,
+  /'sizes'\s*=>\s*\$sizes/,
+]);
+
 requireThemeIncludes('front-page', 'priority homepage hero image', [
   /class="home-hero__image"/,
   /fetchpriority="high"/,
@@ -189,12 +202,34 @@ requireThemeIncludes('single', 'priority single post image', [
   /loading'\s*=>\s*'eager'/,
 ]);
 
-if (themeAssetStats.heroJpg >= themeAssetStats.heroPng * 0.25) {
-  failures.push('Homepage hero JPEG is not sufficiently smaller than the PNG source.');
+requireThemeIncludes('front-page', 'lazy author photo image', [
+  /author-strip__photo[\s\S]*<img/,
+  /writer-photo',\s*'jpg'/,
+  /loading="lazy"/,
+]);
+
+requireThemeIncludes('page-despre-autor', 'priority author page image', [
+  /author-strip__photo[\s\S]*<img/,
+  /fetchpriority="high"/,
+  /loading="eager"/,
+]);
+
+for (const pngPath of obsoleteThemePngs) {
+  if (fs.existsSync(pngPath)) {
+    failures.push(`Obsolete oversized theme PNG is still present: ${pngPath}`);
+  }
 }
 
-if (themeAssetStats.writerJpg >= themeAssetStats.writerPng * 0.25) {
-  failures.push('Author JPEG is not sufficiently smaller than the PNG source.');
+if (themeAssetStats.heroJpg > 300000) {
+  failures.push('Homepage hero JPEG is larger than the 300 KB production budget.');
+}
+
+if (themeAssetStats.socialCoverJpg > 450000) {
+  failures.push('Social cover JPEG is larger than the 450 KB production budget.');
+}
+
+if (themeAssetStats.writerJpg > 150000) {
+  failures.push('Author JPEG is larger than the 150 KB production budget.');
 }
 
 if (themeAssetStats.styleMinCss >= themeAssetStats.styleCss) {

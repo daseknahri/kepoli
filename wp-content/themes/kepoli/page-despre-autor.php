@@ -6,7 +6,9 @@ get_header();
 ?>
 <section class="section">
     <div class="author-strip">
-        <div class="author-strip__photo" style="--author-image: url('<?php echo esc_url(kepoli_asset_uri('writer-photo', 'svg')); ?>');"></div>
+        <div class="author-strip__photo">
+            <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'jpg')); ?>" alt="<?php esc_attr_e('Isalune Merovik, autoarea Kepoli', 'kepoli'); ?>" loading="eager" fetchpriority="high" decoding="async">
+        </div>
         <div class="author-strip__copy">
             <?php kepoli_breadcrumbs(); ?>
             <p class="eyebrow"><?php esc_html_e('Autoare', 'kepoli'); ?></p>
