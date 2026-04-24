@@ -93,6 +93,10 @@ add_filter('enter_title_here', static function (string $title, WP_Post $post): s
     return $title;
 }, 10, 2);
 
+add_action('admin_init', static function (): void {
+    remove_post_type_support(kepoli_newsletter_post_type(), 'title');
+});
+
 add_filter('manage_edit_kepoli_newsletter_columns', static function (array $columns): array {
     return [
         'cb' => $columns['cb'] ?? '',
@@ -126,12 +130,26 @@ add_action('manage_kepoli_newsletter_posts_custom_column', static function (stri
     echo esc_html($source_label);
 }, 10, 2);
 
+add_filter('the_title', static function (string $title, int $post_id): string {
+    if (!is_admin()) {
+        return $title;
+    }
+
+    $post = get_post($post_id);
+    if (!$post || $post->post_type !== kepoli_newsletter_post_type()) {
+        return $title;
+    }
+
+    $email = trim((string) get_post_meta($post_id, '_kepoli_newsletter_email', true));
+    return $email !== '' ? $email : $title;
+}, 10, 2);
+
 add_filter('post_row_actions', static function (array $actions, WP_Post $post): array {
     if ($post->post_type !== kepoli_newsletter_post_type()) {
         return $actions;
     }
 
-    unset($actions['inline hide-if-no-js'], $actions['view']);
+    unset($actions['inline hide-if-no-js'], $actions['view'], $actions['quick_edit']);
     return $actions;
 }, 10, 2);
 
@@ -151,6 +169,82 @@ add_action('pre_get_posts', static function (WP_Query $query): void {
     if (!$query->get('order')) {
         $query->set('order', 'DESC');
     }
+});
+
+add_action('add_meta_boxes', static function (): void {
+    remove_meta_box('submitdiv', kepoli_newsletter_post_type(), 'side');
+
+    add_meta_box(
+        'kepoli-newsletter-details',
+        __('Detalii abonare', 'kepoli'),
+        static function (WP_Post $post): void {
+            $email = trim((string) get_post_meta($post->ID, '_kepoli_newsletter_email', true));
+            $source_label = trim((string) get_post_meta($post->ID, '_kepoli_newsletter_source_label', true));
+            $source_url = trim((string) get_post_meta($post->ID, '_kepoli_newsletter_source_url', true));
+            $subscribed_at = get_post_time('d.m.Y H:i', true, $post);
+
+            if ($source_label === '') {
+                $source_label = __('Site Kepoli', 'kepoli');
+            }
+            ?>
+            <table class="form-table" role="presentation">
+                <tr>
+                    <th scope="row"><?php esc_html_e('Email', 'kepoli'); ?></th>
+                    <td>
+                        <?php if ($email !== '') : ?>
+                            <a href="mailto:<?php echo esc_attr($email); ?>"><?php echo esc_html($email); ?></a>
+                        <?php else : ?>
+                            <span>&mdash;</span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Sursa', 'kepoli'); ?></th>
+                    <td>
+                        <?php if ($source_url !== '') : ?>
+                            <a href="<?php echo esc_url($source_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($source_label); ?></a>
+                        <?php else : ?>
+                            <span><?php echo esc_html($source_label); ?></span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Data inscrierii', 'kepoli'); ?></th>
+                    <td><?php echo esc_html($subscribed_at); ?></td>
+                </tr>
+            </table>
+            <p>
+                <a class="button button-secondary" href="<?php echo esc_url(admin_url('edit.php?post_type=' . kepoli_newsletter_post_type())); ?>">
+                    <?php esc_html_e('Inapoi la lista', 'kepoli'); ?>
+                </a>
+            </p>
+            <?php
+        },
+        kepoli_newsletter_post_type(),
+        'normal',
+        'high'
+    );
+});
+
+add_action('admin_head', static function (): void {
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+    if (!$screen || $screen->post_type !== kepoli_newsletter_post_type()) {
+        return;
+    }
+    ?>
+    <style>
+      #titlediv,
+      #minor-publishing,
+      #misc-publishing-actions,
+      #delete-action {
+        display: none;
+      }
+
+      #major-publishing-actions {
+        border-top: 0;
+      }
+    </style>
+    <?php
 });
 
 add_action('restrict_manage_posts', static function (): void {
