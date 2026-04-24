@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.7.0
+ * Version: 1.8.0
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.7.0';
+    private const VERSION = '1.8.0';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -51,6 +51,7 @@ final class Kepoli_Author_Tools
         add_filter('mce_external_plugins', [self::class, 'register_tinymce_plugin']);
         add_filter('mce_buttons', [self::class, 'register_tinymce_buttons']);
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin_assets']);
+        add_action('add_meta_boxes_post', [self::class, 'add_publish_companion_box']);
         add_action('add_meta_boxes_post', [self::class, 'add_writer_guide_box']);
         add_action('add_meta_boxes_post', [self::class, 'add_post_setup_box']);
         add_action('save_post_post', [self::class, 'save_post_setup'], 10, 3);
@@ -123,9 +124,47 @@ final class Kepoli_Author_Tools
                     'checkMissingPrefix' => __('De completat inainte de publicare:', 'kepoli-author-tools'),
                     'publishConfirmPrefix' => __('Postarea mai are campuri lipsa:', 'kepoli-author-tools'),
                     'publishConfirmSuffix' => __('Continui totusi publicarea?', 'kepoli-author-tools'),
+                    'companionReady' => __('Postarea arata bine pentru urmatorul pas. Fa doar o ultima lectura inainte de publicare.', 'kepoli-author-tools'),
+                    'companionReview' => __('Mai sunt cateva lucruri de verificat inainte sa publici.', 'kepoli-author-tools'),
+                    'companionNoCategory' => __('Nicio sugestie clara inca', 'kepoli-author-tools'),
+                    'companionNoTags' => __('Fara taguri sugerate inca', 'kepoli-author-tools'),
                 ],
             ]);
         }
+    }
+
+    public static function add_publish_companion_box(): void
+    {
+        add_meta_box(
+            'kepoli-publish-companion',
+            __('Kepoli publish companion', 'kepoli-author-tools'),
+            [self::class, 'render_publish_companion_box'],
+            'post',
+            'side',
+            'high'
+        );
+    }
+
+    public static function render_publish_companion_box(): void
+    {
+        ?>
+        <div class="kepoli-publish-companion" data-kepoli-publish-companion>
+            <p class="kepoli-publish-companion__intro"><?php esc_html_e('Un rezumat scurt al lucrurilor pe care Kepoli le-a completat automat si al celor care mai cer o verificare umana.', 'kepoli-author-tools'); ?></p>
+            <div class="kepoli-publish-companion__block">
+                <span class="kepoli-publish-companion__label"><?php esc_html_e('Categoria sugerata', 'kepoli-author-tools'); ?></span>
+                <strong data-kepoli-companion-category><?php esc_html_e('Se calculeaza...', 'kepoli-author-tools'); ?></strong>
+            </div>
+            <div class="kepoli-publish-companion__block">
+                <span class="kepoli-publish-companion__label"><?php esc_html_e('Taguri sugerate', 'kepoli-author-tools'); ?></span>
+                <p data-kepoli-companion-tags><?php esc_html_e('Se calculeaza...', 'kepoli-author-tools'); ?></p>
+            </div>
+            <div class="kepoli-publish-companion__block">
+                <span class="kepoli-publish-companion__label"><?php esc_html_e('Mai verifica', 'kepoli-author-tools'); ?></span>
+                <ul class="kepoli-publish-companion__checks" data-kepoli-companion-checks></ul>
+            </div>
+            <p class="kepoli-publish-companion__summary" data-kepoli-companion-summary></p>
+        </div>
+        <?php
     }
 
     public static function add_writer_guide_box(): void

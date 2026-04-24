@@ -23,6 +23,64 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   color: #252416;
 }
 
+.kepoli-publish-companion {
+  color: #252416;
+}
+
+.kepoli-publish-companion__intro,
+.kepoli-publish-companion__summary {
+  margin: 0;
+  color: #6b654f;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.kepoli-publish-companion__block + .kepoli-publish-companion__block {
+  margin-top: 14px;
+}
+
+.kepoli-publish-companion__label {
+  display: block;
+  margin-bottom: 5px;
+  color: #252416;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.kepoli-publish-companion__block strong,
+.kepoli-publish-companion__block p {
+  margin: 0;
+}
+
+.kepoli-publish-companion__checks {
+  margin: 0;
+  padding-left: 18px;
+  color: #6b654f;
+}
+
+.kepoli-publish-companion__checks li + li {
+  margin-top: 4px;
+}
+
+.kepoli-publish-companion__summary {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fbf7ef;
+}
+
+.kepoli-publish-companion__summary.is-ready {
+  background: #e2ecd0;
+  color: #3e4f18;
+}
+
+.kepoli-publish-companion__summary.is-missing {
+  background: #fff0d8;
+  color: #84501f;
+}
+
 .kepoli-author-guide ol {
   margin-left: 18px;
 }

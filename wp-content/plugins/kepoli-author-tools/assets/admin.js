@@ -955,6 +955,45 @@
     summary.classList.remove('is-ready');
   }
 
+  function renderPublishCompanion() {
+    const categoryTarget = document.querySelector('[data-kepoli-companion-category]');
+    const tagsTarget = document.querySelector('[data-kepoli-companion-tags]');
+    const checksTarget = document.querySelector('[data-kepoli-companion-checks]');
+    const summaryTarget = document.querySelector('[data-kepoli-companion-summary]');
+
+    if (!categoryTarget || !tagsTarget || !checksTarget || !summaryTarget) {
+      return;
+    }
+
+    const strings = (window.kepoliAuthorTools && window.kepoliAuthorTools.strings) || {};
+    const category = suggestedCategory();
+    const tags = suggestedTags();
+    const state = checklistState();
+    const missing = missingChecklistLabels(state).filter((label) => !(currentKind() !== 'recipe' && label === 'schema reteta'));
+
+    categoryTarget.textContent = category ? category.name : (strings.companionNoCategory || 'Nicio sugestie clara inca');
+    tagsTarget.textContent = tags.length ? tags.join(', ') : (strings.companionNoTags || 'Fara taguri sugerate inca');
+
+    checksTarget.innerHTML = '';
+    if (missing.length) {
+      missing.forEach((item) => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        checksTarget.appendChild(li);
+      });
+    } else {
+      const li = document.createElement('li');
+      li.textContent = 'doar lectura finala';
+      checksTarget.appendChild(li);
+    }
+
+    summaryTarget.textContent = missing.length
+      ? (strings.companionReview || 'Mai sunt cateva lucruri de verificat inainte sa publici.')
+      : (strings.companionReady || 'Postarea arata bine pentru urmatorul pas.');
+    summaryTarget.classList.toggle('is-ready', !missing.length);
+    summaryTarget.classList.toggle('is-missing', missing.length > 0);
+  }
+
   function bindChecklist() {
     const fields = document.querySelectorAll(
       '#title, #content, input[name="kepoli_post_kind"], textarea[name="kepoli_post_excerpt"], textarea[name="kepoli_meta_description"], textarea[name="kepoli_related_recipe_slugs"], textarea[name="kepoli_related_article_slugs"], input[name="kepoli_image_alt"], input[name="kepoli_recipe_servings"], textarea[name="kepoli_recipe_ingredients"], textarea[name="kepoli_recipe_steps"], #_thumbnail_id'
@@ -976,11 +1015,15 @@
       }
 
       if (target.closest('#set-post-thumbnail, .editor-post-featured-image, .thickbox')) {
-        window.setTimeout(renderChecklist, 250);
+        window.setTimeout(() => {
+          renderChecklist();
+          renderPublishCompanion();
+        }, 250);
       }
     });
 
     renderChecklist();
+    renderPublishCompanion();
   }
 
   function bindPublishWarning() {
@@ -1004,6 +1047,26 @@
     });
   }
 
+  function bindCompanionRefresh() {
+    const fields = document.querySelectorAll(
+      '#title, #content, input[name="kepoli_post_kind"], textarea[name="kepoli_post_excerpt"], textarea[name="kepoli_meta_description"], textarea[name="kepoli_related_recipe_slugs"], textarea[name="kepoli_related_article_slugs"], input[name="kepoli_image_alt"], input[name="kepoli_recipe_servings"], textarea[name="kepoli_recipe_ingredients"], textarea[name="kepoli_recipe_steps"], #_thumbnail_id'
+    );
+
+    fields.forEach((field) => {
+      field.addEventListener('input', renderPublishCompanion);
+      field.addEventListener('change', renderPublishCompanion);
+    });
+
+    categoryInputs().forEach((input) => input.addEventListener('change', renderPublishCompanion));
+    const tags = tagField();
+    if (tags) {
+      tags.addEventListener('input', renderPublishCompanion);
+      tags.addEventListener('change', renderPublishCompanion);
+    }
+
+    renderPublishCompanion();
+  }
+
   function initKepoliAuthorTools() {
     addQuicktagsButtons();
     bindAutomationButtons();
@@ -1011,6 +1074,7 @@
     bindKindToggle();
     bindPassiveAutofill();
     bindChecklist();
+    bindCompanionRefresh();
     bindPublishWarning();
   }
 
