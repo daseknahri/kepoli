@@ -30,3 +30,9 @@ Before applying:
 - Configure Google Privacy & Messaging or a Google-certified CMP for Romania, EEA, UK, and Switzerland visitors before showing personalized ads.
 - Keep `ADSENSE_ENABLE=0` until the consent flow is live, includes a link to Google's Business Data Responsibility site, and has been tested on the live domain.
 - Review the live site after each redeploy to confirm `Politica editoriala`, `Publicitate si consimtamant`, `Politica de confidentialitate`, and `Disclaimer culinar` are all public and linked in the footer.
+
+Search Console domain variants:
+
+- Use the production host `https://kepoli.com/` unless the extra hosts are intentionally configured.
+- If Search Console lists `www.kepoli.com`, `api.kepoli.com`, or `recipe.kepoli.com` with `robots.txt` not fetched, fix that in DNS/Coolify by either removing those properties from Search Console or routing/redirecting those hosts to `https://kepoli.com/`.
+- The WordPress app can serve robots.txt only for hostnames that reach the `wordpress` service.

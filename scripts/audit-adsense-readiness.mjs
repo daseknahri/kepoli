@@ -159,6 +159,12 @@ requireThemeIncludes('functions', 'deploy fingerprint opt-in guard', [
   /function kepoli_deploy_fingerprint_meta\(\): void[\s\S]*KEPOLI_DEPLOY_FINGERPRINT/,
 ]);
 
+requireThemeIncludes('functions', 'Google SWG openaccess article markup', [
+  /swg-basic\.js/,
+  /isPartOfProductId:\s*'CAow-o3LDA:openaccess'/,
+  /type:\s*'NewsArticle'/,
+]);
+
 requireIncludes('disclaimer-culinar', 'culinary disclaimer coverage', [
   /medic|nutritionist|dietetician/i,
   /Alergeni/i,

@@ -1368,6 +1368,27 @@ function kepoli_ga_head(): void
 }
 add_action('wp_head', 'kepoli_ga_head', 9);
 
+function kepoli_swg_basic_head(): void
+{
+    if (!is_singular('post')) {
+        return;
+    }
+    ?>
+    <script async type="application/javascript" src="https://news.google.com/swg/js/v1/swg-basic.js"></script>
+    <script>
+      (self.SWG_BASIC = self.SWG_BASIC || []).push(function (basicSubscriptions) {
+        basicSubscriptions.init({
+          type: 'NewsArticle',
+          isPartOfType: ['Product'],
+          isPartOfProductId: 'CAow-o3LDA:openaccess',
+          clientOptions: { theme: 'light', lang: 'ro' }
+        });
+      });
+    </script>
+    <?php
+}
+add_action('wp_head', 'kepoli_swg_basic_head', 10);
+
 function kepoli_ad_slot(string $slot, string $class = ''): string
 {
     $client = kepoli_env('ADSENSE_CLIENT_ID');
