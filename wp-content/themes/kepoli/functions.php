@@ -23,7 +23,7 @@ function kepoli_asset_uri(string $basename, string $fallback_extension = 'svg'):
 {
     $dir = get_template_directory();
     $uri = get_template_directory_uri();
-    foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $extension) {
+    foreach (['webp', 'jpg', 'jpeg', 'png', 'svg'] as $extension) {
         $path = "/assets/img/{$basename}.{$extension}";
         if (file_exists($dir . $path)) {
             return $uri . $path;
@@ -1208,7 +1208,13 @@ add_action('after_setup_theme', 'kepoli_setup');
 
 function kepoli_scripts(): void
 {
-    wp_enqueue_style('kepoli-style', get_stylesheet_uri(), [], wp_get_theme()->get('Version'));
+    $style_path = get_template_directory() . '/style.min.css';
+    $style_uri = get_template_directory_uri() . '/style.min.css';
+    if (!file_exists($style_path)) {
+        $style_path = get_stylesheet_directory() . '/style.css';
+        $style_uri = get_stylesheet_uri();
+    }
+    wp_enqueue_style('kepoli-style', $style_uri, [], (string) filemtime($style_path));
 
     $script = get_template_directory() . '/assets/js/site.js';
     if (file_exists($script)) {
@@ -1219,6 +1225,7 @@ function kepoli_scripts(): void
             (string) filemtime($script),
             true
         );
+        wp_script_add_data('kepoli-site', 'strategy', 'defer');
     }
 }
 add_action('wp_enqueue_scripts', 'kepoli_scripts');

@@ -4,7 +4,7 @@
  */
 get_header();
 
-$hero_image = kepoli_asset_uri('hero-homepage', 'png');
+$hero_image = kepoli_asset_uri('hero-homepage', 'jpg');
 $categories = get_categories([
     'hide_empty' => true,
     'exclude' => [1],
@@ -30,7 +30,8 @@ $article_list = new WP_Query([
     'meta_value' => 'article',
 ]);
 ?>
-<section class="home-hero" style="--hero-image: url('<?php echo esc_url($hero_image); ?>');">
+<section class="home-hero">
+    <img class="home-hero__image" src="<?php echo esc_url($hero_image); ?>" alt="" fetchpriority="high" loading="eager" decoding="async">
     <div class="home-hero__inner">
         <p class="eyebrow"><?php esc_html_e('Kepoli', 'kepoli'); ?></p>
         <h1><?php esc_html_e('Retete romanesti si ghiduri pentru gatit acasa.', 'kepoli'); ?></h1>
@@ -117,7 +118,7 @@ $article_list = new WP_Query([
                 <a class="category-card <?php echo esc_attr(kepoli_tone_class($category->slug) . (!empty($category_image['url']) ? ' category-card--with-image' : '')); ?>" href="<?php echo esc_url(get_category_link($category)); ?>">
                     <?php if (!empty($category_image['url'])) : ?>
                         <span class="category-card__visual" aria-hidden="true">
-                            <img src="<?php echo esc_url($category_image['url']); ?>" alt="<?php echo esc_attr($category_image['alt'] ?? ''); ?>">
+                            <img src="<?php echo esc_url($category_image['url']); ?>" alt="<?php echo esc_attr($category_image['alt'] ?? ''); ?>" loading="lazy" decoding="async">
                         </span>
                     <?php endif; ?>
                     <span class="category-card__top">
@@ -138,7 +139,7 @@ $article_list = new WP_Query([
                         <span class="category-card__gallery" aria-hidden="true">
                             <?php foreach ($category_image['gallery'] as $gallery_item) : ?>
                                 <span class="category-card__thumb">
-                                    <img src="<?php echo esc_url($gallery_item['url']); ?>" alt="<?php echo esc_attr($gallery_item['alt'] ?? ''); ?>">
+                                    <img src="<?php echo esc_url($gallery_item['url']); ?>" alt="<?php echo esc_attr($gallery_item['alt'] ?? ''); ?>" loading="lazy" decoding="async">
                                 </span>
                             <?php endforeach; ?>
                         </span>

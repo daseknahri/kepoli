@@ -17,6 +17,14 @@ const themeFiles = new Map([
 ]);
 const seedBootstrap = fs.readFileSync('seed/bootstrap.php', 'utf8');
 const writerPhotoSvg = fs.readFileSync('wp-content/themes/kepoli/assets/img/writer-photo.svg', 'utf8');
+const themeAssetStats = {
+  heroJpg: fs.statSync('wp-content/themes/kepoli/assets/img/hero-homepage.jpg').size,
+  heroPng: fs.statSync('wp-content/themes/kepoli/assets/img/hero-homepage.png').size,
+  writerJpg: fs.statSync('wp-content/themes/kepoli/assets/img/writer-photo.jpg').size,
+  writerPng: fs.statSync('wp-content/themes/kepoli/assets/img/writer-photo.png').size,
+  styleCss: fs.statSync('wp-content/themes/kepoli/style.css').size,
+  styleMinCss: fs.statSync('wp-content/themes/kepoli/style.min.css').size,
+};
 
 const failures = [];
 const notes = [];
@@ -164,6 +172,34 @@ requireThemeIncludes('functions', 'Google SWG openaccess article markup', [
   /isPartOfProductId:\s*'CAow-o3LDA:openaccess'/,
   /type:\s*'NewsArticle'/,
 ]);
+
+requireThemeIncludes('functions', 'production stylesheet enqueue', [
+  /style\.min\.css/,
+  /filemtime\(\$style_path\)/,
+]);
+
+requireThemeIncludes('front-page', 'priority homepage hero image', [
+  /class="home-hero__image"/,
+  /fetchpriority="high"/,
+  /loading="eager"/,
+]);
+
+requireThemeIncludes('single', 'priority single post image', [
+  /fetchpriority'\s*=>\s*'high'/,
+  /loading'\s*=>\s*'eager'/,
+]);
+
+if (themeAssetStats.heroJpg >= themeAssetStats.heroPng * 0.25) {
+  failures.push('Homepage hero JPEG is not sufficiently smaller than the PNG source.');
+}
+
+if (themeAssetStats.writerJpg >= themeAssetStats.writerPng * 0.25) {
+  failures.push('Author JPEG is not sufficiently smaller than the PNG source.');
+}
+
+if (themeAssetStats.styleMinCss >= themeAssetStats.styleCss) {
+  failures.push('Minified stylesheet is not smaller than style.css.');
+}
 
 requireIncludes('disclaimer-culinar', 'culinary disclaimer coverage', [
   /medic|nutritionist|dietetician/i,

@@ -15,7 +15,13 @@ get_header();
     $recipe_snapshot = $is_recipe ? kepoli_recipe_snapshot_items() : [];
     $post_next_steps = kepoli_post_next_steps();
     $share_icons = ['facebook' => 'facebook', 'whatsapp' => 'whatsapp', 'email' => 'email', 'copy' => 'link', 'print' => 'print'];
-    $featured_image = kepoli_post_featured_image_markup(get_the_ID(), 'large', ['class' => 'entry-featured-media__image']);
+    $featured_image = kepoli_post_featured_image_markup(get_the_ID(), 'large', [
+        'class' => 'entry-featured-media__image',
+        'loading' => 'eager',
+        'fetchpriority' => 'high',
+        'decoding' => 'async',
+        'sizes' => '(max-width: 760px) 100vw, 760px',
+    ]);
     $featured_caption = $featured_image !== '' ? kepoli_post_featured_image_caption(get_the_ID()) : '';
     ?>
     <article <?php post_class('content-layout content-layout--single-post ' . ($is_recipe ? 'content-layout--recipe' : 'content-layout--article')); ?> data-reading-progress-source>

@@ -386,9 +386,24 @@ textarea {
   display: grid;
   align-items: center;
   background-color: #ded5c2;
-  background-image: linear-gradient(90deg, rgba(37, 36, 22, 0.74), rgba(37, 36, 22, 0.28) 46%, rgba(37, 36, 22, 0.08)), var(--hero-image);
-  background-position: center;
-  background-size: cover;
+}
+
+.home-hero__image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(90deg, rgba(37, 36, 22, 0.74), rgba(37, 36, 22, 0.28) 46%, rgba(37, 36, 22, 0.08));
+  pointer-events: none;
 }
 
 .home-hero::after {
@@ -396,14 +411,14 @@ textarea {
   position: absolute;
   inset: auto 0 0;
   height: 18%;
-  z-index: 0;
+  z-index: 1;
   background: linear-gradient(180deg, rgba(251, 247, 239, 0), var(--paper));
   pointer-events: none;
 }
 
 .home-hero__inner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   max-width: 720px;
   width: var(--content);
   margin: 0 auto;
