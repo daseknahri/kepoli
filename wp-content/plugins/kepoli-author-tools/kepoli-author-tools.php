@@ -186,12 +186,15 @@ final class Kepoli_Author_Tools
         ?>
         <div class="kepoli-post-setup">
             <div class="kepoli-automation-actions">
+                <button type="button" class="button button-primary" data-kepoli-complete-setup><?php esc_html_e('Completeaza automat', 'kepoli-author-tools'); ?></button>
+                <button type="button" class="button" data-kepoli-extract-recipe><?php esc_html_e('Extrage schema reteta', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-generate-excerpt><?php esc_html_e('Genereaza excerpt', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-generate-meta><?php esc_html_e('Genereaza meta description', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-suggest-related><?php esc_html_e('Sugereaza linkuri interne', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-generate-image-meta><?php esc_html_e('Genereaza meta imagine', 'kepoli-author-tools'); ?></button>
                 <span class="kepoli-automation-actions__status" data-kepoli-automation-status></span>
             </div>
+            <p class="kepoli-automation-actions__note"><?php esc_html_e('Completeaza automat incearca sa umple campurile goale. Pentru retete, Extrage schema reteta citeste ingredientele si pasii din continut daca folosesti structura Kepoli.', 'kepoli-author-tools'); ?></p>
 
             <fieldset class="kepoli-post-setup__group">
                 <legend><?php esc_html_e('Tip continut', 'kepoli-author-tools'); ?></legend>

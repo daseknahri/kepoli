@@ -59,6 +59,13 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   line-height: 1.35;
 }
 
+.kepoli-automation-actions__note {
+  margin: -6px 0 0;
+  color: #6b654f;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .kepoli-post-setup {
   display: grid;
   gap: 18px;

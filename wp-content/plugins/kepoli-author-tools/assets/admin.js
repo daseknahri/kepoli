@@ -63,6 +63,17 @@
     return textarea ? cleanText(textarea.value) : '';
   }
 
+  function currentContentHtml() {
+    const editor = activeVisualEditor();
+    const textarea = getTextarea();
+
+    if (editor) {
+      return String(editor.getContent({ format: 'html' }) || '');
+    }
+
+    return textarea ? String(textarea.value || '') : '';
+  }
+
   function currentFieldValue(selector) {
     const field = document.querySelector(selector);
     return field ? String(field.value || '').trim() : '';
@@ -101,6 +112,19 @@
     field.value = value;
     field.dispatchEvent(new Event('input', { bubbles: true }));
     field.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function setFieldIfEmpty(selector, value) {
+    if (!value) {
+      return;
+    }
+
+    const field = document.querySelector(selector);
+    if (!field || String(field.value || '').trim()) {
+      return;
+    }
+
+    setField(selector, value);
   }
 
   function shortSentence(text, maxLength) {
@@ -165,57 +189,230 @@
       .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
   }
 
+  function generatedSeoTitle() {
+    const title = currentTitle();
+    return title ? shortSentence(title, 65).replace(/\.\.\.$/, '') : '';
+  }
+
+  function generatedExcerpt() {
+    const text = currentContentText();
+    const title = currentTitle();
+    return shortSentence(text || title, 220);
+  }
+
+  function generatedMetaDescription() {
+    const text = currentContentText();
+    const title = currentTitle();
+    return shortSentence(text || title, 155);
+  }
+
+  function generatedRelated() {
+    const kind = currentKind();
+    return {
+      recipes: relatedSuggestions('recipe').slice(0, kind === 'recipe' ? 3 : 5).map((post) => post.slug),
+      articles: relatedSuggestions('article').slice(0, kind === 'recipe' ? 1 : 2).map((post) => post.slug)
+    };
+  }
+
+  function generatedImageMeta() {
+    const title = currentTitle() || 'Reteta Kepoli';
+    const kind = currentKind();
+    const prefix = kind === 'article' ? 'Imagine editoriala pentru' : 'Fotografie culinara pentru';
+
+    return {
+      alt: shortSentence(`${prefix} ${title}, publicata pe blogul romanesc Kepoli.`, 150),
+      title: title,
+      caption: shortSentence(`${title} pe Kepoli.`, 120),
+      description: shortSentence(`Imagine reprezentativa pentru ${title}, folosita in articolul culinar Kepoli.`, 220)
+    };
+  }
+
+  function normalizedHeading(text) {
+    return cleanText(text)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function extractRecipeSection(sectionName) {
+    const html = currentContentHtml();
+    if (!html) {
+      return [];
+    }
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    const sectionHeadings = {
+      ingredients: ['ingrediente'],
+      steps: ['mod de preparare', 'preparare', 'pasi', 'pași']
+    };
+
+    const targetHeadings = sectionHeadings[sectionName] || [];
+    const sectionItems = [];
+    let active = false;
+
+    Array.from(container.childNodes).forEach((node) => {
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return;
+      }
+
+      const element = node;
+      const tag = element.tagName.toLowerCase();
+
+      if (/^h[1-6]$/.test(tag)) {
+        const heading = normalizedHeading(element.textContent || '');
+        active = targetHeadings.some((candidate) => heading === normalizedHeading(candidate));
+        return;
+      }
+
+      if (!active) {
+        return;
+      }
+
+      if (/^h[1-6]$/.test(tag)) {
+        active = false;
+        return;
+      }
+
+      if (tag === 'ul' || tag === 'ol') {
+        Array.from(element.querySelectorAll('li')).forEach((item) => {
+          const text = cleanText(item.textContent || '');
+          if (text) {
+            sectionItems.push(text);
+          }
+        });
+        return;
+      }
+
+      const text = cleanText(element.textContent || '');
+      if (!text) {
+        return;
+      }
+
+      if (sectionName === 'ingredients') {
+        text.split(/\s*[,;\n]\s*/).map((part) => part.trim()).filter(Boolean).forEach((part) => sectionItems.push(part));
+        return;
+      }
+
+      if (sectionName === 'steps') {
+        sectionItems.push(text);
+      }
+    });
+
+    return Array.from(new Set(sectionItems));
+  }
+
+  function extractRecipeMetaFromText() {
+    const text = currentContentText();
+    const servingsMatch = text.match(/(?:pentru|aproximativ|cam)?\s*(\d{1,2}\s*(?:portii|porții|persoane))/i);
+    const prepMatch = text.match(/(?:pregatire|preparare)\s*:?\s*(\d{1,3})\s*(?:min|minute)/i);
+    const cookMatch = text.match(/(?:gatire|coacere|fierbere)\s*:?\s*(\d{1,3})\s*(?:min|minute)/i);
+
+    return {
+      servings: servingsMatch ? servingsMatch[1] : '',
+      prepMinutes: prepMatch ? prepMatch[1] : '',
+      cookMinutes: cookMatch ? cookMatch[1] : '',
+      ingredients: extractRecipeSection('ingredients'),
+      steps: extractRecipeSection('steps')
+    };
+  }
+
+  function fillRecipeSchema(extractOnlyIfEmpty) {
+    const data = extractRecipeMetaFromText();
+    const setter = extractOnlyIfEmpty ? setFieldIfEmpty : setField;
+
+    setter('input[name="kepoli_recipe_servings"]', data.servings);
+    setter('input[name="kepoli_recipe_prep_minutes"]', data.prepMinutes);
+    setter('input[name="kepoli_recipe_cook_minutes"]', data.cookMinutes);
+    setter('textarea[name="kepoli_recipe_ingredients"]', data.ingredients.join('\n'));
+    setter('textarea[name="kepoli_recipe_steps"]', data.steps.join('\n'));
+
+    return data;
+  }
+
+  function completeSetup() {
+    setFieldIfEmpty('input[name="kepoli_seo_title"]', generatedSeoTitle());
+    setFieldIfEmpty('textarea[name="kepoli_post_excerpt"]', generatedExcerpt());
+    setFieldIfEmpty('textarea[name="kepoli_meta_description"]', generatedMetaDescription());
+
+    const related = generatedRelated();
+    setFieldIfEmpty('textarea[name="kepoli_related_recipe_slugs"]', related.recipes.join(', '));
+    setFieldIfEmpty('textarea[name="kepoli_related_article_slugs"]', related.articles.join(', '));
+
+    const imageMeta = generatedImageMeta();
+    setFieldIfEmpty('input[name="kepoli_image_alt"]', imageMeta.alt);
+    setFieldIfEmpty('input[name="kepoli_image_title"]', imageMeta.title);
+    setFieldIfEmpty('input[name="kepoli_image_caption"]', imageMeta.caption);
+    setFieldIfEmpty('textarea[name="kepoli_image_description"]', imageMeta.description);
+
+    if (currentKind() === 'recipe') {
+      fillRecipeSchema(true);
+    }
+  }
+
   function bindAutomationButtons() {
+    const setupButton = document.querySelector('[data-kepoli-complete-setup]');
+    const recipeButton = document.querySelector('[data-kepoli-extract-recipe]');
     const excerptButton = document.querySelector('[data-kepoli-generate-excerpt]');
     const metaButton = document.querySelector('[data-kepoli-generate-meta]');
     const relatedButton = document.querySelector('[data-kepoli-suggest-related]');
     const imageButton = document.querySelector('[data-kepoli-generate-image-meta]');
 
+    if (setupButton) {
+      setupButton.addEventListener('click', () => {
+        completeSetup();
+        setStatus('Campurile goale au fost completate automat. Verifica rezultatul inainte de publicare.');
+      });
+    }
+
+    if (recipeButton) {
+      recipeButton.addEventListener('click', () => {
+        const data = fillRecipeSchema(false);
+        const hasData = data.ingredients.length || data.steps.length || data.servings || data.prepMinutes || data.cookMinutes;
+        setStatus(
+          hasData
+            ? 'Schema retetei a fost extrasa din continut. Verifica ingredientele, pasii si timpii.'
+            : 'Nu am gasit destule repere in continut. Foloseste titlurile Ingrediente si Mod de preparare sau completeaza manual.'
+        );
+      });
+    }
+
     if (excerptButton) {
       excerptButton.addEventListener('click', () => {
-        const text = currentContentText();
-        const title = currentTitle();
-        const excerpt = shortSentence(text || title, 220);
-        setField('textarea[name="kepoli_post_excerpt"]', excerpt);
+        setField('textarea[name="kepoli_post_excerpt"]', generatedExcerpt());
         setStatus('Excerpt generat. Ajusteaza-l daca vrei un rezumat mai editorial.');
       });
     }
 
     if (metaButton) {
       metaButton.addEventListener('click', () => {
-        const text = currentContentText();
-        const title = currentTitle();
-        const description = shortSentence(text || title, 155);
-        setField('textarea[name="kepoli_meta_description"]', description);
+        setField('textarea[name="kepoli_meta_description"]', generatedMetaDescription());
         setStatus('Meta description generata. Verifica textul inainte de publicare.');
       });
     }
 
     if (relatedButton) {
       relatedButton.addEventListener('click', () => {
-        const kind = currentKind();
-        const recipes = relatedSuggestions('recipe').slice(0, kind === 'recipe' ? 3 : 5).map((post) => post.slug);
-        const articles = relatedSuggestions('article').slice(0, kind === 'recipe' ? 1 : 2).map((post) => post.slug);
+        const related = generatedRelated();
 
-        setField('textarea[name="kepoli_related_recipe_slugs"]', recipes.join(', '));
-        setField('textarea[name="kepoli_related_article_slugs"]', articles.join(', '));
+        setField('textarea[name="kepoli_related_recipe_slugs"]', related.recipes.join(', '));
+        setField('textarea[name="kepoli_related_article_slugs"]', related.articles.join(', '));
         setStatus('Linkuri interne sugerate. Ajusteaza lista daca vrei alte recomandari.');
       });
     }
 
     if (imageButton) {
       imageButton.addEventListener('click', () => {
-        const title = currentTitle() || 'Reteta Kepoli';
-        const kind = currentKind();
-        const prefix = kind === 'article' ? 'Imagine editoriala pentru' : 'Fotografie culinara pentru';
-        const alt = shortSentence(`${prefix} ${title}, publicata pe blogul romanesc Kepoli.`, 150);
-        const caption = shortSentence(`${title} pe Kepoli.`, 120);
-        const description = shortSentence(`Imagine reprezentativa pentru ${title}, folosita in articolul culinar Kepoli.`, 220);
+        const imageMeta = generatedImageMeta();
 
-        setField('input[name="kepoli_image_alt"]', alt);
-        setField('input[name="kepoli_image_title"]', title);
-        setField('input[name="kepoli_image_caption"]', caption);
-        setField('textarea[name="kepoli_image_description"]', description);
+        setField('input[name="kepoli_image_alt"]', imageMeta.alt);
+        setField('input[name="kepoli_image_title"]', imageMeta.title);
+        setField('input[name="kepoli_image_caption"]', imageMeta.caption);
+        setField('textarea[name="kepoli_image_description"]', imageMeta.description);
         setStatus('Image meta generata. Verifica daca descrie corect imaginea aleasa.');
       });
     }
