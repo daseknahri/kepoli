@@ -79,6 +79,21 @@
     return field ? String(field.value || '').trim() : '';
   }
 
+  function categoryInputs() {
+    return Array.from(document.querySelectorAll('#categorychecklist input[type="checkbox"][name="post_category[]"]'));
+  }
+
+  function selectedCategoryIds() {
+    return categoryInputs()
+      .filter((input) => input.checked)
+      .map((input) => Number.parseInt(input.value, 10))
+      .filter((value) => Number.isFinite(value));
+  }
+
+  function hasManualCategorySelection() {
+    return !!(window.kepoliAuthorToolsState && window.kepoliAuthorToolsState.categoryManual);
+  }
+
   function oncePerSessionFlag(key) {
     if (!window.kepoliAuthorToolsState) {
       window.kepoliAuthorToolsState = {};
@@ -243,6 +258,93 @@
     };
   }
 
+  function suggestedCategory() {
+    const categories = (window.kepoliAuthorTools && window.kepoliAuthorTools.categories) || [];
+    const text = `${currentTitle()} ${currentContentText()}`;
+    const titleWords = normalizeWords(currentTitle());
+    const sourceWords = normalizeWords(text);
+    const posts = (window.kepoliAuthorTools && window.kepoliAuthorTools.relatedPosts) || [];
+    const categoryScores = new Map();
+    const slugKeywords = {
+      'ciorbe-si-supe': ['ciorba', 'bors', 'supa', 'supa crema', 'zeama', 'galuste', 'galuste', 'radauteana'],
+      'feluri-principale': ['sarmale', 'tochitura', 'tocanita', 'friptura', 'mamaliga', 'ostropel', 'snitel', 'varza', 'pilaf', 'chiftele'],
+      'patiserie-si-deserturi': ['desert', 'prajitura', 'cozonac', 'placinta', 'clatite', 'papanasi', 'chec', 'cornulete', 'aluat', 'foi'],
+      'conserve-si-garnituri': ['zacusca', 'muraturi', 'salata', 'garnitura', 'borcan', 'compot', 'bulion', 'gem', 'dulceata', 'piure'],
+      'articole': ['ghid', 'cum', 'calendar', 'meniuri', 'tehnici', 'organizare', 'ingrediente', 'bucatarie', 'pastrare', 'explica']
+    };
+
+    categories.forEach((category) => {
+      let score = 0;
+      const haystack = normalizeWords([category.name, category.description].join(' '));
+      const keywords = slugKeywords[category.slug] || [];
+
+      sourceWords.forEach((word) => {
+        if (haystack.includes(word)) {
+          score += 2;
+        }
+      });
+
+      keywords.forEach((keyword) => {
+        const normalizedKeyword = normalizeWords(keyword).join(' ');
+        if (!normalizedKeyword) {
+          return;
+        }
+
+        if (normalizeWords(text).join(' ').includes(normalizedKeyword)) {
+          score += 6;
+        }
+      });
+
+      if (currentKind() === 'article' && category.slug === 'articole') {
+        score += 12;
+      }
+
+      if (currentKind() === 'recipe' && category.slug === 'articole') {
+        score -= 10;
+      }
+
+      posts.forEach((post) => {
+        const postWords = normalizeWords([post.title, post.excerpt, (post.tags || []).join(' ')].join(' '));
+        const overlap = titleWords.filter((word) => postWords.includes(word)).length;
+        if (!overlap) {
+          return;
+        }
+
+        (post.categories || []).forEach((categoryName) => {
+          const matchingCategory = categories.find((item) => item.name === categoryName);
+          if (matchingCategory && matchingCategory.id === category.id) {
+            score += overlap * 2;
+          }
+        });
+      });
+
+      categoryScores.set(category.id, score);
+    });
+
+    return categories
+      .map((category) => ({ ...category, score: categoryScores.get(category.id) || 0 }))
+      .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))[0] || null;
+  }
+
+  function applySuggestedCategory(force) {
+    const suggestion = suggestedCategory();
+    if (!suggestion) {
+      return null;
+    }
+
+    if (!force && hasManualCategorySelection()) {
+      return suggestion;
+    }
+
+    categoryInputs().forEach((input) => {
+      const checked = Number.parseInt(input.value, 10) === suggestion.id;
+      input.checked = checked;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    return suggestion;
+  }
+
   function normalizedHeading(text) {
     return cleanText(text)
       .toLowerCase()
@@ -365,6 +467,8 @@
     setFieldIfEmpty('input[name="kepoli_image_caption"]', imageMeta.caption);
     setFieldIfEmpty('textarea[name="kepoli_image_description"]', imageMeta.description);
 
+    applySuggestedCategory(false);
+
     if (currentKind() === 'recipe') {
       fillRecipeSchema(true);
     }
@@ -393,6 +497,7 @@
 
   function bindAutomationButtons() {
     const setupButton = document.querySelector('[data-kepoli-complete-setup]');
+    const categoryButton = document.querySelector('[data-kepoli-suggest-category]');
     const recipeButton = document.querySelector('[data-kepoli-extract-recipe]');
     const excerptButton = document.querySelector('[data-kepoli-generate-excerpt]');
     const metaButton = document.querySelector('[data-kepoli-generate-meta]');
@@ -403,6 +508,17 @@
       setupButton.addEventListener('click', () => {
         completeSetup();
         setStatus('Campurile goale au fost completate automat. Verifica rezultatul inainte de publicare.');
+      });
+    }
+
+    if (categoryButton) {
+      categoryButton.addEventListener('click', () => {
+        const suggestion = applySuggestedCategory(true);
+        setStatus(
+          suggestion
+            ? `Categoria sugerata a fost selectata: ${suggestion.name}.`
+            : 'Nu am gasit o categorie suficient de clara in continut.'
+        );
       });
     }
 
@@ -589,6 +705,7 @@
     const titleField = document.getElementById('title');
     const contentField = getTextarea();
     const kindInputs = Array.from(document.querySelectorAll('input[name="kepoli_post_kind"]'));
+    const categories = categoryInputs();
 
     if (titleField) {
       titleField.addEventListener('blur', () => {
@@ -622,6 +739,12 @@
         if (completeSetupIfReady('kind', false) && input.value === 'recipe') {
           fillRecipeSchema(true);
         }
+      });
+    });
+
+    categories.forEach((input) => {
+      input.addEventListener('change', () => {
+        setSessionFlag('categoryManual', true);
       });
     });
   }

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.5.0
+ * Version: 1.6.0
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.5.0';
+    private const VERSION = '1.6.0';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -117,6 +117,7 @@ final class Kepoli_Author_Tools
             wp_localize_script('kepoli-author-tools-admin', 'kepoliAuthorTools', [
                 'currentPostId' => self::current_post_id(),
                 'relatedPosts' => self::related_posts_payload(self::current_post_id()),
+                'categories' => self::category_payload(),
                 'strings' => [
                     'checkReady' => __('Setup aproape complet. Mai verifica naturaletea textului inainte de publicare.', 'kepoli-author-tools'),
                     'checkMissingPrefix' => __('De completat inainte de publicare:', 'kepoli-author-tools'),
@@ -187,6 +188,7 @@ final class Kepoli_Author_Tools
         <div class="kepoli-post-setup">
             <div class="kepoli-automation-actions">
                 <button type="button" class="button button-primary" data-kepoli-complete-setup><?php esc_html_e('Completeaza automat', 'kepoli-author-tools'); ?></button>
+                <button type="button" class="button" data-kepoli-suggest-category><?php esc_html_e('Sugereaza categorie', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-extract-recipe><?php esc_html_e('Extrage schema reteta', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-generate-excerpt><?php esc_html_e('Genereaza excerpt', 'kepoli-author-tools'); ?></button>
                 <button type="button" class="button" data-kepoli-generate-meta><?php esc_html_e('Genereaza meta description', 'kepoli-author-tools'); ?></button>
@@ -546,6 +548,34 @@ final class Kepoli_Author_Tools
                 'excerpt' => wp_strip_all_tags(get_the_excerpt($post_id)),
                 'categories' => is_array($categories) ? array_values($categories) : [],
                 'tags' => is_array($tags) ? array_values($tags) : [],
+            ];
+        }
+
+        return $items;
+    }
+
+    private static function category_payload(): array
+    {
+        $terms = get_terms([
+            'taxonomy' => 'category',
+            'hide_empty' => false,
+        ]);
+
+        if (!is_array($terms)) {
+            return [];
+        }
+
+        $items = [];
+        foreach ($terms as $term) {
+            if (!$term instanceof WP_Term || (int) $term->term_id === 1) {
+                continue;
+            }
+
+            $items[] = [
+                'id' => (int) $term->term_id,
+                'slug' => (string) $term->slug,
+                'name' => (string) $term->name,
+                'description' => (string) $term->description,
             ];
         }
 
