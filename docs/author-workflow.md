@@ -12,7 +12,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
   - `3 parti`: splits the current content into three WordPress pages.
 - The Text editor tab also gets the same quick buttons.
 - The `Kepoli post setup` box lets the writer choose `Reteta` or `Articol`, write an excerpt, write a meta description, add related post slugs, complete featured-image metadata, and complete recipe structured data.
-- The setup box includes automation buttons for `Completeaza automat`, `Sugereaza categorie`, `Sugereaza taguri`, `Extrage schema reteta`, `Genereaza excerpt`, `Genereaza meta description`, `Sugereaza linkuri interne`, and `Genereaza meta imagine`.
+- The setup box keeps one main action in front: `Completeaza automat`. Extra helper actions stay under `Mai multe unelte`, so the editor remains simple for day-to-day use.
 - Kepoli also tries to complete empty setup fields earlier in the flow: after the writer adds a real title, pastes enough content, switches to `Reteta`, or inserts one of the built-in templates. In the same phase, it can also replace the default category with a more likely one until the writer makes a manual category choice.
 - The setup box also shows a live editorial checklist, so the writer can see what is still missing before publishing.
 - If the writer saves a post with empty excerpt, meta description, related slugs, or featured-image metadata, Kepoli fills sensible defaults from the title/content and current post library.
@@ -28,15 +28,12 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 3. Write or paste the article/recipe in the main content field.
 4. In `Kepoli post setup`, choose whether the post is a `Reteta` or `Articol`.
 5. Start with the title and main content. Kepoli now tries to fill empty setup fields automatically once there is enough real content to work from.
-6. Click `Completeaza automat` any time you want to rerun the common empty-field fill in one pass: SEO title, excerpt, meta description, internal links, image metadata, and recipe schema where Kepoli can infer it.
-7. Click `Sugereaza categorie` if you want Kepoli to explicitly pick the most likely category from the draft. On new posts, the passive autofill can also replace the default category before you touch the category box yourself.
-8. Click `Sugereaza taguri` if you want Kepoli to assemble a small set of likely tags from the draft and related-post matches.
-9. Add a featured image, then click `Genereaza meta imagine` if you want to refresh alt text, title, caption, and Media Library description specifically for that image.
-10. For recipes, click `Extrage schema reteta` after you write the structured content. Kepoli will look for sections like `Ingrediente` and `Mod de preparare` and move them into the recipe schema fields.
-11. For a long article, click `2 parti` or `3 parti` in the toolbar.
-12. Watch the live checklist in `Kepoli post setup` and complete any missing items.
-13. Check `Kepoli publish companion` near Publish for a compact summary of the current category/tag suggestions and anything still missing.
-14. Review the generated fields and inserted page breaks before publishing. If you publish with missing essentials, Kepoli will show a final warning.
+6. Click `Completeaza automat` whenever you want Kepoli to do the main setup pass for you: SEO title, excerpt, meta description, internal links, image metadata, suggested category, suggested tags, and recipe schema where it can infer them.
+7. Open `Mai multe unelte` only when you want a specific helper, like `Sugereaza categorie`, `Sugereaza taguri`, `Extrage schema reteta`, or `Genereaza meta imagine`.
+8. For a long article, click `2 parti` or `3 parti` in the toolbar.
+9. Watch the live checklist in `Kepoli post setup` and complete any missing items.
+10. Check `Kepoli publish companion` near Publish for a compact summary of the current category/tag suggestions and anything still missing.
+11. Review the generated fields and inserted page breaks before publishing. If you publish with missing essentials, Kepoli will show a final warning.
 
 ## Image Workflow For Seeded Posts
 

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.0
+ * Version: 1.8.1
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.0';
+    private const VERSION = '1.8.1';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -225,18 +225,24 @@ final class Kepoli_Author_Tools
         wp_nonce_field('kepoli_author_tools_save', 'kepoli_author_tools_nonce');
         ?>
         <div class="kepoli-post-setup">
-            <div class="kepoli-automation-actions">
+            <div class="kepoli-automation-actions kepoli-automation-actions--primary">
                 <button type="button" class="button button-primary" data-kepoli-complete-setup><?php esc_html_e('Completeaza automat', 'kepoli-author-tools'); ?></button>
-                <button type="button" class="button" data-kepoli-suggest-category><?php esc_html_e('Sugereaza categorie', 'kepoli-author-tools'); ?></button>
-                <button type="button" class="button" data-kepoli-suggest-tags><?php esc_html_e('Sugereaza taguri', 'kepoli-author-tools'); ?></button>
-                <button type="button" class="button" data-kepoli-extract-recipe><?php esc_html_e('Extrage schema reteta', 'kepoli-author-tools'); ?></button>
-                <button type="button" class="button" data-kepoli-generate-excerpt><?php esc_html_e('Genereaza excerpt', 'kepoli-author-tools'); ?></button>
-                <button type="button" class="button" data-kepoli-generate-meta><?php esc_html_e('Genereaza meta description', 'kepoli-author-tools'); ?></button>
-                <button type="button" class="button" data-kepoli-suggest-related><?php esc_html_e('Sugereaza linkuri interne', 'kepoli-author-tools'); ?></button>
-                <button type="button" class="button" data-kepoli-generate-image-meta><?php esc_html_e('Genereaza meta imagine', 'kepoli-author-tools'); ?></button>
                 <span class="kepoli-automation-actions__status" data-kepoli-automation-status></span>
             </div>
-            <p class="kepoli-automation-actions__note"><?php esc_html_e('Completeaza automat incearca sa umple campurile goale. Pentru retete, Extrage schema reteta citeste ingredientele si pasii din continut daca folosesti structura Kepoli.', 'kepoli-author-tools'); ?></p>
+            <p class="kepoli-automation-actions__note"><?php esc_html_e('Acesta este butonul principal pentru lucru rapid. Kepoli incearca sa completeze campurile goale si iti lasa doar verificarea finala.', 'kepoli-author-tools'); ?></p>
+            <details class="kepoli-automation-more">
+                <summary><?php esc_html_e('Mai multe unelte', 'kepoli-author-tools'); ?></summary>
+                <div class="kepoli-automation-actions kepoli-automation-actions--secondary">
+                    <button type="button" class="button" data-kepoli-suggest-category><?php esc_html_e('Sugereaza categorie', 'kepoli-author-tools'); ?></button>
+                    <button type="button" class="button" data-kepoli-suggest-tags><?php esc_html_e('Sugereaza taguri', 'kepoli-author-tools'); ?></button>
+                    <button type="button" class="button" data-kepoli-extract-recipe><?php esc_html_e('Extrage schema reteta', 'kepoli-author-tools'); ?></button>
+                    <button type="button" class="button" data-kepoli-generate-excerpt><?php esc_html_e('Genereaza excerpt', 'kepoli-author-tools'); ?></button>
+                    <button type="button" class="button" data-kepoli-generate-meta><?php esc_html_e('Genereaza meta description', 'kepoli-author-tools'); ?></button>
+                    <button type="button" class="button" data-kepoli-suggest-related><?php esc_html_e('Sugereaza linkuri interne', 'kepoli-author-tools'); ?></button>
+                    <button type="button" class="button" data-kepoli-generate-image-meta><?php esc_html_e('Genereaza meta imagine', 'kepoli-author-tools'); ?></button>
+                </div>
+                <p class="kepoli-automation-actions__note"><?php esc_html_e('Pentru retete, Extrage schema reteta citeste ingredientele si pasii din continut daca folosesti structura Kepoli.', 'kepoli-author-tools'); ?></p>
+            </details>
 
             <fieldset class="kepoli-post-setup__group">
                 <legend><?php esc_html_e('Tip continut', 'kepoli-author-tools'); ?></legend>

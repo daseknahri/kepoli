@@ -111,6 +111,18 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   background: #fffdf8;
 }
 
+.kepoli-automation-actions--primary .button-primary {
+  min-height: 38px;
+  padding: 0 16px;
+}
+
+.kepoli-automation-actions--secondary {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 .kepoli-automation-actions__status {
   color: #6b654f;
   font-size: 12px;
@@ -122,6 +134,32 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   color: #6b654f;
   font-size: 12px;
   line-height: 1.45;
+}
+
+.kepoli-automation-more {
+  border: 1px solid #e7d9c4;
+  background: #fffdf8;
+}
+
+.kepoli-automation-more summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  color: #252416;
+  font-weight: 700;
+}
+
+.kepoli-automation-more[open] summary {
+  border-bottom: 1px solid #e7d9c4;
+}
+
+.kepoli-automation-more > .kepoli-automation-actions,
+.kepoli-automation-more > .kepoli-automation-actions__note {
+  margin-left: 12px;
+  margin-right: 12px;
+}
+
+.kepoli-automation-more > .kepoli-automation-actions__note {
+  margin-bottom: 12px;
 }
 
 .kepoli-post-setup {
