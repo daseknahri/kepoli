@@ -201,12 +201,14 @@ requireTextIncludes('.env.example Google service gates', envExample, [
   /ADSENSE_ENABLE=0/,
   /GA_ENABLE=0/,
   /GA_MEASUREMENT_ID=/,
+  /RRM_NEWSLETTER_CTA_ID=e67fddb0-cd37-468c-b8ae-f11f3fb7d446/,
   /CANONICAL_REDIRECT_HOSTS=www\.kepoli\.com,api\.kepoli\.com,recipe\.kepoli\.com/,
 ]);
 
 requireTextIncludes('docker compose Google service gates', dockerCompose, [
   /GA_ENABLE:\s*\$\{GA_ENABLE:-0\}/,
   /ADSENSE_ENABLE:\s*\$\{ADSENSE_ENABLE:-0\}/,
+  /RRM_NEWSLETTER_CTA_ID:\s*\$\{RRM_NEWSLETTER_CTA_ID:-e67fddb0-cd37-468c-b8ae-f11f3fb7d446\}/,
   /CANONICAL_REDIRECT_HOSTS:\s*\$\{CANONICAL_REDIRECT_HOSTS:-www\.kepoli\.com,api\.kepoli\.com,recipe\.kepoli\.com\}/,
 ]);
 
@@ -291,6 +293,7 @@ requireThemeIncludes('functions', 'conditional Google resource hints', [
   /function kepoli_resource_hints\(array \$urls,\s*string \$relation_type\): array/,
   /kepoli_ga_enabled\(\)\s*&&\s*kepoli_env\('GA_MEASUREMENT_ID'\)/,
   /kepoli_ads_enabled\(\)\s*&&\s*kepoli_env\('ADSENSE_CLIENT_ID'\)/,
+  /kepoli_newsletter_cta_id\(\)\s*!==\s*''/,
   /news\.google\.com/,
 ]);
 
@@ -300,10 +303,24 @@ requireThemeIncludes('functions', 'Analytics consent gate', [
   /if \(\$measurement_id === '' \|\| !kepoli_ga_enabled\(\)\)/,
 ]);
 
-requireThemeIncludes('functions', 'Google SWG openaccess article markup', [
+requireThemeIncludes('functions', 'inline newsletter CTA markup', [
+  /function kepoli_newsletter_cta_id\(\): string/,
+  /RRM_NEWSLETTER_CTA_ID/,
+  /function kepoli_rrm_newsletter_head\(\): void/,
   /swg-basic\.js/,
-  /isPartOfProductId:\s*'CAow-o3LDA:openaccess'/,
-  /type:\s*'NewsArticle'/,
+  /function kepoli_newsletter_cta\(\): string/,
+  /rrm-inline-cta/,
+  /e67fddb0-cd37-468c-b8ae-f11f3fb7d446/,
+]);
+
+requireThemeIncludes('single', 'inline newsletter placement', [
+  /kepoli_newsletter_cta\(\)/,
+]);
+
+rejectPublicCopy('theme Reader Revenue popup initialization', [...themeFiles.values()].join('\n'), [
+  /basicSubscriptions\.init/,
+  /isPartOfProductId/,
+  /type:\s*['"]NewsArticle['"]/,
 ]);
 
 requireThemeIncludes('functions', 'structured data image and entity details', [

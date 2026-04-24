@@ -143,6 +143,7 @@ get_header();
                 'link_after' => '</span>',
             ]);
             ?>
+            <?php echo kepoli_newsletter_cta(); ?>
             <?php if (!empty($post_next_steps['items'])) : ?>
                 <section class="entry-next-steps">
                     <div class="entry-next-steps__header">

@@ -50,6 +50,8 @@ Use only `docker-compose.yml` in Coolify. Do not add `docker-compose.local.yml`;
 
 The theme contains inactive ad placements. Live ad markup is emitted only when `ADSENSE_ENABLE=1`, an AdSense client ID exists, and the matching slot environment variable is set. `ads.txt` is generated only when `ADSENSE_PUB_ID` is configured.
 
+The newsletter signup is a normal inline Reader Revenue Manager CTA placed inside single posts. Change `RRM_NEWSLETTER_CTA_ID` if you create a new CTA, or leave it empty to disable the inline block.
+
 Before submitting to AdSense:
 
 - Review all 30 posts for culinary accuracy and originality.

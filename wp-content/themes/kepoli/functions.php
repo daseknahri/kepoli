@@ -1419,7 +1419,7 @@ function kepoli_resource_hints(array $urls, string $relation_type): array
         $hints[] = 'https://googleads.g.doubleclick.net';
     }
 
-    if (is_singular('post')) {
+    if (is_singular('post') && kepoli_newsletter_cta_id() !== '') {
         $hints[] = 'https://news.google.com';
     }
 
@@ -1621,26 +1621,34 @@ function kepoli_ga_head(): void
 }
 add_action('wp_head', 'kepoli_ga_head', 9);
 
-function kepoli_swg_basic_head(): void
+function kepoli_newsletter_cta_id(): string
 {
-    if (!is_singular('post')) {
+    return kepoli_env('RRM_NEWSLETTER_CTA_ID', 'e67fddb0-cd37-468c-b8ae-f11f3fb7d446');
+}
+
+function kepoli_rrm_newsletter_head(): void
+{
+    if (!is_singular('post') || kepoli_newsletter_cta_id() === '') {
         return;
     }
-    ?>
-    <script async type="application/javascript" src="https://news.google.com/swg/js/v1/swg-basic.js"></script>
-    <script>
-      (self.SWG_BASIC = self.SWG_BASIC || []).push(function (basicSubscriptions) {
-        basicSubscriptions.init({
-          type: 'NewsArticle',
-          isPartOfType: ['Product'],
-          isPartOfProductId: 'CAow-o3LDA:openaccess',
-          clientOptions: { theme: 'light', lang: 'ro' }
-        });
-      });
-    </script>
-    <?php
+
+    echo '<script async type="application/javascript" src="https://news.google.com/swg/js/v1/swg-basic.js"></script>' . "\n";
 }
-add_action('wp_head', 'kepoli_swg_basic_head', 10);
+add_action('wp_head', 'kepoli_rrm_newsletter_head', 10);
+
+function kepoli_newsletter_cta(): string
+{
+    $cta_id = kepoli_newsletter_cta_id();
+    if ($cta_id === '') {
+        return '';
+    }
+
+    return sprintf(
+        '<section class="entry-newsletter-cta" aria-label="%1$s"><div rrm-inline-cta="%2$s"></div></section>',
+        esc_attr__('Newsletter Kepoli', 'kepoli'),
+        esc_attr($cta_id)
+    );
+}
 
 function kepoli_ad_slot(string $slot, string $class = ''): string
 {
