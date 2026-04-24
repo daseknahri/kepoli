@@ -183,6 +183,12 @@ rejectPublicCopy('sidebar author box', themeFiles.get('template-parts-sidebar'),
   /Retete romanesti testate/i,
 ]);
 
+rejectPublicCopy('theme public Romanian copy', [...themeFiles.values()].join('\n'), [
+  /['"]%d min read['"]/i,
+  /['"]Kepoli home['"]/,
+  /['"]Breadcrumbs['"]/,
+]);
+
 rejectPublicCopy('author illustration asset', writerPhotoSvg, [
   /placeholder/i,
 ]);

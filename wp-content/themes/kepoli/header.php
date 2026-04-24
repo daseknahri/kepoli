@@ -14,7 +14,7 @@
 <a class="skip-link" href="#content"><?php esc_html_e('Sari la continut', 'kepoli'); ?></a>
 <header class="site-header">
     <div class="site-header__inner">
-        <a class="site-brand" href="<?php echo esc_url(home_url('/')); ?>" aria-label="<?php esc_attr_e('Kepoli home', 'kepoli'); ?>">
+        <a class="site-brand" href="<?php echo esc_url(home_url('/')); ?>" aria-label="<?php esc_attr_e('Acasa Kepoli', 'kepoli'); ?>">
             <img src="<?php echo esc_url(kepoli_asset_uri('kepoli-wordmark')); ?>" alt="Kepoli"<?php echo kepoli_asset_dimension_attributes('kepoli-wordmark'); ?> decoding="async">
         </a>
         <div class="site-nav-panel" id="site-nav-panel" data-nav-panel>

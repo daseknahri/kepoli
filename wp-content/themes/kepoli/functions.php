@@ -1335,8 +1335,8 @@ function kepoli_setup(): void
     add_theme_support('responsive-embeds');
 
     register_nav_menus([
-        'primary' => __('Primary navigation', 'kepoli'),
-        'footer' => __('Footer navigation', 'kepoli'),
+        'primary' => __('Navigatie principala', 'kepoli'),
+        'footer' => __('Navigatie footer', 'kepoli'),
     ]);
 }
 add_action('after_setup_theme', 'kepoli_setup');
@@ -1434,7 +1434,7 @@ add_filter('wp_resource_hints', 'kepoli_resource_hints', 10, 2);
 function kepoli_register_sidebars(): void
 {
     register_sidebar([
-        'name' => __('Recipe sidebar', 'kepoli'),
+        'name' => __('Bara laterala reteta', 'kepoli'),
         'id' => 'recipe-sidebar',
         'before_widget' => '<section class="sidebar-section widget %2$s">',
         'after_widget' => '</section>',
@@ -1697,7 +1697,7 @@ function kepoli_read_time(int $post_id = 0): string
     $post_id = $post_id ?: get_the_ID();
     $words = str_word_count(wp_strip_all_tags((string) get_post_field('post_content', $post_id)));
     $minutes = max(1, (int) ceil($words / 220));
-    return sprintf(_n('%d min read', '%d min read', $minutes, 'kepoli'), $minutes);
+    return sprintf(_n('%d min de citit', '%d min de citit', $minutes, 'kepoli'), $minutes);
 }
 
 function kepoli_post_kind(int $post_id = 0): string
@@ -2199,7 +2199,7 @@ function kepoli_breadcrumbs(): void
 {
     $items = kepoli_breadcrumb_items();
 
-    echo '<nav class="breadcrumbs" aria-label="' . esc_attr__('Breadcrumbs', 'kepoli') . '">';
+    echo '<nav class="breadcrumbs" aria-label="' . esc_attr__('Fir de navigare', 'kepoli') . '">';
     foreach ($items as $index => $item) {
         if ($index > 0) {
             echo ' / ';
