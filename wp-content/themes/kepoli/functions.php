@@ -1367,6 +1367,42 @@ function kepoli_meta_description(): void
 }
 add_action('wp_head', 'kepoli_meta_description', 2);
 
+function kepoli_priority_image_preloads(): void
+{
+    if (is_front_page()) {
+        printf(
+            "<link rel=\"preload\" as=\"image\" href=\"%s\" fetchpriority=\"high\">\n",
+            esc_url(kepoli_asset_uri('hero-homepage', 'jpg'))
+        );
+        return;
+    }
+
+    if (!is_singular('post')) {
+        return;
+    }
+
+    $image_id = kepoli_post_featured_image_id(get_the_ID());
+    if (!$image_id) {
+        return;
+    }
+
+    $href = wp_get_attachment_image_url($image_id, 'large');
+    if (!is_string($href) || $href === '') {
+        return;
+    }
+
+    $srcset = wp_get_attachment_image_srcset($image_id, 'large');
+    $sizes = '(max-width: 760px) 100vw, 760px';
+
+    printf(
+        "<link rel=\"preload\" as=\"image\" href=\"%1\$s\"%2\$s imagesizes=\"%3\$s\" fetchpriority=\"high\">\n",
+        esc_url($href),
+        is_string($srcset) && $srcset !== '' ? ' imagesrcset="' . esc_attr($srcset) . '"' : '',
+        esc_attr($sizes)
+    );
+}
+add_action('wp_head', 'kepoli_priority_image_preloads', 1);
+
 function kepoli_social_meta(): void
 {
     $title = kepoli_current_seo_title();

@@ -5,9 +5,12 @@ COPY wp-content/mu-plugins/ /opt/kepoli/wp-content/mu-plugins/
 COPY wp-content/plugins/ /opt/kepoli/wp-content/plugins/
 COPY seed/ /seed/
 COPY content/ /content/
+COPY docker/wordpress/kepoli-performance.conf /etc/apache2/conf-available/kepoli-performance.conf
 COPY docker/wordpress/entrypoint.sh /usr/local/bin/kepoli-wordpress-entrypoint
 
-RUN chmod +x /usr/local/bin/kepoli-wordpress-entrypoint /seed/bin/bootstrap.sh
+RUN a2enmod headers expires deflate \
+    && a2enconf kepoli-performance \
+    && chmod +x /usr/local/bin/kepoli-wordpress-entrypoint /seed/bin/bootstrap.sh
 
 ENTRYPOINT ["kepoli-wordpress-entrypoint"]
 CMD ["apache2-foreground"]

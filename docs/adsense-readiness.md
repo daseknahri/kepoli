@@ -11,6 +11,8 @@ Implemented readiness items:
 - Ad placeholders that preserve layout before ad units exist.
 - Live ad rendering gated by environment variables, including an explicit `ADSENSE_ENABLE` switch.
 - Optional Analytics rendering gated by an explicit `GA_ENABLE` switch so it can wait for consent setup.
+- Apache compression and long-lived cache headers for static theme assets in the production container.
+- Priority preload hints for homepage and article LCP images.
 - `ads.txt` generated only after `ADSENSE_PUB_ID` is configured.
 - Google Site Kit installed for later account connection.
 - Dedicated public page for `Publicitate si consimtamant`.

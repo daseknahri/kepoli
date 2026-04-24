@@ -6,6 +6,7 @@ Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and food arti
 
 - WordPress with MariaDB, deployed by Docker Compose with small Kepoli-specific images built from this repo.
 - A custom `kepoli` theme focused on reading, recipes, internal links, and ad-safe layouts.
+- Production Apache settings for static asset caching, compression, and small security headers.
 - An optional one-shot `wp-init` seed profile for manual reseeding.
 - A small MU plugin that self-runs the same seed once if a platform starts WordPress but skips the one-shot seed service, and keeps the writer account as an administrator.
 - A small authoring plugin that keeps post writing simple and adds toolbar buttons for splitting long posts into two or three WordPress pages.

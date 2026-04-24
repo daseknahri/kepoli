@@ -5,6 +5,9 @@ const pages = JSON.parse(fs.readFileSync('content/pages.json', 'utf8'));
 const envExample = fs.readFileSync('.env.example', 'utf8');
 const readme = fs.readFileSync('README.md', 'utf8');
 const adsenseDocs = fs.readFileSync('docs/adsense-readiness.md', 'utf8');
+const dockerCompose = fs.readFileSync('docker-compose.yml', 'utf8');
+const wordpressDockerfile = fs.readFileSync('docker/wordpress/Dockerfile', 'utf8');
+const apachePerformanceConf = fs.readFileSync('docker/wordpress/kepoli-performance.conf', 'utf8');
 const themeFiles = new Map([
   ['header', fs.readFileSync('wp-content/themes/kepoli/header.php', 'utf8')],
   ['functions', fs.readFileSync('wp-content/themes/kepoli/functions.php', 'utf8')],
@@ -189,6 +192,19 @@ requireTextIncludes('.env.example Google service gates', envExample, [
   /GA_MEASUREMENT_ID=/,
 ]);
 
+requireTextIncludes('docker compose Google service gates', dockerCompose, [
+  /GA_ENABLE:\s*\$\{GA_ENABLE:-0\}/,
+  /ADSENSE_ENABLE:\s*\$\{ADSENSE_ENABLE:-0\}/,
+]);
+
+requireTextIncludes('production Apache performance config', `${wordpressDockerfile}\n${apachePerformanceConf}`, [
+  /a2enmod headers expires deflate/,
+  /a2enconf kepoli-performance/,
+  /Cache-Control "public, max-age=31536000, immutable"/,
+  /AddOutputFilterByType DEFLATE/,
+  /ExpiresByType text\/css "access plus 1 year"/,
+]);
+
 requireTextIncludes('AdSense docs consent gates', `${readme}\n${adsenseDocs}`, [
   /ADSENSE_ENABLE=0[^.\n]*GA_ENABLE=0|GA_ENABLE=0[^.\n]*ADSENSE_ENABLE=0/,
   /consent/i,
@@ -201,6 +217,14 @@ requireThemeIncludes('functions', 'frontend output cleanup', [
   /remove_action\('wp_head',\s*'wp_oembed_add_discovery_links'/,
   /function kepoli_dequeue_unused_frontend_assets\(\): void/,
   /wp_dequeue_style\('wp-block-library'\)/,
+]);
+
+requireThemeIncludes('functions', 'priority image preloads', [
+  /function kepoli_priority_image_preloads\(\): void/,
+  /rel=\\"preload\\" as=\\"image\\"/,
+  /fetchpriority=\\"high\\"/,
+  /imagesrcset/,
+  /hero-homepage',\s*'jpg'/,
 ]);
 
 requireThemeIncludes('functions', 'conditional Google resource hints', [
