@@ -6,12 +6,20 @@ get_header();
 
 $featured_article = kepoli_latest_post_by_kind('article');
 $editorial_paths = kepoli_editorial_paths();
+$article_meta_items = kepoli_article_collection_meta_items(kepoli_post_count_by_kind('article'));
 ?>
 <header class="archive-header">
     <?php kepoli_breadcrumbs(); ?>
     <p class="eyebrow"><?php esc_html_e('Articole', 'kepoli'); ?></p>
     <h1><?php esc_html_e('Ghiduri de bucatarie', 'kepoli'); ?></h1>
     <p><?php esc_html_e('Organizare, ingrediente, tehnici si idei pentru mese romanesti bine asezate.', 'kepoli'); ?></p>
+    <?php if ($article_meta_items) : ?>
+        <div class="meta-strip">
+            <?php foreach ($article_meta_items as $item) : ?>
+                <span class="meta-strip__item"><?php echo esc_html($item); ?></span>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
     <?php kepoli_render_reader_trust_links(); ?>
 </header>
 <?php if ($featured_article) : ?>

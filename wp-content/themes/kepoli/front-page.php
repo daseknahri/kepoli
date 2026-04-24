@@ -158,7 +158,7 @@ $article_list = new WP_Query([
             <p class="eyebrow"><?php esc_html_e('Articole', 'kepoli'); ?></p>
             <h2><?php esc_html_e('Ghiduri pentru bucatarie', 'kepoli'); ?></h2>
         </div>
-        <p><?php esc_html_e('Context scurt si util pentru ingrediente, tehnici si planificare.', 'kepoli'); ?></p>
+        <p><?php esc_html_e('Context scurt si util pentru ingrediente, tehnici si planificare, cu ghidurile importante revizuite periodic.', 'kepoli'); ?></p>
     </div>
     <div class="home-cluster home-cluster--reverse">
         <?php if ($featured_article) : ?>

@@ -140,6 +140,8 @@ requireThemeIncludes('functions', 'card meta helpers', [
   /function kepoli_post_next_steps\s*\(/,
   /function kepoli_article_snapshot_items\s*\(/,
   /function kepoli_editorial_paths\s*\(/,
+  /function kepoli_article_freshness_label\s*\(/,
+  /function kepoli_article_collection_meta_items\s*\(/,
   /gallery/,
 ]);
 
@@ -170,6 +172,11 @@ requireThemeIncludes('page-retete', 'category card visual proof', [
   /category-card__gallery/,
 ]);
 
+requireThemeIncludes('page-articole', 'freshness transparency meta', [
+  /kepoli_article_collection_meta_items\s*\(/,
+  /meta-strip/,
+]);
+
 for (const fileKey of ['template-parts-card', 'single', 'page-retete', 'page-articole']) {
   requireThemeIncludes(fileKey, 'editorial card metadata', [
     /kepoli_render_post_card_meta\s*\(/,
@@ -187,6 +194,10 @@ requireThemeIncludes('page', 'page trust navigation', [
 requireThemeIncludes('archive', 'archive guidance support', [
   /kepoli_archive_guidance_items\s*\(/,
   /archive-guide/,
+]);
+
+requireThemeIncludes('archive', 'article freshness archive note', [
+  /kepoli_article_collection_meta_items\s*\(/,
 ]);
 
 requireThemeIncludes('single', 'recipe snapshot support', [

@@ -997,6 +997,31 @@ function kepoli_post_updated_label(int $post_id = 0): string
     return sprintf(__('Actualizat %s', 'kepoli'), get_the_modified_date('', $post_id));
 }
 
+function kepoli_article_freshness_label(int $post_id = 0): string
+{
+    $post_id = $post_id ?: get_the_ID();
+    $updated = kepoli_post_updated_label($post_id);
+    if ($updated !== '') {
+        return $updated;
+    }
+
+    return sprintf(__('Publicat %s', 'kepoli'), get_the_date('j M Y', $post_id));
+}
+
+function kepoli_article_collection_meta_items(int $count = 0): array
+{
+    $items = [];
+
+    if ($count > 0) {
+        $items[] = sprintf(_n('%d ghid publicat', '%d ghiduri publicate', $count, 'kepoli'), $count);
+    }
+
+    $items[] = __('Ghiduri revizuite periodic cand apar clarificari utile', 'kepoli');
+    $items[] = __('Cardurile si paginile arata data de actualizare atunci cand un ghid este revizuit', 'kepoli');
+
+    return $items;
+}
+
 function kepoli_article_heading_index(int $post_id = 0): array
 {
     $post_id = $post_id ?: get_the_ID();
@@ -1127,6 +1152,29 @@ function kepoli_latest_post_by_kind(string $kind): ?WP_Post
     ]);
 
     return $posts ? $posts[0] : null;
+}
+
+function kepoli_post_count_by_kind(string $kind): int
+{
+    static $cache = [];
+
+    if (isset($cache[$kind])) {
+        return $cache[$kind];
+    }
+
+    $query = new WP_Query([
+        'post_type' => 'post',
+        'posts_per_page' => 1,
+        'fields' => 'ids',
+        'no_found_rows' => false,
+        'ignore_sticky_posts' => true,
+        'meta_key' => '_kepoli_post_kind',
+        'meta_value' => $kind,
+    ]);
+
+    $cache[$kind] = (int) $query->found_posts;
+
+    return $cache[$kind];
 }
 
 function kepoli_setup(): void
@@ -1517,6 +1565,13 @@ function kepoli_post_card_meta_items(int $post_id = 0): array
         if ($items !== []) {
             return $items;
         }
+    }
+
+    if (kepoli_post_kind($post_id) === 'article') {
+        return [
+            kepoli_article_freshness_label($post_id),
+            kepoli_read_time($post_id),
+        ];
     }
 
     return [
