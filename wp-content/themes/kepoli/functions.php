@@ -1782,6 +1782,38 @@ function kepoli_recipe_snapshot_items(int $post_id = 0): array
     return $items;
 }
 
+function kepoli_recipe_step_anchor(int $position): string
+{
+    return 'mod-de-preparare-step-' . max(1, $position);
+}
+
+function kepoli_recipe_step_name(string $step): string
+{
+    $text = trim(wp_strip_all_tags($step));
+    if ($text === '') {
+        return __('Pas de preparare', 'kepoli');
+    }
+
+    $name = wp_trim_words($text, 8, '');
+    return rtrim($name, " \t\n\r\0\x0B.,;:") ?: __('Pas de preparare', 'kepoli');
+}
+
+function kepoli_recipe_keywords(int $post_id = 0): string
+{
+    $post_id = $post_id ?: get_the_ID();
+    $keywords = wp_get_post_tags($post_id, ['fields' => 'names']);
+
+    if (!is_array($keywords)) {
+        return '';
+    }
+
+    $keywords = array_values(array_unique(array_filter(array_map(static function ($keyword): string {
+        return trim((string) $keyword);
+    }, $keywords))));
+
+    return implode(', ', $keywords);
+}
+
 function kepoli_article_snapshot_data(int $post_id = 0): array
 {
     $post_id = $post_id ?: get_the_ID();
@@ -1941,13 +1973,14 @@ function kepoli_recipe_json_ld(): void
 
     $author_id = (int) get_post_field('post_author', get_the_ID());
     $author_name = $author_id ? get_the_author_meta('display_name', $author_id) : get_bloginfo('name');
+    $recipe_image = kepoli_social_image_schema_object();
 
     $schema = [
         '@context' => 'https://schema.org',
         '@type' => 'Recipe',
         'name' => get_the_title(),
         'description' => wp_strip_all_tags(get_the_excerpt()),
-        'image' => [kepoli_social_image_schema_object()],
+        'image' => [$recipe_image],
         'mainEntityOfPage' => [
             '@type' => 'WebPage',
             '@id' => get_permalink(),
@@ -1968,10 +2001,22 @@ function kepoli_recipe_json_ld(): void
         'cookTime' => $data['cook_iso'] ?? '',
         'totalTime' => $data['total_iso'] ?? '',
         'recipeIngredient' => $data['ingredients'] ?? [],
-        'recipeInstructions' => array_map(static function ($step) {
-            return ['@type' => 'HowToStep', 'text' => $step];
-        }, $data['steps'] ?? []),
+        'recipeInstructions' => array_map(static function ($step, $index) use ($recipe_image) {
+            $position = (int) $index + 1;
+            return [
+                '@type' => 'HowToStep',
+                'name' => kepoli_recipe_step_name((string) $step),
+                'text' => $step,
+                'url' => get_permalink() . '#' . kepoli_recipe_step_anchor($position),
+                'image' => $recipe_image,
+            ];
+        }, $data['steps'] ?? [], array_keys($data['steps'] ?? [])),
     ];
+
+    $keywords = kepoli_recipe_keywords();
+    if ($keywords !== '') {
+        $schema['keywords'] = $keywords;
+    }
 
     echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
 }
@@ -2007,9 +2052,9 @@ function kepoli_article_json_ld(): void
         'publisher' => kepoli_schema_publisher(),
     ];
 
-    $keywords = wp_get_post_tags(get_the_ID(), ['fields' => 'names']);
-    if ($keywords) {
-        $schema['keywords'] = implode(', ', $keywords);
+    $keywords = kepoli_recipe_keywords();
+    if ($keywords !== '') {
+        $schema['keywords'] = $keywords;
     }
 
     echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
@@ -2153,13 +2198,34 @@ function kepoli_recipe_content_anchors(string $content): string
         return $content;
     }
 
-    return strtr($content, [
+    $content = strtr($content, [
         '<h2>Pe scurt</h2>' => '<h2 id="pe-scurt">Pe scurt</h2>',
         '<h2>Ingrediente</h2>' => '<h2 id="ingrediente">Ingrediente</h2>',
         '<h2>Mod de preparare</h2>' => '<h2 id="mod-de-preparare">Mod de preparare</h2>',
         '<h2>Sfaturi pentru reusita</h2>' => '<h2 id="sfaturi-pentru-reusita">Sfaturi pentru reusita</h2>',
         '<section class="related-posts"><h2>Legaturi utile</h2>' => '<section class="related-posts" id="legaturi-utile"><h2>Legaturi utile</h2>',
     ]);
+
+    $anchored_content = preg_replace_callback(
+        '/(<h2 id="mod-de-preparare">Mod de preparare<\/h2>\s*<ol>)(.*?)(<\/ol>)/is',
+        static function (array $matches): string {
+            $position = 0;
+            $steps = (string) preg_replace_callback(
+                '/<li(?![^>]*\sid=)([^>]*)>/i',
+                static function (array $li_matches) use (&$position): string {
+                    $position++;
+                    return '<li id="' . esc_attr(kepoli_recipe_step_anchor($position)) . '"' . $li_matches[1] . '>';
+                },
+                $matches[2]
+            );
+
+            return $matches[1] . $steps . $matches[3];
+        },
+        $content,
+        1
+    );
+
+    return is_string($anchored_content) ? $anchored_content : $content;
 }
 add_filter('the_content', 'kepoli_recipe_content_anchors', 5);
 

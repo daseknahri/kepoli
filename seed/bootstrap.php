@@ -604,8 +604,8 @@ function kepoli_seed_recipe_content(array $post, array $post_ids, array $categor
     }
     $html .= '</ul>';
     $html .= '<h2 id="mod-de-preparare">Mod de preparare</h2><ol>';
-    foreach ($post['steps'] as $step) {
-        $html .= '<li>' . esc_html($step) . '</li>';
+    foreach (array_values($post['steps']) as $index => $step) {
+        $html .= '<li id="mod-de-preparare-step-' . esc_attr((string) ($index + 1)) . '">' . esc_html($step) . '</li>';
     }
     $html .= '</ol>';
     $html .= '</section>';

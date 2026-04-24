@@ -310,12 +310,24 @@ requireThemeIncludes('functions', 'structured data image and entity details', [
   /function kepoli_schema_image_object\(string \$url,\s*array \$dimensions = \[\],\s*string \$caption = ''\): array/,
   /function kepoli_social_image_schema_object\(\): array/,
   /function kepoli_schema_publisher\(\): array/,
+  /function kepoli_recipe_step_anchor\(int \$position\): string/,
+  /function kepoli_recipe_step_name\(string \$step\): string/,
+  /function kepoli_recipe_keywords\(int \$post_id = 0\): string/,
   /'@id'\s*=>\s*home_url\('\/#organization'\)/,
   /'image'\s*=>\s*\[kepoli_social_image_schema_object\(\)\]/,
   /'mainEntityOfPage'\s*=>\s*\[\s*'@type'\s*=>\s*'WebPage'/s,
   /'inLanguage'\s*=>\s*get_bloginfo\('language'\)/,
   /'dateModified'\s*=>\s*get_the_modified_date\('c'\)/,
+  /'recipeInstructions'\s*=>\s*array_map\(/,
+  /'name'\s*=>\s*kepoli_recipe_step_name/,
+  /'url'\s*=>\s*get_permalink\(\) \. '#' \. kepoli_recipe_step_anchor/,
+  /'image'\s*=>\s*\$recipe_image/,
+  /\$schema\['keywords'\]\s*=\s*\$keywords/,
   /kepoli_schema_asset_image_object\('writer-photo',\s*'jpg',\s*'Isalune Merovik'\)/,
+]);
+
+requireTextIncludes('seed recipe step anchors', seedBootstrap, [
+  /<li id="mod-de-preparare-step-/,
 ]);
 
 requireThemeIncludes('functions', 'production stylesheet enqueue', [
