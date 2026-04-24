@@ -1118,6 +1118,60 @@ h3 {
   margin-top: 28px;
 }
 
+.review-lane {
+  margin-top: 28px;
+}
+
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 18px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+.review-card {
+  margin: 0;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background 160ms ease;
+}
+
+.review-card:hover,
+.review-card:focus-visible {
+  background: #fffdf8;
+}
+
+.review-card h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.24;
+  text-wrap: pretty;
+}
+
+.review-card p:last-of-type {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.52;
+}
+
+.review-card__meta {
+  margin-top: auto;
+  color: var(--muted);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .guide-path-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3008,6 +3062,7 @@ h3 {
 
   .browse-links,
   .page-grid,
+  .review-grid,
   .guide-path-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -3147,6 +3202,7 @@ h3 {
 
   .browse-links,
   .page-grid,
+  .review-grid,
   .guide-path-grid {
     grid-template-columns: 1fr;
   }

@@ -12,6 +12,7 @@ $categories = get_categories([
 ]);
 $featured_recipe = kepoli_latest_post_by_kind('recipe');
 $featured_article = kepoli_latest_post_by_kind('article');
+$recently_touched_articles = kepoli_recently_touched_posts_by_kind('article', 3, $featured_article ? [$featured_article->ID] : []);
 
 $recipe_list = new WP_Query([
     'post_type' => 'post',
@@ -192,6 +193,27 @@ $article_list = new WP_Query([
             <?php endwhile; wp_reset_postdata(); ?>
         </div>
     </div>
+    <?php if ($recently_touched_articles) : ?>
+        <div class="review-lane">
+            <div class="section__header section__header--compact section__header--simple">
+                <div>
+                    <p class="eyebrow"><?php esc_html_e('Urmarite de aproape', 'kepoli'); ?></p>
+                    <h2><?php esc_html_e('Ghiduri publicate sau revizuite recent', 'kepoli'); ?></h2>
+                </div>
+                <p><?php esc_html_e('Un semnal simplu ca partea editoriala nu sta pe loc: unele ghiduri sunt noi, altele sunt revazute cand apar clarificari utile.', 'kepoli'); ?></p>
+            </div>
+            <div class="review-grid">
+                <?php foreach ($recently_touched_articles as $article) : ?>
+                    <a class="page-panel review-card tone-guides" href="<?php echo esc_url(get_permalink($article)); ?>">
+                        <p class="eyebrow"><?php echo esc_html(kepoli_article_freshness_label($article->ID)); ?></p>
+                        <h3><?php echo esc_html(get_the_title($article)); ?></h3>
+                        <p><?php echo esc_html(wp_trim_words(get_the_excerpt($article), 18, '...')); ?></p>
+                        <span class="review-card__meta"><?php echo esc_html(kepoli_read_time($article->ID)); ?></span>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
     <?php if ($editorial_paths) : ?>
         <div class="guide-paths">
             <div class="section__header section__header--compact section__header--simple">

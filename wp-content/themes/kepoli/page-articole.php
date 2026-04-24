@@ -7,6 +7,7 @@ get_header();
 $featured_article = kepoli_latest_post_by_kind('article');
 $editorial_paths = kepoli_editorial_paths();
 $article_meta_items = kepoli_article_collection_meta_items(kepoli_post_count_by_kind('article'));
+$recently_touched_articles = kepoli_recently_touched_posts_by_kind('article', 3, $featured_article ? [$featured_article->ID] : []);
 ?>
 <header class="archive-header">
     <?php kepoli_breadcrumbs(); ?>
@@ -41,6 +42,27 @@ $article_meta_items = kepoli_article_collection_meta_items(kepoli_post_count_by_
                 <?php echo kepoli_render_post_card_meta($featured_article->ID, 'meta-strip meta-strip--inline', 'meta-strip__item'); ?>
             </div>
         </article>
+    </section>
+<?php endif; ?>
+<?php if ($recently_touched_articles) : ?>
+    <section class="section section--tight">
+        <div class="section__header section__header--compact section__header--simple">
+            <div>
+                <p class="eyebrow"><?php esc_html_e('Urmarite de aproape', 'kepoli'); ?></p>
+                <h2><?php esc_html_e('Ghiduri publicate sau revizuite recent', 'kepoli'); ?></h2>
+            </div>
+            <p><?php esc_html_e('Aici apar ghidurile la care ne-am intors recent, fie pentru ca sunt noi, fie pentru ca au primit clarificari utile.', 'kepoli'); ?></p>
+        </div>
+        <div class="review-grid">
+            <?php foreach ($recently_touched_articles as $article) : ?>
+                <a class="page-panel review-card tone-guides" href="<?php echo esc_url(get_permalink($article)); ?>">
+                    <p class="eyebrow"><?php echo esc_html(kepoli_article_freshness_label($article->ID)); ?></p>
+                    <h3><?php echo esc_html(get_the_title($article)); ?></h3>
+                    <p><?php echo esc_html(wp_trim_words(get_the_excerpt($article), 18, '...')); ?></p>
+                    <span class="review-card__meta"><?php echo esc_html(kepoli_read_time($article->ID)); ?></span>
+                </a>
+            <?php endforeach; ?>
+        </div>
     </section>
 <?php endif; ?>
 <?php if ($editorial_paths) : ?>

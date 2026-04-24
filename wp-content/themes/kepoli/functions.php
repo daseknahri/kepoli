@@ -1177,6 +1177,20 @@ function kepoli_post_count_by_kind(string $kind): int
     return $cache[$kind];
 }
 
+function kepoli_recently_touched_posts_by_kind(string $kind, int $limit = 3, array $exclude_ids = []): array
+{
+    return get_posts([
+        'post_type' => 'post',
+        'posts_per_page' => $limit,
+        'ignore_sticky_posts' => true,
+        'post__not_in' => array_map('intval', $exclude_ids),
+        'orderby' => 'modified',
+        'order' => 'DESC',
+        'meta_key' => '_kepoli_post_kind',
+        'meta_value' => $kind,
+    ]);
+}
+
 function kepoli_setup(): void
 {
     add_theme_support('title-tag');
