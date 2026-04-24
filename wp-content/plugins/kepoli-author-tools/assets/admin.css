@@ -305,8 +305,14 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   background: #fffdf8;
 }
 
+.kepoli-seo-fields {
+  padding: 16px;
+  padding-top: 0;
+}
+
 .kepoli-image-fields p,
-.kepoli-recipe-fields p {
+.kepoli-recipe-fields p,
+.kepoli-seo-fields p {
   margin-top: 0;
   color: #6b654f;
 }

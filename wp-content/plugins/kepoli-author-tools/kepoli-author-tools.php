@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.4
+ * Version: 1.8.5
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.4';
+    private const VERSION = '1.8.5';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -229,6 +229,7 @@ final class Kepoli_Author_Tools
         $has_image_meta = array_filter($image_meta, static function ($value): bool {
             return trim((string) $value) !== '';
         });
+        $has_seo_details = trim($seo_title) !== '' || trim($related_recipes) !== '' || trim($related_articles) !== '';
 
         wp_nonce_field('kepoli_author_tools_save', 'kepoli_author_tools_nonce');
         ?>
@@ -264,11 +265,7 @@ final class Kepoli_Author_Tools
                 </label>
             </fieldset>
 
-            <div class="kepoli-post-setup__grid">
-                <label>
-                    <span><?php esc_html_e('SEO title optional', 'kepoli-author-tools'); ?></span>
-                    <input type="text" name="kepoli_seo_title" value="<?php echo esc_attr($seo_title); ?>" placeholder="<?php esc_attr_e('Daca ramane gol, se foloseste titlul postarii.', 'kepoli-author-tools'); ?>">
-                </label>
+            <div class="kepoli-post-setup__grid kepoli-post-setup__grid--single">
                 <label>
                     <span><?php esc_html_e('Excerpt', 'kepoli-author-tools'); ?></span>
                     <textarea name="kepoli_post_excerpt" rows="3" maxlength="260" placeholder="<?php esc_attr_e('Rezumat scurt pentru carduri, arhive si intro.', 'kepoli-author-tools'); ?>"><?php echo esc_textarea($excerpt); ?></textarea>
@@ -282,16 +279,26 @@ final class Kepoli_Author_Tools
                 </label>
             </div>
 
-            <div class="kepoli-post-setup__grid">
-                <label>
-                    <span><?php esc_html_e('Related recipe slugs', 'kepoli-author-tools'); ?></span>
-                    <textarea name="kepoli_related_recipe_slugs" rows="3" placeholder="sarmale-in-foi-de-varza, ciorba-radauteana"><?php echo esc_textarea($related_recipes); ?></textarea>
-                </label>
-                <label>
-                    <span><?php esc_html_e('Related article slugs', 'kepoli-author-tools'); ?></span>
-                    <textarea name="kepoli_related_article_slugs" rows="3" placeholder="ghidul-camarii-romanesti"><?php echo esc_textarea($related_articles); ?></textarea>
-                </label>
-            </div>
+            <details class="kepoli-setup-section kepoli-seo-fields" <?php echo $has_seo_details ? ' open' : ''; ?>>
+                <summary><?php esc_html_e('Detalii SEO si legaturi', 'kepoli-author-tools'); ?></summary>
+                <p><?php esc_html_e('Aceste campuri sunt optionale pentru lucru manual. Daca le lasi goale, Kepoli incearca sa le completeze automat.', 'kepoli-author-tools'); ?></p>
+                <div class="kepoli-post-setup__grid kepoli-post-setup__grid--single">
+                    <label>
+                        <span><?php esc_html_e('SEO title optional', 'kepoli-author-tools'); ?></span>
+                        <input type="text" name="kepoli_seo_title" value="<?php echo esc_attr($seo_title); ?>" placeholder="<?php esc_attr_e('Daca ramane gol, se foloseste titlul postarii.', 'kepoli-author-tools'); ?>">
+                    </label>
+                </div>
+                <div class="kepoli-post-setup__grid">
+                    <label>
+                        <span><?php esc_html_e('Related recipe slugs', 'kepoli-author-tools'); ?></span>
+                        <textarea name="kepoli_related_recipe_slugs" rows="3" placeholder="sarmale-in-foi-de-varza, ciorba-radauteana"><?php echo esc_textarea($related_recipes); ?></textarea>
+                    </label>
+                    <label>
+                        <span><?php esc_html_e('Related article slugs', 'kepoli-author-tools'); ?></span>
+                        <textarea name="kepoli_related_article_slugs" rows="3" placeholder="ghidul-camarii-romanesti"><?php echo esc_textarea($related_articles); ?></textarea>
+                    </label>
+                </div>
+            </details>
 
             <details class="kepoli-setup-section kepoli-image-fields" <?php echo $has_image_meta ? ' open' : ''; ?>>
                 <summary><?php esc_html_e('Detalii imagine', 'kepoli-author-tools'); ?></summary>
