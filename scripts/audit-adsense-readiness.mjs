@@ -9,6 +9,7 @@ const dockerCompose = fs.readFileSync('docker-compose.yml', 'utf8');
 const wordpressDockerfile = fs.readFileSync('docker/wordpress/Dockerfile', 'utf8');
 const apachePerformanceConf = fs.readFileSync('docker/wordpress/kepoli-performance.conf', 'utf8');
 const adtechMuPlugin = fs.readFileSync('wp-content/mu-plugins/kepoli-adtech.php', 'utf8');
+const newsletterMuPlugin = fs.readFileSync('wp-content/mu-plugins/kepoli-newsletter.php', 'utf8');
 const siteJs = fs.readFileSync('wp-content/themes/kepoli/assets/js/site.js', 'utf8');
 const siteMinJs = fs.readFileSync('wp-content/themes/kepoli/assets/js/site.min.js', 'utf8');
 const themeFiles = new Map([
@@ -202,14 +203,12 @@ requireTextIncludes('.env.example Google service gates', envExample, [
   /ADSENSE_ENABLE=0/,
   /GA_ENABLE=0/,
   /GA_MEASUREMENT_ID=/,
-  /RRM_NEWSLETTER_CTA_ID=e67fddb0-cd37-468c-b8ae-f11f3fb7d446/,
   /CANONICAL_REDIRECT_HOSTS=www\.kepoli\.com,api\.kepoli\.com,recipe\.kepoli\.com/,
 ]);
 
 requireTextIncludes('docker compose Google service gates', dockerCompose, [
   /GA_ENABLE:\s*\$\{GA_ENABLE:-0\}/,
   /ADSENSE_ENABLE:\s*\$\{ADSENSE_ENABLE:-0\}/,
-  /RRM_NEWSLETTER_CTA_ID:\s*\$\{RRM_NEWSLETTER_CTA_ID:-e67fddb0-cd37-468c-b8ae-f11f3fb7d446\}/,
   /CANONICAL_REDIRECT_HOSTS:\s*\$\{CANONICAL_REDIRECT_HOSTS:-www\.kepoli\.com,api\.kepoli\.com,recipe\.kepoli\.com\}/,
 ]);
 
@@ -303,12 +302,14 @@ requireThemeIncludes('functions', 'Analytics consent gate', [
 ]);
 
 requireThemeIncludes('functions', 'inline newsletter CTA markup', [
-  /function kepoli_newsletter_cta_id\(\): string/,
-  /RRM_NEWSLETTER_CTA_ID/,
   /function kepoli_newsletter_cta\(string \$class = ''\): string/,
   /newsletter-cta/,
-  /rrm-inline-cta/,
-  /e67fddb0-cd37-468c-b8ae-f11f3fb7d446/,
+  /admin-post\.php/,
+  /kepoli_newsletter_signup/,
+  /newsletter_email/,
+  /newsletter-cta__form/,
+  /newsletter-cta__input/,
+  /kepoli_newsletter_nonce/,
 ]);
 
 requireThemeIncludes('front-page', 'homepage inline newsletter placement', [
@@ -326,6 +327,9 @@ rejectPublicCopy('single post newsletter placement', themeFiles.get('single'), [
 requireTextIncludes('compact newsletter styling', themeFiles.get('style') ?? fs.readFileSync('wp-content/themes/kepoli/style.css', 'utf8'), [
   /\.newsletter-cta\s*\{/,
   /width:\s*min\(100%,\s*520px\)/,
+  /\.newsletter-cta__form\s*\{/,
+  /\.newsletter-cta__input\s*\{/,
+  /\.newsletter-cta__notice--success/,
 ]);
 
 rejectPublicCopy('theme Reader Revenue popup initialization', [...themeFiles.values()].join('\n'), [
@@ -334,6 +338,19 @@ rejectPublicCopy('theme Reader Revenue popup initialization', [...themeFiles.val
   /basicSubscriptions\.init/,
   /isPartOfProductId/,
   /type:\s*['"]NewsArticle['"]/,
+  /rrm-inline-cta/,
+  /RRM_NEWSLETTER_CTA_ID/,
+]);
+
+requireTextIncludes('newsletter storage MU plugin', newsletterMuPlugin, [
+  /Plugin Name:\s*Kepoli Newsletter Signups/,
+  /register_post_type\(kepoli_newsletter_post_type\(\)/,
+  /'show_ui'\s*=>\s*true/,
+  /'menu_icon'\s*=>\s*'dashicons-email-alt'/,
+  /admin_post_nopriv_kepoli_newsletter_signup/,
+  /admin_post_kepoli_newsletter_signup/,
+  /_kepoli_newsletter_email/,
+  /_kepoli_newsletter_source_label/,
 ]);
 
 requireThemeIncludes('functions', 'structured data image and entity details', [

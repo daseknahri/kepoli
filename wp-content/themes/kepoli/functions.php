@@ -1617,25 +1617,64 @@ function kepoli_ga_head(): void
 }
 add_action('wp_head', 'kepoli_ga_head', 9);
 
-function kepoli_newsletter_cta_id(): string
-{
-    return kepoli_env('RRM_NEWSLETTER_CTA_ID', 'e67fddb0-cd37-468c-b8ae-f11f3fb7d446');
-}
-
 function kepoli_newsletter_cta(string $class = ''): string
 {
-    $cta_id = kepoli_newsletter_cta_id();
-    if ($cta_id === '') {
-        return '';
+    $classes = trim('newsletter-cta ' . $class);
+    $email_field_id = 'newsletter-email-' . wp_generate_uuid4();
+    $honeypot_id = 'newsletter-website-' . wp_generate_uuid4();
+    $current_url = kepoli_current_url();
+    $contact_email = kepoli_env('SITE_EMAIL', 'contact@kepoli.com');
+    $source_label = is_front_page()
+        ? __('Prima pagina Kepoli', 'kepoli')
+        : wp_strip_all_tags(get_the_title() ?: wp_get_document_title());
+
+    $status = isset($_GET['newsletter']) ? sanitize_key((string) wp_unslash($_GET['newsletter'])) : '';
+    $notice_message = '';
+    $notice_class = '';
+
+    if ($status === 'success') {
+        $notice_message = __('Multumim. Te-am trecut pe lista newsletterului Kepoli.', 'kepoli');
+        $notice_class = 'newsletter-cta__notice newsletter-cta__notice--success';
+    } elseif ($status === 'duplicate') {
+        $notice_message = __('Adresa aceasta este deja inscrisa.', 'kepoli');
+        $notice_class = 'newsletter-cta__notice newsletter-cta__notice--success';
+    } elseif ($status === 'invalid') {
+        $notice_message = __('Te rog verifica adresa de email si incearca din nou.', 'kepoli');
+        $notice_class = 'newsletter-cta__notice newsletter-cta__notice--error';
+    } elseif ($status === 'error') {
+        $notice_message = __('Nu am putut salva inscrierea acum. Mai incearca o data.', 'kepoli');
+        $notice_class = 'newsletter-cta__notice newsletter-cta__notice--error';
     }
 
-    $classes = trim('newsletter-cta ' . $class);
+    $notice_markup = '';
+    if ($notice_message !== '') {
+        $notice_markup = sprintf(
+            '<p class="%1$s" role="%2$s">%3$s</p>',
+            esc_attr($notice_class),
+            $status === 'success' || $status === 'duplicate' ? 'status' : 'alert',
+            esc_html($notice_message)
+        );
+    }
 
     return sprintf(
-        '<section class="%1$s" aria-label="%2$s"><div class="newsletter-cta__embed" rrm-inline-cta="%3$s"></div></section>',
+        '<section class="%1$s" aria-labelledby="newsletter-title"><div class="newsletter-cta__inner"><p class="eyebrow">%2$s</p><h2 id="newsletter-title" class="newsletter-cta__title">%3$s</h2><p class="newsletter-cta__copy">%4$s</p>%5$s<form class="newsletter-cta__form" action="%6$s" method="post"><input type="hidden" name="action" value="kepoli_newsletter_signup"><input type="hidden" name="redirect_to" value="%7$s"><input type="hidden" name="source_label" value="%8$s"><input type="hidden" name="source_url" value="%7$s">%9$s<label class="screen-reader-text" for="%10$s">%11$s</label><input class="newsletter-cta__input" id="%10$s" name="newsletter_email" type="email" inputmode="email" autocomplete="email" placeholder="%12$s" maxlength="190" required><button class="newsletter-cta__submit" type="submit">%13$s</button><div class="newsletter-cta__honeypot" aria-hidden="true"><label for="%14$s">%15$s</label><input id="%14$s" name="website" type="text" tabindex="-1" autocomplete="off"></div></form><p class="newsletter-cta__fine-print">%16$s <a href="mailto:%17$s">%17$s</a>.</p></div></section>',
         esc_attr($classes),
-        esc_attr__('Newsletter Kepoli', 'kepoli'),
-        esc_attr($cta_id)
+        esc_html__('Newsletter', 'kepoli'),
+        esc_html__('Primeste retetele noi pe email', 'kepoli'),
+        esc_html__('Trimitem un mesaj scurt cand publicam ceva util: retete noi, ghiduri practice si actualizari importante.', 'kepoli'),
+        $notice_markup,
+        esc_url(admin_url('admin-post.php')),
+        esc_url($current_url),
+        esc_attr($source_label),
+        wp_nonce_field('kepoli_newsletter_signup', 'kepoli_newsletter_nonce', true, false),
+        esc_attr($email_field_id),
+        esc_html__('Adresa de email', 'kepoli'),
+        esc_attr__('Adresa ta de email', 'kepoli'),
+        esc_html__('Aboneaza-ma', 'kepoli'),
+        esc_attr($honeypot_id),
+        esc_html__('Lasa gol acest camp', 'kepoli'),
+        esc_html__('Pentru retragere sau corecturi, ne poti scrie la', 'kepoli'),
+        esc_attr($contact_email)
     );
 }
 
