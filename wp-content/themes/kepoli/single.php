@@ -152,6 +152,10 @@ get_header();
                                         <?php endif; ?>
                                     </div>
                                     <?php echo kepoli_render_post_card_meta($related->ID); ?>
+                                    <?php $related_reason = kepoli_related_card_reason(get_the_ID(), $related->ID); ?>
+                                    <?php if ($related_reason !== '') : ?>
+                                        <p class="related-card__reason"><?php echo esc_html($related_reason); ?></p>
+                                    <?php endif; ?>
                                     <h3><a href="<?php echo esc_url(get_permalink($related)); ?>"><?php echo esc_html(get_the_title($related)); ?></a></h3>
                                     <p><?php echo esc_html(wp_trim_words(get_the_excerpt($related), 24, '...')); ?></p>
                                 </div>

@@ -761,6 +761,59 @@ function kepoli_related_posts_by_kind(int $post_id = 0, string $kind = 'recipe')
     return kepoli_get_posts_by_slugs(array_slice($slugs, 0, 3));
 }
 
+function kepoli_related_card_reason(int $current_post_id = 0, int $related_post_id = 0): string
+{
+    $current_post_id = $current_post_id ?: get_the_ID();
+    $related_post_id = $related_post_id ?: get_the_ID();
+
+    if (!$current_post_id || !$related_post_id || $current_post_id === $related_post_id) {
+        return '';
+    }
+
+    $current_kind = kepoli_post_kind($current_post_id);
+    $related_kind = kepoli_post_kind($related_post_id);
+    $current_category = kepoli_primary_category($current_post_id);
+    $related_category = kepoli_primary_category($related_post_id);
+
+    if ($current_kind === 'recipe' && $related_kind === 'article') {
+        if ($current_category && $current_category->slug !== 'articole') {
+            return sprintf(
+                __('Ghid ales pentru ingredientele, pasii si contextul din zona %s.', 'kepoli'),
+                $current_category->name
+            );
+        }
+
+        return __('Ghid ales pentru ingredientele si pasii care completeaza reteta aceasta.', 'kepoli');
+    }
+
+    if ($current_kind === 'article' && $related_kind === 'recipe') {
+        if ($related_category && $related_category->slug !== 'articole') {
+            return sprintf(
+                __('Reteta din %s care pune in practica ideile din articol.', 'kepoli'),
+                $related_category->name
+            );
+        }
+
+        return __('Reteta aleasa ca sa pui imediat in practica ideile din articol.', 'kepoli');
+    }
+
+    if ($current_category && $related_category && $current_category->term_id === $related_category->term_id) {
+        return sprintf(
+            __('Din aceeasi zona culinara: %s.', 'kepoli'),
+            $current_category->name
+        );
+    }
+
+    if ($related_category && $related_category->slug !== 'articole') {
+        return sprintf(
+            __('Ales din zona %s pentru un pas firesc mai departe.', 'kepoli'),
+            $related_category->name
+        );
+    }
+
+    return __('Ales editorial pentru a continua lectura intr-un mod util.', 'kepoli');
+}
+
 function kepoli_post_updated_label(int $post_id = 0): string
 {
     $post_id = $post_id ?: get_the_ID();

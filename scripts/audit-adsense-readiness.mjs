@@ -136,6 +136,7 @@ requireThemeIncludes('functions', 'card meta helpers', [
   /function kepoli_post_card_meta_items\s*\(/,
   /function kepoli_render_post_card_meta\s*\(/,
   /function kepoli_category_card_image_data\s*\(/,
+  /function kepoli_related_card_reason\s*\(/,
 ]);
 
 requireThemeIncludes('front-page', 'homepage trust links', [
@@ -183,6 +184,11 @@ requireThemeIncludes('single', 'recipe snapshot support', [
 requireThemeIncludes('single', 'early featured image support', [
   /entry-featured-media--header/,
   /entry-featured-media--header[\s\S]*entry-summary/,
+]);
+
+requireThemeIncludes('single', 'editorial recommendation reasons', [
+  /kepoli_related_card_reason\s*\(/,
+  /related-card__reason/,
 ]);
 
 requireSeedIncludes('distinct intro support', [
