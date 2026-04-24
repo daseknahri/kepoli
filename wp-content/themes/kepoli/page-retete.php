@@ -32,6 +32,7 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
             <?php foreach ($recipe_categories as $category) : ?>
                 <?php
                 $category_meta = kepoli_category_card_meta($category);
+                $category_image = kepoli_category_card_image_data($category);
                 $category_description = trim(wp_strip_all_tags((string) $category->description));
                 if ($category_description === '') {
                     $category_description = $category_meta['description'];
@@ -39,13 +40,21 @@ $featured_recipe = kepoli_latest_post_by_kind('recipe');
                     $category_description = wp_trim_words($category_description, 18, '...');
                 }
                 ?>
-                <a class="category-card <?php echo esc_attr(kepoli_tone_class($category->slug)); ?>" href="<?php echo esc_url(get_category_link($category)); ?>">
+                <a class="category-card <?php echo esc_attr(kepoli_tone_class($category->slug) . (!empty($category_image['url']) ? ' category-card--with-image' : '')); ?>" href="<?php echo esc_url(get_category_link($category)); ?>">
+                    <?php if (!empty($category_image['url'])) : ?>
+                        <span class="category-card__visual" aria-hidden="true">
+                            <img src="<?php echo esc_url($category_image['url']); ?>" alt="<?php echo esc_attr($category_image['alt'] ?? ''); ?>">
+                        </span>
+                    <?php endif; ?>
                     <span class="category-card__top">
                         <span class="category-card__icon" aria-hidden="true"><?php echo esc_html($category_meta['icon']); ?></span>
                         <span class="category-card__count"><?php echo esc_html(sprintf(_n('%d reteta', '%d retete', $category->count, 'kepoli'), $category->count)); ?></span>
                     </span>
                     <strong><?php echo esc_html($category->name); ?></strong>
                     <span class="category-card__description"><?php echo esc_html($category_description); ?></span>
+                    <?php if (!empty($category_image['sample'])) : ?>
+                        <span class="category-card__sample"><?php echo esc_html(sprintf(__('De inceput: %s', 'kepoli'), $category_image['sample'])); ?></span>
+                    <?php endif; ?>
                 </a>
             <?php endforeach; ?>
         </div>

@@ -13,6 +13,8 @@ get_header();
     $article_headings = !$is_recipe ? kepoli_article_heading_index() : [];
     $recipe_snapshot = $is_recipe ? kepoli_recipe_snapshot_items() : [];
     $share_icons = ['facebook' => 'facebook', 'whatsapp' => 'whatsapp', 'email' => 'email', 'copy' => 'link', 'print' => 'print'];
+    $featured_image = kepoli_post_featured_image_markup(get_the_ID(), 'large', ['class' => 'entry-featured-media__image']);
+    $featured_caption = $featured_image !== '' ? kepoli_post_featured_image_caption(get_the_ID()) : '';
     ?>
     <article <?php post_class('content-layout content-layout--single-post ' . ($is_recipe ? 'content-layout--recipe' : 'content-layout--article')); ?> data-reading-progress-source>
         <div class="entry">
@@ -27,6 +29,14 @@ get_header();
                 <h1 class="entry-title"><?php the_title(); ?></h1>
                 <?php if (has_excerpt()) : ?>
                     <p class="entry-excerpt"><?php echo esc_html(get_the_excerpt()); ?></p>
+                <?php endif; ?>
+                <?php if ($featured_image !== '') : ?>
+                    <figure class="entry-featured-media entry-featured-media--header">
+                        <?php echo $featured_image; ?>
+                        <?php if ($featured_caption) : ?>
+                            <figcaption><?php echo esc_html($featured_caption); ?></figcaption>
+                        <?php endif; ?>
+                    </figure>
                 <?php endif; ?>
                 <div class="entry-summary">
                     <div class="entry-meta-row" aria-label="<?php esc_attr_e('Informatii articol', 'kepoli'); ?>">
@@ -102,20 +112,6 @@ get_header();
                     </nav>
                 <?php endif; ?>
             </header>
-            <?php
-            $featured_image = kepoli_post_featured_image_markup(get_the_ID(), 'large', ['class' => 'entry-featured-media__image']);
-            if ($featured_image !== '') :
-                ?>
-                <figure class="entry-featured-media">
-                    <?php echo $featured_image; ?>
-                    <?php
-                    $featured_caption = kepoli_post_featured_image_caption(get_the_ID());
-                    if ($featured_caption) :
-                        ?>
-                        <figcaption><?php echo esc_html($featured_caption); ?></figcaption>
-                    <?php endif; ?>
-                </figure>
-            <?php endif; ?>
             <div class="entry-content">
                 <?php the_content(); ?>
             </div>

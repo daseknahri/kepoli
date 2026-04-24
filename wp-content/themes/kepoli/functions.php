@@ -324,6 +324,50 @@ function kepoli_category_card_meta(WP_Term $category): array
     ];
 }
 
+function kepoli_category_card_image_data(WP_Term $category): array
+{
+    static $cache = [];
+
+    if (array_key_exists($category->term_id, $cache)) {
+        return $cache[$category->term_id];
+    }
+
+    $query = new WP_Query([
+        'post_type' => 'post',
+        'post_status' => 'publish',
+        'posts_per_page' => 1,
+        'cat' => $category->term_id,
+        'no_found_rows' => true,
+        'ignore_sticky_posts' => true,
+        'meta_query' => [
+            [
+                'key' => '_thumbnail_id',
+                'compare' => 'EXISTS',
+            ],
+        ],
+    ]);
+
+    $data = [];
+
+    if ($query->have_posts()) {
+        $post = $query->posts[0];
+        $image_url = get_the_post_thumbnail_url($post, 'medium_large');
+
+        if ($image_url) {
+            $data = [
+                'url' => $image_url,
+                'alt' => kepoli_post_featured_image_alt($post->ID),
+                'sample' => get_the_title($post),
+            ];
+        }
+    }
+
+    wp_reset_postdata();
+    $cache[$category->term_id] = $data;
+
+    return $data;
+}
+
 function kepoli_archive_count_label(WP_Term $category): string
 {
     if ($category->slug === 'articole') {
