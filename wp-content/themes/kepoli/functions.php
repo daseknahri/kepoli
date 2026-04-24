@@ -1319,6 +1319,10 @@ function kepoli_code_seed_version(): string
 
 function kepoli_deploy_fingerprint_meta(): void
 {
+    if (!kepoli_env_bool('KEPOLI_DEPLOY_FINGERPRINT')) {
+        return;
+    }
+
     $target_version = kepoli_code_seed_version();
     $current_version = (string) get_option('kepoli_seed_version', '');
 

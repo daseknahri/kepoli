@@ -81,7 +81,7 @@ async function main() {
   console.log(`Live current: ${liveCurrent || '(missing)'}`);
 
   if (!liveTarget) {
-    throw new Error('Live site is missing kepoli-seed-target meta. Production is serving an older theme build or the head fingerprint is not deployed yet.');
+    throw new Error('Live site is missing kepoli-seed-target meta. Either KEPOLI_DEPLOY_FINGERPRINT is disabled, or production is serving an older theme build.');
   }
 
   if (liveTarget !== expectedVersion) {

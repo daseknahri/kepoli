@@ -16,6 +16,7 @@ const themeFiles = new Map([
   ['template-parts-sidebar', fs.readFileSync('wp-content/themes/kepoli/template-parts-sidebar.php', 'utf8')],
 ]);
 const seedBootstrap = fs.readFileSync('seed/bootstrap.php', 'utf8');
+const writerPhotoSvg = fs.readFileSync('wp-content/themes/kepoli/assets/img/writer-photo.svg', 'utf8');
 
 const failures = [];
 const notes = [];
@@ -73,6 +74,14 @@ function wordCount(value) {
     .filter(Boolean).length;
 }
 
+function rejectPublicCopy(label, value, patterns) {
+  for (const pattern of patterns) {
+    if (pattern.test(String(value || ''))) {
+      failures.push(`Production copy issue in ${label}: ${pattern}`);
+    }
+  }
+}
+
 requireIncludes('despre-kepoli', 'trust/originality language', [
   /publicitate/i,
   /politica-editoriala/i,
@@ -119,6 +128,35 @@ requireIncludes('politica-editoriala', 'editorial quality disclosures', [
   /sponsorizate|comerciale/i,
   /subiecte/i,
   /Titluri|titlurile/i,
+]);
+
+for (const page of pages) {
+  rejectPublicCopy(`page ${page.slug}`, page.content, [
+    /placeholder/i,
+    /lorem/i,
+    /dummy/i,
+    /functionare si dezvoltare/i,
+  ]);
+}
+
+for (const post of posts) {
+  rejectPublicCopy(`post ${post.slug}`, JSON.stringify(post), [
+    /placeholder/i,
+    /lorem/i,
+    /dummy/i,
+  ]);
+}
+
+rejectPublicCopy('sidebar author box', themeFiles.get('template-parts-sidebar'), [
+  /Retete romanesti testate/i,
+]);
+
+rejectPublicCopy('author illustration asset', writerPhotoSvg, [
+  /placeholder/i,
+]);
+
+requireThemeIncludes('functions', 'deploy fingerprint opt-in guard', [
+  /function kepoli_deploy_fingerprint_meta\(\): void[\s\S]*KEPOLI_DEPLOY_FINGERPRINT/,
 ]);
 
 requireIncludes('disclaimer-culinar', 'culinary disclaimer coverage', [
