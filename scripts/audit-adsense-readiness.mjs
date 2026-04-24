@@ -9,6 +9,8 @@ const dockerCompose = fs.readFileSync('docker-compose.yml', 'utf8');
 const wordpressDockerfile = fs.readFileSync('docker/wordpress/Dockerfile', 'utf8');
 const apachePerformanceConf = fs.readFileSync('docker/wordpress/kepoli-performance.conf', 'utf8');
 const adtechMuPlugin = fs.readFileSync('wp-content/mu-plugins/kepoli-adtech.php', 'utf8');
+const siteJs = fs.readFileSync('wp-content/themes/kepoli/assets/js/site.js', 'utf8');
+const siteMinJs = fs.readFileSync('wp-content/themes/kepoli/assets/js/site.min.js', 'utf8');
 const themeFiles = new Map([
   ['header', fs.readFileSync('wp-content/themes/kepoli/header.php', 'utf8')],
   ['functions', fs.readFileSync('wp-content/themes/kepoli/functions.php', 'utf8')],
@@ -36,6 +38,8 @@ const themeAssetStats = {
   writerJpg: fs.statSync('wp-content/themes/kepoli/assets/img/writer-photo.jpg').size,
   styleCss: fs.statSync('wp-content/themes/kepoli/style.css').size,
   styleMinCss: fs.statSync('wp-content/themes/kepoli/style.min.css').size,
+  siteJs: fs.statSync('wp-content/themes/kepoli/assets/js/site.js').size,
+  siteMinJs: fs.statSync('wp-content/themes/kepoli/assets/js/site.min.js').size,
 };
 
 const failures = [];
@@ -262,6 +266,25 @@ requireThemeIncludes('functions', 'production stylesheet enqueue', [
   /style\.min\.css/,
   /filemtime\(\$style_path\)/,
 ]);
+
+requireThemeIncludes('functions', 'production script enqueue', [
+  /site\.min\.js/,
+  /filemtime\(\$script\)/,
+  /wp_script_add_data\('kepoli-site',\s*'strategy',\s*'defer'\)/,
+]);
+
+requireTextIncludes('throttled frontend script', `${siteJs}\n${siteMinJs}`, [
+  /requestAnimationFrame\(updateProgress\)/,
+  /scheduleProgressUpdate/,
+]);
+
+if (/console\.(log|warn|error|debug)/.test(siteJs) || /console\.(log|warn|error|debug)/.test(siteMinJs)) {
+  failures.push('Production frontend script should not write to the browser console.');
+}
+
+if (themeAssetStats.siteMinJs >= themeAssetStats.siteJs) {
+  failures.push('Minified frontend script is not smaller than site.js.');
+}
 
 requireThemeIncludes('functions', 'responsive lazy post media images', [
   /function kepoli_post_media_image_attrs/,

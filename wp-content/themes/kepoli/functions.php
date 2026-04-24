@@ -1276,11 +1276,17 @@ function kepoli_scripts(): void
     }
     wp_enqueue_style('kepoli-style', $style_uri, [], (string) filemtime($style_path));
 
-    $script = get_template_directory() . '/assets/js/site.js';
+    $script = get_template_directory() . '/assets/js/site.min.js';
+    $script_uri = get_template_directory_uri() . '/assets/js/site.min.js';
+    if (!file_exists($script)) {
+        $script = get_template_directory() . '/assets/js/site.js';
+        $script_uri = get_template_directory_uri() . '/assets/js/site.js';
+    }
+
     if (file_exists($script)) {
         wp_enqueue_script(
             'kepoli-site',
-            get_template_directory_uri() . '/assets/js/site.js',
+            $script_uri,
             [],
             (string) filemtime($script),
             true

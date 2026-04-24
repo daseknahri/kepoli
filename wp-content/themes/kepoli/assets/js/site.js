@@ -56,7 +56,10 @@
   const source = document.querySelector('[data-reading-progress-source]');
 
   if (progress && progressBar && source) {
+    let progressFrame = 0;
+
     const updateProgress = () => {
+      progressFrame = 0;
       const rect = source.getBoundingClientRect();
       const total = source.offsetHeight - window.innerHeight;
 
@@ -72,9 +75,17 @@
       progressBar.style.width = `${value}%`;
     };
 
+    const scheduleProgressUpdate = () => {
+      if (progressFrame) {
+        return;
+      }
+
+      progressFrame = window.requestAnimationFrame(updateProgress);
+    };
+
     updateProgress();
-    document.addEventListener('scroll', updateProgress, { passive: true });
-    window.addEventListener('resize', updateProgress);
+    document.addEventListener('scroll', scheduleProgressUpdate, { passive: true });
+    window.addEventListener('resize', scheduleProgressUpdate, { passive: true });
   }
 
   document.querySelectorAll('[data-copy-url]').forEach((button) => {
@@ -110,7 +121,7 @@
           button.setAttribute('title', defaultTitle);
         }, 1800);
       } catch (error) {
-        console.error(error);
+        button.setAttribute('title', defaultTitle);
       }
     });
   });
