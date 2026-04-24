@@ -24,3 +24,15 @@ docker compose --profile seed run --rm wp-init
 Do not use `docker-compose.local.yml` in Coolify. That override publishes host port `8080` for local development and can fail on shared servers when the port is already allocated.
 
 If Coolify skips or stops the one-shot service, the `wordpress` image already contains `seed` and `content`; the `kepoli-autoseed` MU plugin runs the seed once on the next request and activates the Kepoli theme.
+
+After a GitHub deploy, verify the public site is actually on the current repo build:
+
+```sh
+node scripts/check-live-deploy.mjs https://kepoli.com
+```
+
+What the result means:
+
+- `Live target` mismatch: Coolify is still serving an older image or did not redeploy the latest commit.
+- `Live current` mismatch: the new code reached production, but the seed version on the live database did not catch up yet.
+- Missing `kepoli-seed-*` meta tags: the public site is still on a build older than the deploy fingerprint update.

@@ -1298,6 +1298,40 @@ function kepoli_social_meta(): void
 }
 add_action('wp_head', 'kepoli_social_meta', 3);
 
+function kepoli_code_seed_version(): string
+{
+    static $version = null;
+
+    if ($version !== null) {
+        return $version;
+    }
+
+    if (!function_exists('kepoli_seed_target_version') && file_exists('/seed/version.php')) {
+        require_once '/seed/version.php';
+    }
+
+    $version = function_exists('kepoli_seed_target_version')
+        ? (string) kepoli_seed_target_version()
+        : '';
+
+    return $version;
+}
+
+function kepoli_deploy_fingerprint_meta(): void
+{
+    $target_version = kepoli_code_seed_version();
+    $current_version = (string) get_option('kepoli_seed_version', '');
+
+    if ($target_version !== '') {
+        printf("<meta name=\"kepoli-seed-target\" content=\"%s\">\n", esc_attr($target_version));
+    }
+
+    if ($current_version !== '') {
+        printf("<meta name=\"kepoli-seed-current\" content=\"%s\">\n", esc_attr($current_version));
+    }
+}
+add_action('wp_head', 'kepoli_deploy_fingerprint_meta', 4);
+
 function kepoli_adsense_head(): void
 {
     $client = kepoli_env('ADSENSE_CLIENT_ID');
