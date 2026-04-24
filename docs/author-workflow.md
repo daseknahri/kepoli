@@ -13,6 +13,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 - The Text editor tab also gets the same quick buttons.
 - The `Kepoli post setup` box lets the writer choose `Reteta` or `Articol`, write an excerpt, write a meta description, add related post slugs, complete featured-image metadata, and complete recipe structured data.
 - The setup box includes automation buttons for `Completeaza automat`, `Extrage schema reteta`, `Genereaza excerpt`, `Genereaza meta description`, `Sugereaza linkuri interne`, and `Genereaza meta imagine`.
+- Kepoli also tries to complete empty setup fields earlier in the flow: after the writer adds a real title, pastes enough content, switches to `Reteta`, or inserts one of the built-in templates.
 - The setup box also shows a live editorial checklist, so the writer can see what is still missing before publishing.
 - If the writer saves a post with empty excerpt, meta description, related slugs, or featured-image metadata, Kepoli fills sensible defaults from the title/content and current post library.
 - Seeded launch posts also read prefixed image metadata from `content/image-plan.json`, so the editor can show ready-made alt text, title, caption, and description even before the featured image is uploaded.
@@ -25,12 +26,13 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 2. Add the title in the top field.
 3. Write or paste the article/recipe in the main content field.
 4. In `Kepoli post setup`, choose whether the post is a `Reteta` or `Articol`.
-5. Click `Completeaza automat` to fill the common empty fields in one pass: SEO title, excerpt, meta description, internal links, image metadata, and recipe schema where Kepoli can infer it.
-6. Add a featured image, then click `Genereaza meta imagine` if you want to refresh alt text, title, caption, and Media Library description specifically for that image.
-7. For recipes, click `Extrage schema reteta` after you write the structured content. Kepoli will look for sections like `Ingrediente` and `Mod de preparare` and move them into the recipe schema fields.
-8. For a long article, click `2 parti` or `3 parti` in the toolbar.
-9. Watch the live checklist in `Kepoli post setup` and complete any missing items.
-10. Review the generated fields and inserted page breaks before publishing. If you publish with missing essentials, Kepoli will show a final warning.
+5. Start with the title and main content. Kepoli now tries to fill empty setup fields automatically once there is enough real content to work from.
+6. Click `Completeaza automat` any time you want to rerun the common empty-field fill in one pass: SEO title, excerpt, meta description, internal links, image metadata, and recipe schema where Kepoli can infer it.
+7. Add a featured image, then click `Genereaza meta imagine` if you want to refresh alt text, title, caption, and Media Library description specifically for that image.
+8. For recipes, click `Extrage schema reteta` after you write the structured content. Kepoli will look for sections like `Ingrediente` and `Mod de preparare` and move them into the recipe schema fields.
+9. For a long article, click `2 parti` or `3 parti` in the toolbar.
+10. Watch the live checklist in `Kepoli post setup` and complete any missing items.
+11. Review the generated fields and inserted page breaks before publishing. If you publish with missing essentials, Kepoli will show a final warning.
 
 ## Image Workflow For Seeded Posts
 

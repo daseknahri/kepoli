@@ -79,6 +79,22 @@
     return field ? String(field.value || '').trim() : '';
   }
 
+  function oncePerSessionFlag(key) {
+    if (!window.kepoliAuthorToolsState) {
+      window.kepoliAuthorToolsState = {};
+    }
+
+    return window.kepoliAuthorToolsState[key];
+  }
+
+  function setSessionFlag(key, value) {
+    if (!window.kepoliAuthorToolsState) {
+      window.kepoliAuthorToolsState = {};
+    }
+
+    window.kepoliAuthorToolsState[key] = value;
+  }
+
   function hasFeaturedImage() {
     const thumbnailInput = document.getElementById('_thumbnail_id');
     return !!(thumbnailInput && String(thumbnailInput.value || '').trim() && String(thumbnailInput.value) !== '-1');
@@ -354,6 +370,27 @@
     }
   }
 
+  function completeSetupIfReady(reason, showStatus) {
+    const title = currentTitle();
+    const content = currentContentText();
+
+    if (title.length < 6) {
+      return false;
+    }
+
+    if (content.length < 80 && reason !== 'kind') {
+      return false;
+    }
+
+    completeSetup();
+
+    if (showStatus) {
+      setStatus('Kepoli a completat automat campurile goale pe baza titlului si continutului curent.');
+    }
+
+    return true;
+  }
+
   function bindAutomationButtons() {
     const setupButton = document.querySelector('[data-kepoli-complete-setup]');
     const recipeButton = document.querySelector('[data-kepoli-extract-recipe]');
@@ -518,9 +555,14 @@
         if (type === 'recipe') {
           setKind('recipe');
           insertContent(recipeTemplate());
+          window.setTimeout(() => {
+            completeSetupIfReady('template', true);
+            fillRecipeSchema(true);
+          }, 120);
         } else {
           setKind('article');
           insertContent(articleTemplate());
+          window.setTimeout(() => completeSetupIfReady('template', true), 120);
         }
       });
     });
@@ -541,6 +583,47 @@
 
     inputs.forEach((input) => input.addEventListener('change', update));
     update();
+  }
+
+  function bindPassiveAutofill() {
+    const titleField = document.getElementById('title');
+    const contentField = getTextarea();
+    const kindInputs = Array.from(document.querySelectorAll('input[name="kepoli_post_kind"]'));
+
+    if (titleField) {
+      titleField.addEventListener('blur', () => {
+        if (oncePerSessionFlag('titleAutofill')) {
+          return;
+        }
+
+        if (completeSetupIfReady('title', true)) {
+          setSessionFlag('titleAutofill', true);
+        }
+      });
+    }
+
+    if (contentField) {
+      const triggerContentAutofill = () => {
+        if (oncePerSessionFlag('contentAutofill')) {
+          return;
+        }
+
+        if (completeSetupIfReady('content', true)) {
+          setSessionFlag('contentAutofill', true);
+        }
+      };
+
+      contentField.addEventListener('blur', triggerContentAutofill);
+      contentField.addEventListener('paste', () => window.setTimeout(triggerContentAutofill, 180));
+    }
+
+    kindInputs.forEach((input) => {
+      input.addEventListener('change', () => {
+        if (completeSetupIfReady('kind', false) && input.value === 'recipe') {
+          fillRecipeSchema(true);
+        }
+      });
+    });
   }
 
   function checklistState() {
@@ -675,6 +758,7 @@
     bindAutomationButtons();
     bindTemplateButtons();
     bindKindToggle();
+    bindPassiveAutofill();
     bindChecklist();
     bindPublishWarning();
   }
