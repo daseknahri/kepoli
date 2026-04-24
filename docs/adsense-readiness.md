@@ -10,6 +10,7 @@ Implemented readiness items:
 - Clear category navigation and internal links.
 - Ad placeholders that preserve layout before ad units exist.
 - Live ad rendering gated by environment variables, including an explicit `ADSENSE_ENABLE` switch.
+- Optional Analytics rendering gated by an explicit `GA_ENABLE` switch so it can wait for consent setup.
 - `ads.txt` generated only after `ADSENSE_PUB_ID` is configured.
 - Google Site Kit installed for later account connection.
 - Dedicated public page for `Publicitate si consimtamant`.
@@ -28,7 +29,7 @@ Before applying:
 - Review generated recipes for correctness and originality.
 - Connect Site Kit to the Google account that owns AdSense/Search Console/Analytics.
 - Configure Google Privacy & Messaging or a Google-certified CMP for Romania, EEA, UK, and Switzerland visitors before showing personalized ads.
-- Keep `ADSENSE_ENABLE=0` until the consent flow is live, includes a link to Google's Business Data Responsibility site, and has been tested on the live domain.
+- Keep `ADSENSE_ENABLE=0` and `GA_ENABLE=0` until the consent flow is live, includes a link to Google's Business Data Responsibility site, and has been tested on the live domain.
 - Review the live site after each redeploy to confirm `Politica editoriala`, `Publicitate si consimtamant`, `Politica de confidentialitate`, and `Disclaimer culinar` are all public and linked in the footer.
 
 Search Console domain variants:

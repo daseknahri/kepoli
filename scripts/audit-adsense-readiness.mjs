@@ -2,6 +2,9 @@ import fs from 'node:fs';
 
 const posts = JSON.parse(fs.readFileSync('content/posts.json', 'utf8'));
 const pages = JSON.parse(fs.readFileSync('content/pages.json', 'utf8'));
+const envExample = fs.readFileSync('.env.example', 'utf8');
+const readme = fs.readFileSync('README.md', 'utf8');
+const adsenseDocs = fs.readFileSync('docs/adsense-readiness.md', 'utf8');
 const themeFiles = new Map([
   ['header', fs.readFileSync('wp-content/themes/kepoli/header.php', 'utf8')],
   ['functions', fs.readFileSync('wp-content/themes/kepoli/functions.php', 'utf8')],
@@ -76,6 +79,14 @@ function requireSeedIncludes(label, patterns) {
   for (const pattern of patterns) {
     if (!pattern.test(seedBootstrap)) {
       failures.push(`Seed bootstrap is missing ${label}: ${pattern}`);
+    }
+  }
+}
+
+function requireTextIncludes(label, value, patterns) {
+  for (const pattern of patterns) {
+    if (!pattern.test(value)) {
+      failures.push(`${label} is missing: ${pattern}`);
     }
   }
 }
@@ -170,6 +181,39 @@ rejectPublicCopy('author illustration asset', writerPhotoSvg, [
 
 requireThemeIncludes('functions', 'deploy fingerprint opt-in guard', [
   /function kepoli_deploy_fingerprint_meta\(\): void[\s\S]*KEPOLI_DEPLOY_FINGERPRINT/,
+]);
+
+requireTextIncludes('.env.example Google service gates', envExample, [
+  /ADSENSE_ENABLE=0/,
+  /GA_ENABLE=0/,
+  /GA_MEASUREMENT_ID=/,
+]);
+
+requireTextIncludes('AdSense docs consent gates', `${readme}\n${adsenseDocs}`, [
+  /ADSENSE_ENABLE=0[^.\n]*GA_ENABLE=0|GA_ENABLE=0[^.\n]*ADSENSE_ENABLE=0/,
+  /consent/i,
+]);
+
+requireThemeIncludes('functions', 'frontend output cleanup', [
+  /function kepoli_trim_wordpress_frontend_output\(\): void/,
+  /remove_action\('wp_head',\s*'print_emoji_detection_script'/,
+  /remove_action\('wp_head',\s*'wp_generator'/,
+  /remove_action\('wp_head',\s*'wp_oembed_add_discovery_links'/,
+  /function kepoli_dequeue_unused_frontend_assets\(\): void/,
+  /wp_dequeue_style\('wp-block-library'\)/,
+]);
+
+requireThemeIncludes('functions', 'conditional Google resource hints', [
+  /function kepoli_resource_hints\(array \$urls,\s*string \$relation_type\): array/,
+  /kepoli_ga_enabled\(\)\s*&&\s*kepoli_env\('GA_MEASUREMENT_ID'\)/,
+  /kepoli_ads_enabled\(\)\s*&&\s*kepoli_env\('ADSENSE_CLIENT_ID'\)/,
+  /news\.google\.com/,
+]);
+
+requireThemeIncludes('functions', 'Analytics consent gate', [
+  /function kepoli_ga_enabled\(\): bool/,
+  /GA_ENABLE/,
+  /if \(\$measurement_id === '' \|\| !kepoli_ga_enabled\(\)\)/,
 ]);
 
 requireThemeIncludes('functions', 'Google SWG openaccess article markup', [

@@ -174,6 +174,11 @@ function kepoli_ads_enabled(): bool
     return kepoli_env_bool('ADSENSE_ENABLE', false);
 }
 
+function kepoli_ga_enabled(): bool
+{
+    return kepoli_env_bool('GA_ENABLE', false);
+}
+
 function kepoli_primary_category(int $post_id = 0): ?WP_Term
 {
     $post_id = $post_id ?: get_the_ID();
@@ -1242,6 +1247,25 @@ function kepoli_setup(): void
 }
 add_action('after_setup_theme', 'kepoli_setup');
 
+function kepoli_trim_wordpress_frontend_output(): void
+{
+    remove_action('wp_head', 'print_emoji_detection_script', 7);
+    remove_action('wp_print_styles', 'print_emoji_styles');
+    remove_action('admin_print_scripts', 'print_emoji_detection_script');
+    remove_action('admin_print_styles', 'print_emoji_styles');
+    remove_action('wp_head', 'wp_generator');
+    remove_action('wp_head', 'rsd_link');
+    remove_action('wp_head', 'wlwmanifest_link');
+    remove_action('wp_head', 'wp_shortlink_wp_head');
+    remove_action('wp_head', 'rest_output_link_wp_head');
+    remove_action('wp_head', 'wp_oembed_add_discovery_links');
+    remove_action('wp_head', 'wp_oembed_add_host_js');
+    remove_action('template_redirect', 'rest_output_link_header', 11);
+    add_filter('emoji_svg_url', '__return_false');
+    add_filter('show_recent_comments_widget_style', '__return_false');
+}
+add_action('after_setup_theme', 'kepoli_trim_wordpress_frontend_output');
+
 function kepoli_scripts(): void
 {
     $style_path = get_template_directory() . '/style.min.css';
@@ -1265,6 +1289,47 @@ function kepoli_scripts(): void
     }
 }
 add_action('wp_enqueue_scripts', 'kepoli_scripts');
+
+function kepoli_dequeue_unused_frontend_assets(): void
+{
+    if (is_admin()) {
+        return;
+    }
+
+    wp_dequeue_style('wp-block-library');
+    wp_dequeue_style('global-styles');
+    wp_dequeue_style('classic-theme-styles');
+
+    if (!is_user_logged_in()) {
+        wp_deregister_style('dashicons');
+    }
+}
+add_action('wp_enqueue_scripts', 'kepoli_dequeue_unused_frontend_assets', 20);
+
+function kepoli_resource_hints(array $urls, string $relation_type): array
+{
+    $hints = [];
+
+    if (kepoli_ga_enabled() && kepoli_env('GA_MEASUREMENT_ID') !== '') {
+        $hints[] = 'https://www.googletagmanager.com';
+    }
+
+    if (kepoli_ads_enabled() && kepoli_env('ADSENSE_CLIENT_ID') !== '') {
+        $hints[] = 'https://pagead2.googlesyndication.com';
+        $hints[] = 'https://googleads.g.doubleclick.net';
+    }
+
+    if (is_singular('post')) {
+        $hints[] = 'https://news.google.com';
+    }
+
+    if ($relation_type === 'dns-prefetch' || $relation_type === 'preconnect') {
+        $urls = array_merge($urls, $hints);
+    }
+
+    return array_values(array_unique($urls));
+}
+add_filter('wp_resource_hints', 'kepoli_resource_hints', 10, 2);
 
 function kepoli_register_sidebars(): void
 {
@@ -1396,7 +1461,7 @@ add_action('wp_head', 'kepoli_adsense_head', 8);
 function kepoli_ga_head(): void
 {
     $measurement_id = kepoli_env('GA_MEASUREMENT_ID');
-    if ($measurement_id === '') {
+    if ($measurement_id === '' || !kepoli_ga_enabled()) {
         return;
     }
     ?>

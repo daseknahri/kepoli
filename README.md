@@ -52,7 +52,7 @@ Before submitting to AdSense:
 - Review all 30 posts for culinary accuracy and originality.
 - Connect Google Site Kit from WordPress admin.
 - Configure Google Privacy & Messaging or another Google-certified CMP for Romania, EEA, UK, and Switzerland traffic before personalized ads.
-- Keep `ADSENSE_ENABLE=0` until the consent layer is live and tested.
+- Keep `ADSENSE_ENABLE=0` and `GA_ENABLE=0` until the consent layer is live and tested.
 - Add your real AdSense client, publisher, and slot IDs in Coolify.
 
 ## Author Writing
