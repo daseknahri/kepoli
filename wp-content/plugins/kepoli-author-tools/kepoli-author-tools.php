@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.1
+ * Version: 1.8.2
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.1';
+    private const VERSION = '1.8.2';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -126,6 +126,9 @@ final class Kepoli_Author_Tools
                     'publishConfirmSuffix' => __('Continui totusi publicarea?', 'kepoli-author-tools'),
                     'companionReady' => __('Postarea arata bine pentru urmatorul pas. Fa doar o ultima lectura inainte de publicare.', 'kepoli-author-tools'),
                     'companionReview' => __('Mai sunt cateva lucruri de verificat inainte sa publici.', 'kepoli-author-tools'),
+                    'companionStatusReady' => __('Gata pentru o ultima lectura.', 'kepoli-author-tools'),
+                    'companionStatusSingle' => __('Mai lipseste 1 lucru important.', 'kepoli-author-tools'),
+                    'companionStatusMultiple' => __('Mai lipsesc %d lucruri importante.', 'kepoli-author-tools'),
                     'companionNoCategory' => __('Nicio sugestie clara inca', 'kepoli-author-tools'),
                     'companionNoTags' => __('Fara taguri sugerate inca', 'kepoli-author-tools'),
                 ],
@@ -149,20 +152,27 @@ final class Kepoli_Author_Tools
     {
         ?>
         <div class="kepoli-publish-companion" data-kepoli-publish-companion>
-            <p class="kepoli-publish-companion__intro"><?php esc_html_e('Un rezumat scurt al lucrurilor pe care Kepoli le-a completat automat si al celor care mai cer o verificare umana.', 'kepoli-author-tools'); ?></p>
-            <div class="kepoli-publish-companion__block">
-                <span class="kepoli-publish-companion__label"><?php esc_html_e('Categoria sugerata', 'kepoli-author-tools'); ?></span>
-                <strong data-kepoli-companion-category><?php esc_html_e('Se calculeaza...', 'kepoli-author-tools'); ?></strong>
-            </div>
-            <div class="kepoli-publish-companion__block">
-                <span class="kepoli-publish-companion__label"><?php esc_html_e('Taguri sugerate', 'kepoli-author-tools'); ?></span>
-                <p data-kepoli-companion-tags><?php esc_html_e('Se calculeaza...', 'kepoli-author-tools'); ?></p>
-            </div>
-            <div class="kepoli-publish-companion__block">
-                <span class="kepoli-publish-companion__label"><?php esc_html_e('Mai verifica', 'kepoli-author-tools'); ?></span>
-                <ul class="kepoli-publish-companion__checks" data-kepoli-companion-checks></ul>
+            <p class="kepoli-publish-companion__intro"><?php esc_html_e('Cand esti aproape gata, foloseste acest buton pentru completarea automata finala.', 'kepoli-author-tools'); ?></p>
+            <div class="kepoli-publish-companion__actions">
+                <button type="button" class="button button-primary" data-kepoli-companion-complete><?php esc_html_e('Pregateste pentru publicare', 'kepoli-author-tools'); ?></button>
+                <p class="kepoli-publish-companion__status" data-kepoli-companion-status></p>
             </div>
             <p class="kepoli-publish-companion__summary" data-kepoli-companion-summary></p>
+            <details class="kepoli-publish-companion__details">
+                <summary><?php esc_html_e('Vezi detalii', 'kepoli-author-tools'); ?></summary>
+                <div class="kepoli-publish-companion__block">
+                    <span class="kepoli-publish-companion__label"><?php esc_html_e('Categoria sugerata', 'kepoli-author-tools'); ?></span>
+                    <strong data-kepoli-companion-category><?php esc_html_e('Se calculeaza...', 'kepoli-author-tools'); ?></strong>
+                </div>
+                <div class="kepoli-publish-companion__block">
+                    <span class="kepoli-publish-companion__label"><?php esc_html_e('Taguri sugerate', 'kepoli-author-tools'); ?></span>
+                    <p data-kepoli-companion-tags><?php esc_html_e('Se calculeaza...', 'kepoli-author-tools'); ?></p>
+                </div>
+                <div class="kepoli-publish-companion__block">
+                    <span class="kepoli-publish-companion__label"><?php esc_html_e('Mai verifica', 'kepoli-author-tools'); ?></span>
+                    <ul class="kepoli-publish-companion__checks" data-kepoli-companion-checks></ul>
+                </div>
+            </details>
         </div>
         <?php
     }

@@ -18,7 +18,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 - If the writer saves a post with empty excerpt, meta description, related slugs, or featured-image metadata, Kepoli fills sensible defaults from the title/content and current post library.
 - Seeded launch posts also read prefixed image metadata from `content/image-plan.json`, so the editor can show ready-made alt text, title, caption, and description even before the featured image is uploaded.
 - The `Kepoli writing tools` box includes quick buttons for inserting a recipe or article writing structure.
-- A side box called `Kepoli publish companion` stays near Publish and summarizes the suggested category, suggested tags, and the main items that still need manual review.
+- A side box called `Kepoli publish companion` stays near Publish with one main action, `Pregateste pentru publicare`, plus optional details for category, tags, and the short review list.
 - The `Posts` list includes `Tip Kepoli` and `Setup` columns, plus a Reteta/Articol filter for quick editorial audits.
 
 ## How To Use It
@@ -32,7 +32,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 7. Open `Mai multe unelte` only when you want a specific helper, like `Sugereaza categorie`, `Sugereaza taguri`, `Extrage schema reteta`, or `Genereaza meta imagine`.
 8. For a long article, click `2 parti` or `3 parti` in the toolbar.
 9. Watch the live checklist in `Kepoli post setup` and complete any missing items.
-10. Check `Kepoli publish companion` near Publish for a compact summary of the current category/tag suggestions and anything still missing.
+10. When you are almost done, use `Pregateste pentru publicare` near Publish for one last automatic pass, then open `Vezi detalii` only if you want the category, tags, or the short review list.
 11. Review the generated fields and inserted page breaks before publishing. If you publish with missing essentials, Kepoli will show a final warning.
 
 ## Image Workflow For Seeded Posts

@@ -35,6 +35,23 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   line-height: 1.45;
 }
 
+.kepoli-publish-companion__actions {
+  margin-top: 12px;
+}
+
+.kepoli-publish-companion__actions .button-primary {
+  width: 100%;
+  justify-content: center;
+  min-height: 36px;
+}
+
+.kepoli-publish-companion__status {
+  margin: 8px 0 0;
+  color: #6b654f;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .kepoli-publish-companion__block + .kepoli-publish-companion__block {
   margin-top: 14px;
 }
@@ -79,6 +96,36 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
 .kepoli-publish-companion__summary.is-missing {
   background: #fff0d8;
   color: #84501f;
+}
+
+.kepoli-publish-companion__details {
+  margin-top: 14px;
+  border: 1px solid #e7d9c4;
+  background: #fffdf8;
+}
+
+.kepoli-publish-companion__details summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  color: #252416;
+  font-weight: 700;
+}
+
+.kepoli-publish-companion__details[open] summary {
+  border-bottom: 1px solid #e7d9c4;
+}
+
+.kepoli-publish-companion__details .kepoli-publish-companion__block {
+  margin-left: 12px;
+  margin-right: 12px;
+}
+
+.kepoli-publish-companion__details .kepoli-publish-companion__block:first-of-type {
+  margin-top: 12px;
+}
+
+.kepoli-publish-companion__details .kepoli-publish-companion__block:last-of-type {
+  margin-bottom: 12px;
 }
 
 .kepoli-author-guide ol {

@@ -139,14 +139,19 @@
   }
 
   function setStatus(message) {
-    const status = document.querySelector('[data-kepoli-automation-status]');
-    if (!status) {
+    const targets = document.querySelectorAll('[data-kepoli-automation-status], [data-kepoli-companion-status]');
+    if (!targets.length) {
       return;
     }
 
-    status.textContent = message;
+    targets.forEach((status) => {
+      status.textContent = message;
+    });
+
     window.setTimeout(() => {
-      status.textContent = '';
+      targets.forEach((status) => {
+        status.textContent = '';
+      });
     }, 2600);
   }
 
@@ -960,8 +965,9 @@
     const tagsTarget = document.querySelector('[data-kepoli-companion-tags]');
     const checksTarget = document.querySelector('[data-kepoli-companion-checks]');
     const summaryTarget = document.querySelector('[data-kepoli-companion-summary]');
+    const statusTarget = document.querySelector('[data-kepoli-companion-status]');
 
-    if (!categoryTarget || !tagsTarget || !checksTarget || !summaryTarget) {
+    if (!categoryTarget || !tagsTarget || !checksTarget || !summaryTarget || !statusTarget) {
       return;
     }
 
@@ -985,6 +991,15 @@
       const li = document.createElement('li');
       li.textContent = 'doar lectura finala';
       checksTarget.appendChild(li);
+    }
+
+    if (!missing.length) {
+      statusTarget.textContent = strings.companionStatusReady || 'Gata pentru o ultima lectura.';
+    } else if (missing.length === 1) {
+      statusTarget.textContent = strings.companionStatusSingle || 'Mai lipseste 1 lucru important.';
+    } else {
+      const template = strings.companionStatusMultiple || 'Mai lipsesc %d lucruri importante.';
+      statusTarget.textContent = template.replace('%d', String(missing.length));
     }
 
     summaryTarget.textContent = missing.length
@@ -1067,6 +1082,20 @@
     renderPublishCompanion();
   }
 
+  function bindCompanionActions() {
+    const button = document.querySelector('[data-kepoli-companion-complete]');
+    if (!button) {
+      return;
+    }
+
+    button.addEventListener('click', () => {
+      completeSetup();
+      setStatus('Kepoli a facut completarea finala a campurilor goale. Verifica rezultatul inainte de publicare.');
+      renderChecklist();
+      renderPublishCompanion();
+    });
+  }
+
   function initKepoliAuthorTools() {
     addQuicktagsButtons();
     bindAutomationButtons();
@@ -1075,6 +1104,7 @@
     bindPassiveAutofill();
     bindChecklist();
     bindCompanionRefresh();
+    bindCompanionActions();
     bindPublishWarning();
   }
 
