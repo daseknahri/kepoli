@@ -562,7 +562,8 @@
     "title": "Ghidul camarii romanesti",
     "category": "articole",
     "tags": ["camara", "ingrediente", "organizare"],
-    "excerpt": "O camara romaneasca bine asezata iti scurteaza gatitul de peste saptamana: stii ce poti pune pe foc, ce merita cumparat si ce nu are rost sa stea uitat pe raft.",
+    "excerpt": "O camara romaneasca bine asezata iti scurteaza gatitul de peste saptamana: vezi repede ce poti pune pe foc, ce merita completat si ce nu are rost sa stea uitat pe raft.",
+    "intro": "O camara buna nu inseamna rafturi pline doar ca sa para gospodaresti, ci ingrediente pe care chiar le folosesti si le recunosti dintr-o privire. Cand stii ce ai in casa si ce rol are fiecare lucru, mesele din timpul saptamanii se leaga mai repede si cu mai putina risipa.",
     "takeaways": [
       "Pastreaza in centru ingredientele care intra in mai multe retete, nu cele cumparate din entuziasm.",
       "Separa baza de gust, produsele uscate si aromele finale ca sa vezi imediat ce iti lipseste.",
@@ -593,7 +594,8 @@
     "title": "Cum alegi ingredientele pentru retete romanesti",
     "category": "articole",
     "tags": ["ingrediente", "cumparaturi", "retete romanesti"],
-    "excerpt": "Ingredientele bune pentru retete romanesti nu sunt neaparat cele mai scumpe, ci cele care se potrivesc preparatului, sezonului si modului in care gatesti de fapt acasa.",
+    "excerpt": "Ingredientele bune pentru retete romanesti nu sunt neaparat cele mai scumpe, ci cele care se potrivesc preparatului, sezonului si felului in care gatesti cu adevarat acasa.",
+    "intro": "Multe retete ies doar pe jumatate nu pentru ca lipseste tehnica, ci pentru ca ingredientul ales nu se potriveste cu preparatul. Ghidul acesta te ajuta sa judeci mai calm legumele, carnea, lactatele si produsele uscate, fara sa confunzi pretul mare cu alegerea buna.",
     "takeaways": [
       "Judeca ingredientul dupa rolul lui in reteta, nu dupa ambalaj sau pretul cel mai mare.",
       "Legumele de baza, carnea si lactatele schimba mai mult rezultatul decat condimentele scumpe.",
@@ -624,7 +626,8 @@
     "title": "Meniu romanesc de duminica",
     "category": "articole",
     "tags": ["meniu", "duminica", "familie"],
-    "excerpt": "Un meniu romanesc de duminica iese mai bine cand felurile se sprijina intre ele: ceva cald la inceput, un principal bine ales si un desert care nu te tine captiv in bucatarie.",
+    "excerpt": "Un meniu romanesc de duminica iese mai bine cand felurile se sprijina intre ele: ceva cald la inceput, un principal bine ales si un desert care nu tine pe nimeni blocat in bucatarie.",
+    "intro": "Meniul de duminica nu trebuie sa fie incarcat doar ca sa para festiv. De cele mai multe ori, iese mai bine cand fiecare fel sustine masa intreaga, iar pregatirea este gandita astfel incat sa nu petreci toata ziua alergand intre aragaz, cuptor si masa.",
     "takeaways": [
       "Construieste masa pe echilibru, nu pe numarul de feluri.",
       "Muta pe sambata tot ce se poate coace, fierbe sau portiona dinainte.",
@@ -655,7 +658,8 @@
     "title": "Tehnici simple pentru aluaturi si baze",
     "category": "articole",
     "tags": ["aluat", "tehnici", "patiserie"],
-    "excerpt": "Aluaturile bune se citesc cu mana si cu ochiul: textura, temperatura si timpul de odihna spun mai mult decat simpla lista de grame.",
+    "excerpt": "Aluaturile bune se citesc cu mana si cu ochiul: textura, temperatura si timpul de odihna spun mai mult decat simpla lista de grame din reteta.",
+    "intro": "Multe aluaturi par capricioase doar pana incepi sa le citesti dupa semnele lor reale. Cand intelegi cum arata o compozitie prea uscata, prea rece sau grabita, ajungi mai repede la rezultate bune fara sa te agati rigid de cronometru.",
     "takeaways": [
       "Textura aluatului si ritmul lui real bat cronometrul din reteta.",
       "Temperatura ingredientelor schimba direct cresterea, elasticitatea si fragezimea.",
@@ -686,7 +690,8 @@
     "title": "Calendarul gusturilor de sezon",
     "category": "articole",
     "tags": ["sezon", "calendar", "legume"],
-    "excerpt": "Cand gatesti dupa sezon, alegi mai usor ce cumperi, ce pui in camara si ce retete chiar merita facute in luna respectiva.",
+    "excerpt": "Cand gatesti dupa sezon, alegi mai usor ce merita cumparat, ce pui in camara si ce retete chiar au sens in luna respectiva.",
+    "intro": "Sezonul bun iti usureaza mai multe lucruri deodata: gustul, pretul si decizia despre ce merita gatit acum. Ghidul acesta te ajuta sa vezi mai clar ce ingrediente merita puse in centru in fiecare perioada si cum le legi de meniuri care nu par fortate.",
     "takeaways": [
       "Sezonul influenteaza gustul, pretul si usurinta cu care iese reteta.",
       "Fiecare anotimp are cateva ingrediente care merita puse in centru, nu doar folosite decorativ.",
@@ -717,7 +722,8 @@
     "title": "Cum pastrezi mancarea gatita",
     "category": "articole",
     "tags": ["pastrare", "siguranta", "organizare"],
-    "excerpt": "Pastrarea corecta a mancarii gatite nu tine doar de frigider, ci de racire, portionare, etichetare si decizii calme despre ce merita pastrat.",
+    "excerpt": "Pastrarea corecta a mancarii gatite nu tine doar de frigider, ci de racire, portionare, etichetare si decizii calme despre ce merita pastrat pentru mai tarziu.",
+    "intro": "Mancarea gatita se pierde adesea nu fiindca a fost facuta prea multa, ci pentru ca ramane fara ritm dupa ce se opreste focul. Daca racesti, portionezi si reincalzesti cu ceva mai multa ordine, obtii mai multa claritate, mai putina risipa si mai putine dubii inutile.",
     "takeaways": [
       "Raceste si portioneaza preparatele mai repede decat iti vine natural dupa gatit.",
       "Frigiderul si congelatorul functioneaza doar daca vezi clar ce ai si de cand.",
