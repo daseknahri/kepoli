@@ -225,9 +225,7 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
 }
 
 .kepoli-post-setup__group legend,
-.kepoli-post-setup label > span,
-.kepoli-image-fields h4,
-.kepoli-recipe-fields h4 {
+.kepoli-post-setup label > span {
   display: block;
   margin: 0 0 7px;
   color: #252416;
@@ -270,15 +268,45 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   resize: vertical;
 }
 
-.kepoli-recipe-fields {
-  padding: 16px;
+.kepoli-setup-section {
   border: 1px solid #d9c8af;
   background: #fbf7ef;
 }
 
+.kepoli-setup-section summary {
+  cursor: pointer;
+  padding: 12px 16px;
+  color: #252416;
+  font-weight: 700;
+}
+
+.kepoli-setup-section[open] summary {
+  border-bottom: 1px solid #d9c8af;
+}
+
+.kepoli-setup-section > p,
+.kepoli-setup-section > .kepoli-post-setup__grid {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.kepoli-setup-section > p {
+  margin-top: 14px;
+}
+
+.kepoli-setup-section > .kepoli-post-setup__grid:last-child {
+  margin-bottom: 16px;
+}
+
+.kepoli-recipe-fields {
+  padding: 16px;
+  padding-top: 0;
+}
+
 .kepoli-image-fields {
   padding: 16px;
-  border: 1px solid #e7d9c4;
+  padding-top: 0;
+  border-color: #e7d9c4;
   background: #fffdf8;
 }
 

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.2
+ * Version: 1.8.3
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.2';
+    private const VERSION = '1.8.3';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -231,6 +231,9 @@ final class Kepoli_Author_Tools
         $related_articles = self::array_meta_to_text($post->ID, '_kepoli_related_article_slugs');
         $recipe = self::recipe_data($post->ID);
         $image_meta = self::featured_image_meta($post->ID);
+        $has_image_meta = array_filter($image_meta, static function ($value): bool {
+            return trim((string) $value) !== '';
+        });
 
         wp_nonce_field('kepoli_author_tools_save', 'kepoli_author_tools_nonce');
         ?>
@@ -295,8 +298,8 @@ final class Kepoli_Author_Tools
                 </label>
             </div>
 
-            <div class="kepoli-image-fields">
-                <h4><?php esc_html_e('Featured image metadata', 'kepoli-author-tools'); ?></h4>
+            <details class="kepoli-setup-section kepoli-image-fields" <?php echo $has_image_meta ? ' open' : ''; ?>>
+                <summary><?php esc_html_e('Detalii imagine', 'kepoli-author-tools'); ?></summary>
                 <p><?php esc_html_e('Completeaza aceste campuri pentru imaginea reprezentativa. La salvare, Kepoli le aplica pe featured image daca exista una selectata.', 'kepoli-author-tools'); ?></p>
                 <div class="kepoli-post-setup__grid">
                     <label>
@@ -318,10 +321,10 @@ final class Kepoli_Author_Tools
                         <textarea name="kepoli_image_description" rows="2" placeholder="<?php esc_attr_e('Descriere interna pentru Media Library.', 'kepoli-author-tools'); ?>"><?php echo esc_textarea($image_meta['description']); ?></textarea>
                     </label>
                 </div>
-            </div>
+            </details>
 
-            <div class="kepoli-recipe-fields" data-kepoli-recipe-fields>
-                <h4><?php esc_html_e('Recipe structured data', 'kepoli-author-tools'); ?></h4>
+            <details class="kepoli-setup-section kepoli-recipe-fields" data-kepoli-recipe-fields <?php echo $kind === 'recipe' ? ' open' : ''; ?>>
+                <summary><?php esc_html_e('Date reteta', 'kepoli-author-tools'); ?></summary>
                 <p><?php esc_html_e('Completeaza aceste campuri pentru retete noi. Ele alimenteaza schema Recipe folosita de Google.', 'kepoli-author-tools'); ?></p>
                 <div class="kepoli-post-setup__grid kepoli-post-setup__grid--thirds">
                     <label>
@@ -347,7 +350,7 @@ final class Kepoli_Author_Tools
                         <textarea name="kepoli_recipe_steps" rows="6"><?php echo esc_textarea(implode("\n", $recipe['steps'])); ?></textarea>
                     </label>
                 </div>
-            </div>
+            </details>
 
             <div class="kepoli-editor-checklist" data-kepoli-editor-checklist>
                 <div class="kepoli-editor-checklist__header">

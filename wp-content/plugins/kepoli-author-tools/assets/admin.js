@@ -827,7 +827,11 @@
 
     const update = () => {
       const checked = inputs.find((input) => input.checked);
-      fields.hidden = !checked || checked.value !== 'recipe';
+      const showRecipeFields = !!checked && checked.value === 'recipe';
+      fields.hidden = !showRecipeFields;
+      if (showRecipeFields) {
+        fields.open = true;
+      }
     };
 
     inputs.forEach((input) => input.addEventListener('change', update));
