@@ -152,6 +152,7 @@ $article_list = new WP_Query([
 </section>
 
 <section class="section">
+    <?php $editorial_paths = kepoli_editorial_paths(); ?>
     <div class="section__header">
         <div>
             <p class="eyebrow"><?php esc_html_e('Articole', 'kepoli'); ?></p>
@@ -191,6 +192,31 @@ $article_list = new WP_Query([
             <?php endwhile; wp_reset_postdata(); ?>
         </div>
     </div>
+    <?php if ($editorial_paths) : ?>
+        <div class="guide-paths">
+            <div class="section__header section__header--compact section__header--simple">
+                <div>
+                    <p class="eyebrow"><?php esc_html_e('Zone editoriale', 'kepoli'); ?></p>
+                    <h2><?php esc_html_e('Intra direct in tipul de ghid care te ajuta acum', 'kepoli'); ?></h2>
+                </div>
+                <p><?php esc_html_e('Ingrediente, tehnici, sezon si planificare, grupate ca sa ajungi mai repede la articolul potrivit.', 'kepoli'); ?></p>
+            </div>
+            <div class="guide-path-grid">
+                <?php foreach ($editorial_paths as $path) : ?>
+                    <section class="guide-path <?php echo esc_attr($path['class']); ?>">
+                        <p class="eyebrow"><?php echo esc_html($path['eyebrow']); ?></p>
+                        <h3><?php echo esc_html($path['title']); ?></h3>
+                        <p><?php echo esc_html($path['summary']); ?></p>
+                        <ul class="guide-path__list">
+                            <?php foreach ($path['articles'] as $article) : ?>
+                                <li><a href="<?php echo esc_url($article['url']); ?>"><?php echo esc_html($article['title']); ?></a></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </section>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 </section>
 
 <section class="section section--tight">

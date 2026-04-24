@@ -5,6 +5,7 @@
 get_header();
 
 $featured_article = kepoli_latest_post_by_kind('article');
+$editorial_paths = kepoli_editorial_paths();
 ?>
 <header class="archive-header">
     <?php kepoli_breadcrumbs(); ?>
@@ -32,6 +33,31 @@ $featured_article = kepoli_latest_post_by_kind('article');
                 <?php echo kepoli_render_post_card_meta($featured_article->ID, 'meta-strip meta-strip--inline', 'meta-strip__item'); ?>
             </div>
         </article>
+    </section>
+<?php endif; ?>
+<?php if ($editorial_paths) : ?>
+    <section class="section section--tight">
+        <div class="section__header section__header--compact section__header--simple">
+            <div>
+                <p class="eyebrow"><?php esc_html_e('Zone editoriale', 'kepoli'); ?></p>
+                <h2><?php esc_html_e('Alege dupa tipul de ajutor de care ai nevoie', 'kepoli'); ?></h2>
+            </div>
+            <p><?php esc_html_e('Ghidurile sunt grupate simplu, ca sa ajungi mai repede la ingredientele, tehnicile sau ideile de planificare care conteaza pentru tine.', 'kepoli'); ?></p>
+        </div>
+        <div class="guide-path-grid">
+            <?php foreach ($editorial_paths as $path) : ?>
+                <section class="guide-path <?php echo esc_attr($path['class']); ?>">
+                    <p class="eyebrow"><?php echo esc_html($path['eyebrow']); ?></p>
+                    <h3><?php echo esc_html($path['title']); ?></h3>
+                    <p><?php echo esc_html($path['summary']); ?></p>
+                    <ul class="guide-path__list">
+                        <?php foreach ($path['articles'] as $article) : ?>
+                            <li><a href="<?php echo esc_url($article['url']); ?>"><?php echo esc_html($article['title']); ?></a></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </section>
+            <?php endforeach; ?>
+        </div>
     </section>
 <?php endif; ?>
 <section class="section section--tight">

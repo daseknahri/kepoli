@@ -251,6 +251,65 @@ function kepoli_render_browse_links(string $class = 'browse-links'): void
     echo '</div>';
 }
 
+function kepoli_editorial_paths(): array
+{
+    $definitions = [
+        [
+            'eyebrow' => __('Camara si ingrediente', 'kepoli'),
+            'title' => __('Incepe cu baza care te ajuta toata saptamana', 'kepoli'),
+            'summary' => __('Ghiduri pentru cumparaturi mai clare, ingrediente mai potrivite si o camara care chiar sustine mesele de acasa.', 'kepoli'),
+            'class' => 'tone-pantry',
+            'slugs' => ['ghidul-camarii-romanesti', 'cum-alegi-ingredientele-pentru-retete-romanesti'],
+        ],
+        [
+            'eyebrow' => __('Sezon si planificare', 'kepoli'),
+            'title' => __('Leaga pofta de sezon cu mesele care ies usor', 'kepoli'),
+            'summary' => __('Pentru zilele in care vrei sa alegi mai bine ce merita gatit acum si cum construiesti un meniu coerent.', 'kepoli'),
+            'class' => 'tone-mains',
+            'slugs' => ['calendarul-gusturilor-de-sezon', 'meniu-romanesc-de-duminica'],
+        ],
+        [
+            'eyebrow' => __('Tehnica si pastrare', 'kepoli'),
+            'title' => __('Ghiduri pentru rezultate mai previzibile', 'kepoli'),
+            'summary' => __('Explicatii practice despre aluaturi, baze si pastrarea mancarii gatite fara improvizatii care complica lucrurile.', 'kepoli'),
+            'class' => 'tone-guides',
+            'slugs' => ['tehnici-simple-pentru-aluaturi-si-baze', 'cum-pastrezi-mancarea-gatita'],
+        ],
+    ];
+
+    $paths = [];
+
+    foreach ($definitions as $definition) {
+        $articles = [];
+
+        foreach ($definition['slugs'] as $slug) {
+            $post = get_page_by_path($slug, OBJECT, 'post');
+            if (!$post instanceof WP_Post || kepoli_post_kind($post->ID) !== 'article') {
+                continue;
+            }
+
+            $articles[] = [
+                'title' => get_the_title($post),
+                'url' => get_permalink($post),
+            ];
+        }
+
+        if ($articles === []) {
+            continue;
+        }
+
+        $paths[] = [
+            'eyebrow' => $definition['eyebrow'],
+            'title' => $definition['title'],
+            'summary' => $definition['summary'],
+            'class' => $definition['class'],
+            'articles' => $articles,
+        ];
+    }
+
+    return $paths;
+}
+
 function kepoli_reader_trust_items(): array
 {
     return [

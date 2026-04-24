@@ -139,6 +139,7 @@ requireThemeIncludes('functions', 'card meta helpers', [
   /function kepoli_related_card_reason\s*\(/,
   /function kepoli_post_next_steps\s*\(/,
   /function kepoli_article_snapshot_items\s*\(/,
+  /function kepoli_editorial_paths\s*\(/,
   /gallery/,
 ]);
 
@@ -146,8 +147,15 @@ requireThemeIncludes('front-page', 'homepage trust links', [
   /kepoli_render_reader_trust_links\s*\(/,
   /kepoli_render_post_card_meta\s*\(/,
   /kepoli_category_card_image_data\s*\(/,
+  /kepoli_editorial_paths\s*\(/,
   /category-card__visual/,
   /category-card__gallery/,
+  /guide-path-grid/,
+]);
+
+requireThemeIncludes('page-articole', 'editorial discovery grouping', [
+  /kepoli_editorial_paths\s*\(/,
+  /guide-path-grid/,
 ]);
 
 for (const fileKey of ['single', 'archive', 'search', 'page', 'page-retete', 'page-articole']) {
