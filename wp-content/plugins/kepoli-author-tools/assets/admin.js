@@ -323,9 +323,19 @@
 
   function generatedRelated() {
     const kind = currentKind();
+    const recipeSuggestions = relatedSuggestions('recipe');
+    const articleSuggestions = relatedSuggestions('article');
+
+    if (kind === 'article' && recipeSuggestions.length && articleSuggestions.length) {
+      return {
+        recipes: [recipeSuggestions[0].slug],
+        articles: [articleSuggestions[0].slug]
+      };
+    }
+
     return {
-      recipes: relatedSuggestions('recipe').slice(0, kind === 'recipe' ? 3 : 5).map((post) => post.slug),
-      articles: relatedSuggestions('article').slice(0, kind === 'recipe' ? 1 : 2).map((post) => post.slug)
+      recipes: recipeSuggestions.slice(0, kind === 'recipe' ? 3 : 5).map((post) => post.slug),
+      articles: articleSuggestions.slice(0, kind === 'recipe' ? 1 : 2).map((post) => post.slug)
     };
   }
 

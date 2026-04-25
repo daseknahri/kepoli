@@ -951,50 +951,27 @@ final class Kepoli_Author_Tools
 
     private static function auto_internal_link_posts(string $kind, array $related_recipes, array $related_articles): array
     {
-        $ordered_slugs = [];
         $recipe_queue = array_values(array_unique(array_map('sanitize_title', $related_recipes)));
         $article_queue = array_values(array_unique(array_map('sanitize_title', $related_articles)));
+        $recipe_posts = self::posts_from_slug_queue($recipe_queue, 2);
+        $article_posts = self::posts_from_slug_queue($article_queue, 2);
 
-        while ($recipe_queue || $article_queue) {
-            if ($kind === 'article') {
-                if ($recipe_queue) {
-                    $ordered_slugs[] = array_shift($recipe_queue);
-                }
-                if ($article_queue) {
-                    $ordered_slugs[] = array_shift($article_queue);
-                }
-            } else {
-                if ($article_queue) {
-                    $ordered_slugs[] = array_shift($article_queue);
-                }
-                if ($recipe_queue) {
-                    $ordered_slugs[] = array_shift($recipe_queue);
-                }
-            }
-
-            if (count($ordered_slugs) >= 4) {
-                break;
-            }
+        if ($kind === 'article' && $recipe_posts && $article_posts) {
+            return [$recipe_posts[0], $article_posts[0]];
         }
 
-        $posts = [];
-        foreach ($ordered_slugs as $slug) {
-            if ($slug === '') {
-                continue;
+        if ($kind === 'recipe' && $article_posts) {
+            $posts = [$article_posts[0]];
+            if ($recipe_posts) {
+                $posts[] = $recipe_posts[0];
+            } elseif (isset($article_posts[1])) {
+                $posts[] = $article_posts[1];
             }
 
-            $candidate = get_page_by_path($slug, OBJECT, 'post');
-            if (!$candidate instanceof WP_Post || $candidate->post_status !== 'publish') {
-                continue;
-            }
-
-            $posts[] = $candidate;
-            if (count($posts) >= 2) {
-                break;
-            }
+            return array_slice($posts, 0, 2);
         }
 
-        return $posts;
+        return array_slice(array_merge($recipe_posts, $article_posts), 0, 2);
     }
 
     private static function suggest_related_slugs(int $post_id, string $kind, WP_Post $post): array
@@ -1318,6 +1295,29 @@ final class Kepoli_Author_Tools
         }
 
         return $score;
+    }
+
+    private static function posts_from_slug_queue(array $slugs, int $limit = 2): array
+    {
+        $posts = [];
+
+        foreach ($slugs as $slug) {
+            if ($slug === '') {
+                continue;
+            }
+
+            $candidate = get_page_by_path($slug, OBJECT, 'post');
+            if (!$candidate instanceof WP_Post || $candidate->post_status !== 'publish') {
+                continue;
+            }
+
+            $posts[] = $candidate;
+            if (count($posts) >= $limit) {
+                break;
+            }
+        }
+
+        return $posts;
     }
 
     private static function update_post_content(int $post_id, string $content): void
