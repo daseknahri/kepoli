@@ -282,6 +282,13 @@ requireThemeIncludes('functions', 'attachment page redirect hardening', [
   /wp_safe_redirect\(\$target,\s*301,\s*'Kepoli'\)/,
 ]);
 
+requireThemeIncludes('functions', 'author archive redirect hardening', [
+  /function kepoli_redirect_author_archives\(\): void/,
+  /is_author\(\)/,
+  /kepoli_author_page_url\(\)/,
+  /wp_safe_redirect\(\$target,\s*301,\s*'Kepoli'\)/,
+]);
+
 requireThemeIncludes('functions', 'robots indexing policy', [
   /function kepoli_robots_content\(\): string/,
   /is_search\(\) \|\| is_404\(\)/,

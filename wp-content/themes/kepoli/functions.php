@@ -1671,6 +1671,22 @@ function kepoli_redirect_attachment_pages(): void
 }
 add_action('template_redirect', 'kepoli_redirect_attachment_pages', 1);
 
+function kepoli_redirect_author_archives(): void
+{
+    if (!is_author()) {
+        return;
+    }
+
+    $target = kepoli_author_page_url();
+    if ($target === '') {
+        return;
+    }
+
+    wp_safe_redirect($target, 301, 'Kepoli');
+    exit;
+}
+add_action('template_redirect', 'kepoli_redirect_author_archives', 2);
+
 function kepoli_scripts(): void
 {
     $style_path = get_template_directory() . '/style.min.css';
