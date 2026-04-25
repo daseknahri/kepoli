@@ -588,6 +588,7 @@ final class Kepoli_Author_Tools
 
     private static function related_posts_payload(int $current_post_id): array
     {
+        $usage_counts = self::related_slug_usage_counts($current_post_id);
         $query = new WP_Query([
             'post_type' => 'post',
             'post_status' => ['publish', 'draft', 'pending', 'future'],
@@ -612,10 +613,43 @@ final class Kepoli_Author_Tools
                 'excerpt' => wp_strip_all_tags(get_the_excerpt($post_id)),
                 'categories' => is_array($categories) ? array_values($categories) : [],
                 'tags' => is_array($tags) ? array_values($tags) : [],
+                'linkUsage' => (int) ($usage_counts[(string) get_post_field('post_name', $post_id)] ?? 0),
             ];
         }
 
         return $items;
+    }
+
+    private static function related_slug_usage_counts(int $exclude_post_id = 0): array
+    {
+        $query = new WP_Query([
+            'post_type' => 'post',
+            'post_status' => ['publish', 'draft', 'pending', 'future'],
+            'posts_per_page' => 250,
+            'post__not_in' => $exclude_post_id ? [$exclude_post_id] : [],
+            'fields' => 'ids',
+            'orderby' => 'date',
+            'order' => 'DESC',
+        ]);
+
+        $counts = [];
+
+        foreach ($query->posts as $post_id) {
+            $post_id = (int) $post_id;
+            $slugs = get_post_meta($post_id, '_kepoli_related_slugs', true);
+            $slugs = is_array($slugs) ? $slugs : [];
+
+            foreach ($slugs as $slug) {
+                $slug = sanitize_title((string) $slug);
+                if ($slug === '') {
+                    continue;
+                }
+
+                $counts[$slug] = (int) ($counts[$slug] ?? 0) + 1;
+            }
+        }
+
+        return $counts;
     }
 
     private static function category_payload(): array
@@ -966,6 +1000,7 @@ final class Kepoli_Author_Tools
     private static function suggest_related_slugs(int $post_id, string $kind, WP_Post $post): array
     {
         $source_category_slug = self::primary_category_slug($post_id);
+        $usage_counts = self::related_slug_usage_counts($post_id);
         $source_words = self::keywords_from_text(implode(' ', [
             $post->post_title,
             $post->post_excerpt,
@@ -996,7 +1031,12 @@ final class Kepoli_Author_Tools
                 'index' => $index,
                 'kind' => self::post_kind($candidate_id),
                 'slug' => $slug,
-                'score' => self::score_related_candidate($candidate_id, $source_words, $source_category_slug),
+                'score' => self::score_related_candidate(
+                    $candidate_id,
+                    $source_words,
+                    $source_category_slug,
+                    (int) ($usage_counts[$slug] ?? 0)
+                ),
                 'title' => (string) get_the_title($candidate_id),
             ];
         }
@@ -1035,7 +1075,7 @@ final class Kepoli_Author_Tools
         ];
     }
 
-    private static function score_related_candidate(int $post_id, array $source_words, string $source_category_slug = ''): int
+    private static function score_related_candidate(int $post_id, array $source_words, string $source_category_slug = '', int $usage_count = 0): int
     {
         if (!$source_words) {
             return 0;
@@ -1066,6 +1106,10 @@ final class Kepoli_Author_Tools
             } elseif ($source_category_slug !== 'articole' && $candidate_category_slug !== '' && $candidate_category_slug !== 'articole') {
                 $score -= 2;
             }
+        }
+
+        if ($usage_count > 0) {
+            $score -= min(9, $usage_count * 2);
         }
 
         return $score;

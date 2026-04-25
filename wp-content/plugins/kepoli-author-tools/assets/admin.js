@@ -285,6 +285,11 @@
       }
     });
 
+    const usageCount = Number(post.linkUsage || 0);
+    if (Number.isFinite(usageCount) && usageCount > 0) {
+      score -= Math.min(9, usageCount * 2);
+    }
+
     return score;
   }
 
