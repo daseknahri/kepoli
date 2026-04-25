@@ -935,7 +935,7 @@ function kepoli_post_featured_image_markup(int $post_id = 0, string $size = 'lar
     );
 }
 
-function kepoli_post_media_image_attrs(string $context = 'card', string $class = 'post-media__image'): array
+function kepoli_post_media_image_attrs(string $context = 'card', string $class = 'post-media__image', bool $priority = false): array
 {
     $sizes = match ($context) {
         'sidebar' => '(max-width: 640px) 82px, 96px',
@@ -943,15 +943,21 @@ function kepoli_post_media_image_attrs(string $context = 'card', string $class =
         default => '(max-width: 640px) 104px, (max-width: 980px) 44vw, 300px',
     };
 
-    return [
+    $attrs = [
         'class' => $class,
-        'loading' => 'lazy',
+        'loading' => $priority ? 'eager' : 'lazy',
         'decoding' => 'async',
         'sizes' => $sizes,
     ];
+
+    if ($priority) {
+        $attrs['fetchpriority'] = 'high';
+    }
+
+    return $attrs;
 }
 
-function kepoli_post_card_media_markup(int $post_id = 0, string $context = 'card'): string
+function kepoli_post_card_media_markup(int $post_id = 0, string $context = 'card', bool $priority = false): string
 {
     $post_id = $post_id ?: get_the_ID();
     $size = match ($context) {
@@ -959,7 +965,7 @@ function kepoli_post_card_media_markup(int $post_id = 0, string $context = 'card
         'sidebar' => 'thumbnail',
         default => 'medium_large',
     };
-    $featured_image = kepoli_post_featured_image_markup($post_id, $size, kepoli_post_media_image_attrs($context));
+    $featured_image = kepoli_post_featured_image_markup($post_id, $size, kepoli_post_media_image_attrs($context, 'post-media__image', $priority));
 
     if ($featured_image !== '') {
         return sprintf(
@@ -969,7 +975,7 @@ function kepoli_post_card_media_markup(int $post_id = 0, string $context = 'card
         );
     }
 
-    return kepoli_post_media_markup($post_id, $context);
+    return kepoli_post_media_markup($post_id, $context, $priority);
 }
 
 function kepoli_post_media_mode(int $post_id = 0): string
@@ -999,7 +1005,7 @@ function kepoli_post_media_url(int $post_id = 0, string $size = 'large'): string
     return kepoli_asset_uri('kepoli-icon');
 }
 
-function kepoli_post_media_markup(int $post_id = 0, string $context = 'card'): string
+function kepoli_post_media_markup(int $post_id = 0, string $context = 'card', bool $priority = false): string
 {
     $post_id = $post_id ?: get_the_ID();
     $mode = kepoli_post_media_mode($post_id);
@@ -1009,7 +1015,7 @@ function kepoli_post_media_markup(int $post_id = 0, string $context = 'card'): s
     $image_alt = $mode === 'photo' && kepoli_post_featured_image_id($post_id) ? kepoli_post_featured_image_alt($post_id) : '';
 
     if ($mode === 'photo') {
-        $featured_image = kepoli_post_featured_image_markup($post_id, $size, kepoli_post_media_image_attrs($context));
+        $featured_image = kepoli_post_featured_image_markup($post_id, $size, kepoli_post_media_image_attrs($context, 'post-media__image', $priority));
         if ($featured_image !== '') {
             return sprintf(
                 '<div class="%1$s">%2$s<span class="post-media__shade"></span><img class="post-media__mark" src="%3$s" alt="" loading="lazy" decoding="async"></div>',
@@ -1019,11 +1025,13 @@ function kepoli_post_media_markup(int $post_id = 0, string $context = 'card'): s
             );
         }
 
+        $priority_attributes = $priority ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
         return sprintf(
-            '<div class="%1$s"><img class="post-media__image" src="%2$s" alt="%3$s" loading="lazy" decoding="async"><span class="post-media__shade"></span><img class="post-media__mark" src="%4$s" alt="" loading="lazy" decoding="async"></div>',
+            '<div class="%1$s"><img class="post-media__image" src="%2$s" alt="%3$s"%4$s decoding="async"><span class="post-media__shade"></span><img class="post-media__mark" src="%5$s" alt="" loading="lazy" decoding="async"></div>',
             esc_attr($media_class),
             esc_url($image),
             esc_attr($image_alt),
+            $priority_attributes,
             esc_url(kepoli_asset_uri('kepoli-icon'))
         );
     }

@@ -426,7 +426,7 @@ if (themeAssetStats.articleMinJs >= themeAssetStats.articleJs) {
 requireThemeIncludes('functions', 'responsive lazy post media images', [
   /function kepoli_post_media_image_attrs/,
   /wp_get_attachment_image\(\$image_id,\s*\$size,\s*false,\s*\$attr\)/,
-  /'loading'\s*=>\s*'lazy'/,
+  /'loading'\s*=>\s*\$priority\s*\?\s*'eager'\s*:\s*'lazy'|'loading'\s*=>\s*'lazy'/,
   /'decoding'\s*=>\s*'async'/,
   /'sizes'\s*=>\s*\$sizes/,
 ]);

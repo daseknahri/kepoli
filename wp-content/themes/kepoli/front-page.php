@@ -67,7 +67,7 @@ $article_list = new WP_Query([
         <?php if ($featured_recipe) : ?>
             <article class="lead-story <?php echo esc_attr(kepoli_post_tone_class($featured_recipe->ID)); ?>">
                 <a class="lead-story__media" href="<?php echo esc_url(get_permalink($featured_recipe)); ?>">
-                    <?php echo kepoli_post_media_markup($featured_recipe->ID, 'related'); ?>
+                    <?php echo kepoli_post_media_markup($featured_recipe->ID, 'related', true); ?>
                 </a>
                 <div class="lead-story__body">
                     <p class="eyebrow"><?php esc_html_e('Reteta recomandata', 'kepoli'); ?></p>
