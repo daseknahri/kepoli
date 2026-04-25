@@ -275,6 +275,13 @@ requireThemeIncludes('functions', 'frontend output cleanup', [
   /wp_dequeue_style\('wp-block-library'\)/,
 ]);
 
+requireThemeIncludes('functions', 'attachment page redirect hardening', [
+  /function kepoli_redirect_attachment_pages\(\): void/,
+  /is_attachment\(\)/,
+  /wp_get_attachment_url\(\$attachment->ID\)/,
+  /wp_safe_redirect\(\$target,\s*301,\s*'Kepoli'\)/,
+]);
+
 requireThemeIncludes('functions', 'robots indexing policy', [
   /function kepoli_robots_content\(\): string/,
   /is_search\(\) \|\| is_404\(\)/,

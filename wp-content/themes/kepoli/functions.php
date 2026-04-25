@@ -1635,6 +1635,42 @@ function kepoli_trim_wordpress_frontend_output(): void
 }
 add_action('after_setup_theme', 'kepoli_trim_wordpress_frontend_output');
 
+function kepoli_redirect_attachment_pages(): void
+{
+    if (!is_attachment()) {
+        return;
+    }
+
+    $attachment = get_post();
+    if (!$attachment instanceof WP_Post) {
+        return;
+    }
+
+    $target = '';
+
+    if ((int) $attachment->post_parent > 0) {
+        $parent_permalink = get_permalink((int) $attachment->post_parent);
+        if (is_string($parent_permalink) && $parent_permalink !== '') {
+            $target = $parent_permalink;
+        }
+    }
+
+    if ($target === '') {
+        $attachment_url = wp_get_attachment_url($attachment->ID);
+        if (is_string($attachment_url) && $attachment_url !== '') {
+            $target = $attachment_url;
+        }
+    }
+
+    if ($target === '' || $target === get_permalink($attachment)) {
+        return;
+    }
+
+    wp_safe_redirect($target, 301, 'Kepoli');
+    exit;
+}
+add_action('template_redirect', 'kepoli_redirect_attachment_pages', 1);
+
 function kepoli_scripts(): void
 {
     $style_path = get_template_directory() . '/style.min.css';
