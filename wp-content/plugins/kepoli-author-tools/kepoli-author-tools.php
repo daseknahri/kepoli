@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Kepoli Author Tools
  * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.6
+ * Version: 1.8.7
  * Author: Kepoli
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,9 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.6';
+    private const VERSION = '1.8.7';
+    private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
+    private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -366,7 +368,7 @@ final class Kepoli_Author_Tools
                     <li data-kepoli-check="meta"><?php esc_html_e('Meta description completata', 'kepoli-author-tools'); ?></li>
                     <li data-kepoli-check="featuredImage"><?php esc_html_e('Imagine reprezentativa setata', 'kepoli-author-tools'); ?></li>
                     <li data-kepoli-check="imageAlt"><?php esc_html_e('Alt text pentru imagine', 'kepoli-author-tools'); ?></li>
-                    <li data-kepoli-check="related"><?php esc_html_e('Linkuri interne alese', 'kepoli-author-tools'); ?></li>
+                    <li data-kepoli-check="related"><?php esc_html_e('Linkuri interne pregatite', 'kepoli-author-tools'); ?></li>
                     <li data-kepoli-check="recipe"><?php esc_html_e('Schema reteta completata', 'kepoli-author-tools'); ?></li>
                 </ul>
             </details>
@@ -414,6 +416,8 @@ final class Kepoli_Author_Tools
         update_post_meta($post_id, '_kepoli_related_recipe_slugs', $related_recipes);
         update_post_meta($post_id, '_kepoli_related_article_slugs', $related_articles);
         update_post_meta($post_id, '_kepoli_related_slugs', array_values(array_unique(array_merge($related_recipes, $related_articles))));
+
+        self::maybe_add_internal_links_to_content($post_id, $post, $kind, $related_recipes, $related_articles);
 
         if ($kind === 'recipe') {
             self::save_recipe_json($post_id);
@@ -755,6 +759,10 @@ final class Kepoli_Author_Tools
         $related_recipes = get_post_meta($post_id, '_kepoli_related_recipe_slugs', true);
         $related_articles = get_post_meta($post_id, '_kepoli_related_article_slugs', true);
         $related_count = (is_array($related_recipes) ? count($related_recipes) : 0) + (is_array($related_articles) ? count($related_articles) : 0);
+        $post = get_post($post_id);
+        $has_internal_links = $post instanceof WP_Post
+            ? self::content_has_internal_links((string) $post->post_content, $post_id)
+            : false;
 
         if ((string) get_post_meta($post_id, '_kepoli_meta_description', true) === '') {
             $missing[] = __('meta', 'kepoli-author-tools');
@@ -771,7 +779,7 @@ final class Kepoli_Author_Tools
             $missing[] = __('image meta', 'kepoli-author-tools');
         }
 
-        if ($related_count === 0) {
+        if (!$has_internal_links && $related_count === 0) {
             $missing[] = __('linkuri', 'kepoli-author-tools');
         }
 
@@ -849,6 +857,36 @@ final class Kepoli_Author_Tools
         $post->post_excerpt = $value;
     }
 
+    private static function maybe_add_internal_links_to_content(int $post_id, WP_Post $post, string $kind, array $related_recipes, array $related_articles): void
+    {
+        $content = (string) $post->post_content;
+        $clean_content = self::strip_auto_internal_links_block($content);
+        $has_existing_links = self::content_has_internal_links($clean_content, $post_id);
+
+        if ($has_existing_links) {
+            if ($clean_content !== $content) {
+                self::update_post_content($post_id, $clean_content);
+            }
+            return;
+        }
+
+        $suggested_posts = self::auto_internal_link_posts($kind, $related_recipes, $related_articles);
+        if (!$suggested_posts) {
+            if ($clean_content !== $content) {
+                self::update_post_content($post_id, $clean_content);
+            }
+            return;
+        }
+
+        $block = self::build_auto_internal_links_block($suggested_posts);
+        $updated_content = rtrim($clean_content);
+        $updated_content .= ($updated_content === '' ? '' : "\n\n") . $block;
+
+        if ($updated_content !== $content) {
+            self::update_post_content($post_id, $updated_content);
+        }
+    }
+
     private static function generate_post_excerpt(WP_Post $post): string
     {
         $source = self::remove_template_prompt_text(trim((string) $post->post_excerpt));
@@ -877,6 +915,54 @@ final class Kepoli_Author_Tools
         }
 
         return self::sentence_limit($source, 155);
+    }
+
+    private static function auto_internal_link_posts(string $kind, array $related_recipes, array $related_articles): array
+    {
+        $ordered_slugs = [];
+        $recipe_queue = array_values(array_unique(array_map('sanitize_title', $related_recipes)));
+        $article_queue = array_values(array_unique(array_map('sanitize_title', $related_articles)));
+
+        while ($recipe_queue || $article_queue) {
+            if ($kind === 'article') {
+                if ($recipe_queue) {
+                    $ordered_slugs[] = array_shift($recipe_queue);
+                }
+                if ($article_queue) {
+                    $ordered_slugs[] = array_shift($article_queue);
+                }
+            } else {
+                if ($article_queue) {
+                    $ordered_slugs[] = array_shift($article_queue);
+                }
+                if ($recipe_queue) {
+                    $ordered_slugs[] = array_shift($recipe_queue);
+                }
+            }
+
+            if (count($ordered_slugs) >= 4) {
+                break;
+            }
+        }
+
+        $posts = [];
+        foreach ($ordered_slugs as $slug) {
+            if ($slug === '') {
+                continue;
+            }
+
+            $candidate = get_page_by_path($slug, OBJECT, 'post');
+            if (!$candidate instanceof WP_Post || $candidate->post_status !== 'publish') {
+                continue;
+            }
+
+            $posts[] = $candidate;
+            if (count($posts) >= 2) {
+                break;
+            }
+        }
+
+        return $posts;
     }
 
     private static function suggest_related_slugs(int $post_id, string $kind, WP_Post $post): array
@@ -989,6 +1075,99 @@ final class Kepoli_Author_Tools
             is_array($categories) ? implode(' ', $categories) : '',
             is_array($tags) ? implode(' ', $tags) : '',
         ]);
+    }
+
+    private static function strip_auto_internal_links_block(string $content): string
+    {
+        if ($content === '') {
+            return '';
+        }
+
+        $pattern = '/' . preg_quote(self::AUTO_INTERNAL_LINKS_START, '/') . '.*?' . preg_quote(self::AUTO_INTERNAL_LINKS_END, '/') . '\s*/is';
+        $content = (string) preg_replace($pattern, '', $content);
+        return rtrim($content);
+    }
+
+    private static function content_has_internal_links(string $content, int $post_id = 0): bool
+    {
+        $content = self::strip_auto_internal_links_block($content);
+        if ($content === '') {
+            return false;
+        }
+
+        $host = (string) wp_parse_url(home_url('/'), PHP_URL_HOST);
+        $current_permalink = $post_id ? untrailingslashit((string) get_permalink($post_id)) : '';
+
+        if (!preg_match_all('/<a\b[^>]*href=("|\')([^"\']+)\\1/i', $content, $matches, PREG_SET_ORDER)) {
+            return false;
+        }
+
+        foreach ($matches as $match) {
+            $href = html_entity_decode((string) ($match[2] ?? ''), ENT_QUOTES, get_bloginfo('charset'));
+            $href = trim($href);
+
+            if ($href === '' || strpos($href, '#') === 0 || stripos($href, 'mailto:') === 0 || stripos($href, 'tel:') === 0) {
+                continue;
+            }
+
+            if (strpos($href, '/') === 0) {
+                return true;
+            }
+
+            $href_host = (string) wp_parse_url($href, PHP_URL_HOST);
+            if ($href_host === '' || !$host || !hash_equals(strtolower($host), strtolower($href_host))) {
+                continue;
+            }
+
+            if ($current_permalink !== '' && untrailingslashit($href) === $current_permalink) {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static function build_auto_internal_links_block(array $posts): string
+    {
+        $anchors = [];
+
+        foreach ($posts as $post) {
+            if (!$post instanceof WP_Post) {
+                continue;
+            }
+
+            $anchors[] = sprintf(
+                '<a href="%1$s">%2$s</a>',
+                esc_url(get_permalink($post)),
+                esc_html(get_the_title($post))
+            );
+        }
+
+        if (!$anchors) {
+            return '';
+        }
+
+        $links_text = count($anchors) === 1
+            ? $anchors[0]
+            : implode(' si ', $anchors);
+
+        return self::AUTO_INTERNAL_LINKS_START
+            . "\n"
+            . '<p><strong>' . esc_html__('Citeste si:', 'kepoli-author-tools') . '</strong> ' . $links_text . '.</p>'
+            . "\n"
+            . self::AUTO_INTERNAL_LINKS_END;
+    }
+
+    private static function update_post_content(int $post_id, string $content): void
+    {
+        self::$is_updating_post = true;
+        wp_update_post([
+            'ID' => $post_id,
+            'post_content' => $content,
+        ]);
+        self::$is_updating_post = false;
     }
 
     private static function save_text_meta(int $post_id, string $meta_key, string $field, int $max_length): void

@@ -138,6 +138,35 @@
       .filter(Boolean);
   }
 
+  function hasInContentInternalLinks() {
+    const html = currentContentHtml();
+    if (!html) {
+      return false;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = html;
+    const links = Array.from(wrapper.querySelectorAll('a[href]'));
+
+    return links.some((link) => {
+      const href = String(link.getAttribute('href') || '').trim();
+      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) {
+        return false;
+      }
+
+      if (href.startsWith('/')) {
+        return true;
+      }
+
+      try {
+        const url = new URL(href, window.location.origin);
+        return url.origin === window.location.origin;
+      } catch (error) {
+        return false;
+      }
+    });
+  }
+
   function setStatus(message) {
     const targets = document.querySelectorAll('[data-kepoli-automation-status], [data-kepoli-companion-status]');
     if (!targets.length) {
@@ -890,6 +919,7 @@
     const kind = currentKind();
     const title = currentTitle();
     const content = currentContentText();
+    const hasBodyLinks = hasInContentInternalLinks();
     const excerpt = currentFieldValue('textarea[name="kepoli_post_excerpt"]');
     const meta = currentFieldValue('textarea[name="kepoli_meta_description"]');
     const relatedRecipes = parseListField('textarea[name="kepoli_related_recipe_slugs"]');
@@ -906,7 +936,7 @@
       meta: meta.length >= 20,
       featuredImage: hasFeaturedImage(),
       imageAlt: !hasFeaturedImage() ? false : imageAlt.length >= 8,
-      related: (relatedRecipes.length + relatedArticles.length) > 0,
+      related: hasBodyLinks || (relatedRecipes.length + relatedArticles.length) > 0,
       recipe: kind !== 'recipe' || (recipeIngredients.length > 0 && recipeSteps.length > 0 && recipeServings.length > 0)
     };
   }
