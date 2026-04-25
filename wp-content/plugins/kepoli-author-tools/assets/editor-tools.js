@@ -32,20 +32,70 @@
     editor.nodeChanged();
   }
 
+  function isHeadingNode(node) {
+    return node && node.nodeType === 1 && /^H[1-6]$/.test(node.tagName || '');
+  }
+
+  function preferredBreakIndexes(nodes) {
+    return nodes.reduce(function (indexes, node, index) {
+      if (!isHeadingNode(node) || index === 0) {
+        return indexes;
+      }
+
+      if (/^H[23]$/.test(node.tagName || '')) {
+        indexes.push(index);
+      }
+
+      return indexes;
+    }, []);
+  }
+
+  function computeBreaks(total, parts, preferred) {
+    var breaks = [];
+    var used = {};
+    var tolerance = Math.max(1, Math.floor(total / (parts * 2)));
+    var index;
+
+    for (index = 1; index < parts; index += 1) {
+      var target = Math.max(1, Math.round((total * index) / parts));
+      var chosen = target;
+
+      preferred.forEach(function (candidate) {
+        if (used[candidate] || candidate <= 0 || candidate >= total) {
+          return;
+        }
+
+        if (Math.abs(candidate - target) <= tolerance && Math.abs(candidate - target) < Math.abs(chosen - target)) {
+          chosen = candidate;
+        }
+      });
+
+      if (used[chosen]) {
+        while (used[chosen] && chosen < total) {
+          chosen += 1;
+        }
+      }
+
+      chosen = Math.max(1, Math.min(total - 1, chosen));
+      used[chosen] = true;
+      breaks.push(chosen);
+    }
+
+    return breaks;
+  }
+
   function splitEditorContent(editor, parts) {
     var nodes = getCleanNodes(editor.getContent({ format: 'html' }));
     var breaks = [];
     var output = [];
-    var index;
+    var preferred = preferredBreakIndexes(nodes);
 
     if (nodes.length <= parts) {
       insertPageBreak(editor);
       return;
     }
 
-    for (index = 1; index < parts; index += 1) {
-      breaks.push(Math.max(1, Math.round((nodes.length * index) / parts)));
-    }
+    breaks = computeBreaks(nodes.length, parts, preferred);
 
     nodes.forEach(function (node, nodeIndex) {
       if (breaks.indexOf(nodeIndex) !== -1) {

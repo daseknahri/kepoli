@@ -898,6 +898,55 @@
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
+  function isHeadingBlock(block) {
+    return /^<h[1-6]\b/i.test(block);
+  }
+
+  function preferredTextBreakIndexes(blocks) {
+    return blocks.reduce((indexes, block, index) => {
+      if (index === 0 || !isHeadingBlock(block)) {
+        return indexes;
+      }
+
+      if (/^<h[23]\b/i.test(block)) {
+        indexes.push(index);
+      }
+
+      return indexes;
+    }, []);
+  }
+
+  function computeSplitBreaks(total, parts, preferred) {
+    const breaks = [];
+    const used = new Set();
+    const tolerance = Math.max(1, Math.floor(total / (parts * 2)));
+
+    for (let index = 1; index < parts; index += 1) {
+      const target = Math.max(1, Math.round((total * index) / parts));
+      let chosen = target;
+
+      preferred.forEach((candidate) => {
+        if (used.has(candidate) || candidate <= 0 || candidate >= total) {
+          return;
+        }
+
+        if (Math.abs(candidate - target) <= tolerance && Math.abs(candidate - target) < Math.abs(chosen - target)) {
+          chosen = candidate;
+        }
+      });
+
+      while (used.has(chosen) && chosen < total - 1) {
+        chosen += 1;
+      }
+
+      chosen = Math.max(1, Math.min(total - 1, chosen));
+      used.add(chosen);
+      breaks.push(chosen);
+    }
+
+    return breaks;
+  }
+
   function splitTextarea(parts) {
     const textarea = getTextarea();
     if (!textarea) {
@@ -906,16 +955,14 @@
 
     const clean = textarea.value.replace(/<!--\s*nextpage\s*-->/gi, '').trim();
     const blocks = clean.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+    const preferred = preferredTextBreakIndexes(blocks);
 
     if (blocks.length <= parts) {
       insertAtCursor(textarea, `\n${PAGE_BREAK}\n`);
       return;
     }
 
-    const breaks = [];
-    for (let index = 1; index < parts; index += 1) {
-      breaks.push(Math.max(1, Math.round((blocks.length * index) / parts)));
-    }
+    const breaks = computeSplitBreaks(blocks.length, parts, preferred);
 
     const output = [];
     blocks.forEach((block, index) => {
