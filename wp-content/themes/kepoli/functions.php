@@ -1708,12 +1708,18 @@ function kepoli_robots_content(): string
 function kepoli_meta_description(): void
 {
     $description = kepoli_current_description();
+    $canonical_url = kepoli_current_url();
+    $language = get_bloginfo('language') ?: 'ro-RO';
+
     if ($description !== '') {
         printf("<meta name=\"description\" content=\"%s\">\n", esc_attr(wp_trim_words($description, 28, '')));
     }
 
     printf("<meta name=\"robots\" content=\"%s\">\n", esc_attr(kepoli_robots_content()));
-    printf("<link rel=\"canonical\" href=\"%s\">\n", esc_url(kepoli_current_url()));
+    printf("<link rel=\"canonical\" href=\"%s\">\n", esc_url($canonical_url));
+    printf("<link rel=\"alternate\" hreflang=\"%s\" href=\"%s\">\n", esc_attr($language), esc_url($canonical_url));
+    printf("<link rel=\"alternate\" hreflang=\"ro\" href=\"%s\">\n", esc_url($canonical_url));
+    printf("<link rel=\"alternate\" hreflang=\"x-default\" href=\"%s\">\n", esc_url($canonical_url));
 
     if (is_singular('post')) {
         printf("<meta name=\"author\" content=\"%s\">\n", esc_attr(get_the_author()));

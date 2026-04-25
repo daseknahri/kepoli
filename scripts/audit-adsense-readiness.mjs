@@ -498,6 +498,12 @@ requireThemeIncludes('functions', 'clean canonical URL builder', [
   /add_query_arg\(\$allowed_query,\s*\$canonical\)/,
 ]);
 
+requireThemeIncludes('functions', 'hreflang metadata', [
+  /<link rel=\\"alternate\\" hreflang=\\"%s\\" href=\\"%s\\">/,
+  /hreflang=\\"ro\\"/,
+  /hreflang=\\"x-default\\"/,
+]);
+
 requireThemeIncludes('single', 'priority single post image', [
   /fetchpriority'\s*=>\s*'high'/,
   /loading'\s*=>\s*'eager'/,
