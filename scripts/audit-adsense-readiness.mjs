@@ -467,6 +467,14 @@ requireThemeIncludes('functions', 'trust page structured data', [
   /'publishingPrinciples'\s*=>\s*kepoli_editorial_policy_url\(\)/,
 ]);
 
+requireThemeIncludes('functions', 'rich social metadata', [
+  /function kepoli_social_image_dimensions\(\): array/,
+  /og:image:width/,
+  /og:image:height/,
+  /twitter:image:alt/,
+  /article:publisher/,
+]);
+
 requireThemeIncludes('single', 'priority single post image', [
   /fetchpriority'\s*=>\s*'high'/,
   /loading'\s*=>\s*'eager'/,

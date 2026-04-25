@@ -244,6 +244,21 @@ function kepoli_social_image_alt(): string
     return kepoli_current_description() ?: kepoli_brand_description();
 }
 
+function kepoli_social_image_dimensions(): array
+{
+    if (is_singular()) {
+        $image_id = kepoli_post_featured_image_id(get_the_ID());
+        if ($image_id) {
+            $image = wp_get_attachment_image_src($image_id, 'large');
+            if (is_array($image)) {
+                return [(int) ($image[1] ?? 0), (int) ($image[2] ?? 0)];
+            }
+        }
+    }
+
+    return kepoli_asset_dimensions('kepoli-social-cover');
+}
+
 function kepoli_schema_image_object(string $url, array $dimensions = [], string $caption = ''): array
 {
     $image = [
@@ -1743,6 +1758,7 @@ function kepoli_social_meta(): void
     $type = is_singular('post') ? 'article' : 'website';
     $image = kepoli_social_image_url();
     $image_alt = kepoli_social_image_alt();
+    [$image_width, $image_height] = array_pad(kepoli_social_image_dimensions(), 2, 0);
 
     printf("<meta property=\"og:locale\" content=\"%s\">\n", esc_attr(str_replace('-', '_', get_bloginfo('language'))));
     printf("<meta property=\"og:site_name\" content=\"%s\">\n", esc_attr(get_bloginfo('name')));
@@ -1752,15 +1768,21 @@ function kepoli_social_meta(): void
     printf("<meta property=\"og:type\" content=\"%s\">\n", esc_attr($type));
     printf("<meta property=\"og:image\" content=\"%s\">\n", esc_url($image));
     printf("<meta property=\"og:image:alt\" content=\"%s\">\n", esc_attr($image_alt));
+    if ($image_width > 0 && $image_height > 0) {
+        printf("<meta property=\"og:image:width\" content=\"%d\">\n", $image_width);
+        printf("<meta property=\"og:image:height\" content=\"%d\">\n", $image_height);
+    }
     printf("<meta name=\"twitter:card\" content=\"summary_large_image\">\n");
     printf("<meta name=\"twitter:title\" content=\"%s\">\n", esc_attr($title));
     printf("<meta name=\"twitter:description\" content=\"%s\">\n", esc_attr($description));
     printf("<meta name=\"twitter:image\" content=\"%s\">\n", esc_url($image));
+    printf("<meta name=\"twitter:image:alt\" content=\"%s\">\n", esc_attr($image_alt));
 
     if (is_singular('post')) {
         printf("<meta property=\"article:published_time\" content=\"%s\">\n", esc_attr(get_the_date('c')));
         printf("<meta property=\"article:modified_time\" content=\"%s\">\n", esc_attr(get_the_modified_date('c')));
         printf("<meta property=\"article:author\" content=\"%s\">\n", esc_attr(get_the_author()));
+        printf("<meta property=\"article:publisher\" content=\"%s\">\n", esc_url(home_url('/')));
 
         $category = kepoli_primary_category();
         if ($category) {
