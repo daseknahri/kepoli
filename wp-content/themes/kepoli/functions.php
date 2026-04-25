@@ -1887,6 +1887,9 @@ function kepoli_newsletter_cta(string $class = ''): string
     } elseif ($status === 'duplicate') {
         $notice_message = __('Adresa aceasta este deja inscrisa.', 'kepoli');
         $notice_class = 'newsletter-cta__notice newsletter-cta__notice--success';
+    } elseif ($status === 'busy') {
+        $notice_message = __('Ai trimis prea multe incercari intr-un timp scurt. Mai incearca peste cateva minute.', 'kepoli');
+        $notice_class = 'newsletter-cta__notice newsletter-cta__notice--error';
     } elseif ($status === 'invalid') {
         $notice_message = __('Te rog verifica adresa de email si incearca din nou.', 'kepoli');
         $notice_class = 'newsletter-cta__notice newsletter-cta__notice--error';

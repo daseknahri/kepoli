@@ -46,6 +46,51 @@ function kepoli_newsletter_redirect(string $redirect_to, string $status): void
     exit;
 }
 
+function kepoli_newsletter_request_fingerprint(): string
+{
+    $ip = isset($_SERVER['REMOTE_ADDR']) ? trim((string) $_SERVER['REMOTE_ADDR']) : '';
+    if ($ip === '') {
+        return '';
+    }
+
+    return hash('sha256', $ip);
+}
+
+function kepoli_newsletter_rate_limit_key(): string
+{
+    $fingerprint = kepoli_newsletter_request_fingerprint();
+    return $fingerprint !== '' ? 'kepoli_newsletter_rl_' . $fingerprint : '';
+}
+
+function kepoli_newsletter_is_rate_limited(): bool
+{
+    $key = kepoli_newsletter_rate_limit_key();
+    if ($key === '') {
+        return false;
+    }
+
+    return (int) get_transient($key) >= 3;
+}
+
+function kepoli_newsletter_register_attempt(): void
+{
+    $key = kepoli_newsletter_rate_limit_key();
+    if ($key === '') {
+        return;
+    }
+
+    $attempts = (int) get_transient($key);
+    set_transient($key, $attempts + 1, 15 * MINUTE_IN_SECONDS);
+}
+
+function kepoli_newsletter_clear_attempts(): void
+{
+    $key = kepoli_newsletter_rate_limit_key();
+    if ($key !== '') {
+        delete_transient($key);
+    }
+}
+
 add_action('init', static function (): void {
     register_post_type(kepoli_newsletter_post_type(), [
         'labels' => [
@@ -313,20 +358,28 @@ function kepoli_handle_newsletter_signup(): void
     $redirect_to = isset($_POST['redirect_to']) ? (string) wp_unslash($_POST['redirect_to']) : home_url('/');
 
     if (!isset($_POST['kepoli_newsletter_nonce']) || !wp_verify_nonce((string) wp_unslash($_POST['kepoli_newsletter_nonce']), 'kepoli_newsletter_signup')) {
+        kepoli_newsletter_register_attempt();
         kepoli_newsletter_redirect($redirect_to, 'error');
     }
 
     $honeypot = isset($_POST['website']) ? trim((string) wp_unslash($_POST['website'])) : '';
     if ($honeypot !== '') {
+        kepoli_newsletter_register_attempt();
         kepoli_newsletter_redirect($redirect_to, 'success');
+    }
+
+    if (kepoli_newsletter_is_rate_limited()) {
+        kepoli_newsletter_redirect($redirect_to, 'busy');
     }
 
     $email = kepoli_newsletter_normalize_email((string) ($_POST['newsletter_email'] ?? ''));
     if ($email === '' || !is_email($email)) {
+        kepoli_newsletter_register_attempt();
         kepoli_newsletter_redirect($redirect_to, 'invalid');
     }
 
     if (kepoli_newsletter_signup_exists($email)) {
+        kepoli_newsletter_clear_attempts();
         kepoli_newsletter_redirect($redirect_to, 'duplicate');
     }
 
@@ -343,6 +396,7 @@ function kepoli_handle_newsletter_signup(): void
     ], true);
 
     if (is_wp_error($signup_id) || !$signup_id) {
+        kepoli_newsletter_register_attempt();
         kepoli_newsletter_redirect($redirect_to, 'error');
     }
 
@@ -350,6 +404,7 @@ function kepoli_handle_newsletter_signup(): void
     update_post_meta($signup_id, '_kepoli_newsletter_source_label', $source_label);
     update_post_meta($signup_id, '_kepoli_newsletter_source_url', $source_url);
 
+    kepoli_newsletter_clear_attempts();
     kepoli_newsletter_redirect($redirect_to, 'success');
 }
 

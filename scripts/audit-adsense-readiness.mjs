@@ -234,6 +234,14 @@ requireTextIncludes('machine-readable trust files', adtechMuPlugin, [
   /Canonical:/,
 ]);
 
+requireTextIncludes('newsletter anti-spam safeguards', newsletterMuPlugin, [
+  /function kepoli_newsletter_request_fingerprint\(\): string/,
+  /function kepoli_newsletter_is_rate_limited\(\): bool/,
+  /set_transient\(\$key,\s*\$attempts \+ 1,\s*15 \* MINUTE_IN_SECONDS\)/,
+  /kepoli_newsletter_is_rate_limited\(\)/,
+  /kepoli_newsletter_redirect\(\$redirect_to,\s*'busy'\)/,
+]);
+
 requireTextIncludes('production Apache performance config', `${wordpressDockerfile}\n${apachePerformanceConf}`, [
   /a2enmod headers expires deflate/,
   /a2enconf kepoli-performance/,
@@ -473,6 +481,11 @@ requireThemeIncludes('functions', 'rich social metadata', [
   /og:image:height/,
   /twitter:image:alt/,
   /article:publisher/,
+]);
+
+requireThemeIncludes('functions', 'newsletter rate limit notice', [
+  /elseif \(\$status === 'busy'\)/,
+  /prea multe incercari intr-un timp scurt/i,
 ]);
 
 requireThemeIncludes('single', 'priority single post image', [
