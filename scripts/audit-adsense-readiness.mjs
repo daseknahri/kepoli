@@ -249,6 +249,13 @@ requireTextIncludes('WordPress sitemap pruning', adtechMuPlugin, [
   /return false;/,
 ]);
 
+requireTextIncludes('REST user endpoint hardening', adtechMuPlugin, [
+  /add_filter\('rest_endpoints',\s*static function \(array \$endpoints\): array/,
+  /is_user_logged_in\(\)/,
+  /\/wp\/v2\/users/,
+  /\/wp\/v2\/users\/\(\?P<id>\[\\\\d\]\+\)/,
+]);
+
 requireTextIncludes('newsletter anti-spam safeguards', newsletterMuPlugin, [
   /function kepoli_newsletter_request_fingerprint\(\): string/,
   /function kepoli_newsletter_is_rate_limited\(\): bool/,
