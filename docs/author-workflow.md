@@ -19,7 +19,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 - Kepoli also tries to complete empty setup fields earlier in the flow: after the writer adds a real title, pastes enough content, switches to `Reteta`, or inserts one of the built-in templates. In the same phase, it can also replace the default category with a more likely one until the writer makes a manual category choice.
 - The setup box also shows a live editorial checklist, so the writer can see what is still missing before publishing.
 - If the writer saves a post with empty excerpt, meta description, related slugs, or featured-image metadata, Kepoli fills sensible defaults from the title/content and current post library.
-- If the writer saves a post that still has no Kepoli links inside the body, Kepoli can add a small in-content `Citeste si` paragraph automatically from the strongest related posts.
+- If the writer saves a post that still has no Kepoli links inside the body, Kepoli can add a small in-content `Citeste si` paragraph automatically near the most relevant body paragraph, based on the strongest related posts.
 - Seeded launch posts also read prefixed image metadata from `content/image-plan.json`, so the editor can show ready-made alt text, title, caption, and description even before the featured image is uploaded.
 - The `Kepoli writing tools` box stays compact and focuses on two quick-start buttons: `Structura reteta` and `Structura articol`.
 - A side box called `Kepoli publish companion` stays near Publish with one main action, `Pregateste pentru publicare`, plus optional details for category, tags, and the short review list.
@@ -40,7 +40,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 11. Open `Checklist editorial` only when you want the full list of missing items. The closed summary already tells you the current status.
 12. When you are almost done, use `Pregateste pentru publicare` near Publish for one last automatic pass, then open `Vezi detalii` only if you want the category, tags, or the short review list.
 13. Review the generated fields and inserted page breaks before publishing. If you publish with missing essentials, Kepoli will show a final warning.
-14. If the article still has no internal links in the body, saving the post can add a small automatic `Citeste si` paragraph near the end. Keep it if it fits naturally, or replace it with more specific manual links.
+14. If the article still has no internal links in the body, saving the post can add a small automatic `Citeste si` paragraph near the most relevant paragraph. Keep it if it fits naturally, or replace it with more specific manual links.
 
 ## Image Workflow For Seeded Posts
 

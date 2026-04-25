@@ -878,9 +878,7 @@ final class Kepoli_Author_Tools
             return;
         }
 
-        $block = self::build_auto_internal_links_block($suggested_posts);
-        $updated_content = rtrim($clean_content);
-        $updated_content .= ($updated_content === '' ? '' : "\n\n") . $block;
+        $updated_content = self::place_auto_internal_links_in_content($clean_content, $suggested_posts);
 
         if ($updated_content !== $content) {
             self::update_post_content($post_id, $updated_content);
@@ -1158,6 +1156,86 @@ final class Kepoli_Author_Tools
             . '<p><strong>' . esc_html__('Citeste si:', 'kepoli-author-tools') . '</strong> ' . $links_text . '.</p>'
             . "\n"
             . self::AUTO_INTERNAL_LINKS_END;
+    }
+
+    private static function place_auto_internal_links_in_content(string $content, array $posts): string
+    {
+        $block = self::build_auto_internal_links_block($posts);
+        if ($block === '') {
+            return $content;
+        }
+
+        if (!preg_match_all('/<p\b[^>]*>.*?<\/p>/is', $content, $matches, PREG_OFFSET_CAPTURE)) {
+            $trimmed = rtrim($content);
+            return $trimmed . ($trimmed === '' ? '' : "\n\n") . $block;
+        }
+
+        $best_index = -1;
+        $best_score = 0;
+        $post_keywords = [];
+
+        foreach ($posts as $post) {
+            if ($post instanceof WP_Post) {
+                $post_keywords[] = self::keywords_from_text(self::related_candidate_text($post->ID));
+            }
+        }
+
+        foreach ($matches[0] as $index => $match) {
+            $paragraph_html = (string) $match[0];
+            $paragraph_text = self::plain_text($paragraph_html);
+            $paragraph_keywords = self::keywords_from_text($paragraph_text);
+            $score = 0;
+
+            foreach ($post_keywords as $keywords) {
+                $score += self::keyword_overlap_score($paragraph_keywords, $keywords);
+            }
+
+            if (self::word_count($paragraph_text) >= 12) {
+                $score += 1;
+            }
+
+            if ($score > $best_score) {
+                $best_score = $score;
+                $best_index = $index;
+            }
+        }
+
+        if ($best_index < 0) {
+            $best_index = max(0, count($matches[0]) - 1);
+        }
+
+        $selected = $matches[0][$best_index];
+        $paragraph_html = (string) $selected[0];
+        $offset = (int) $selected[1];
+        $insert_at = $offset + strlen($paragraph_html);
+
+        return substr($content, 0, $insert_at) . "\n\n" . $block . substr($content, $insert_at);
+    }
+
+    private static function keyword_overlap_score(array $left_words, array $right_words): int
+    {
+        if (!$left_words || !$right_words) {
+            return 0;
+        }
+
+        $lookup = array_flip($right_words);
+        $score = 0;
+
+        foreach ($left_words as $word) {
+            if (isset($lookup[$word])) {
+                $score += 3;
+                continue;
+            }
+
+            foreach ($right_words as $candidate) {
+                if (strpos($candidate, $word) !== false || strpos($word, $candidate) !== false) {
+                    $score += 1;
+                    break;
+                }
+            }
+        }
+
+        return $score;
     }
 
     private static function update_post_content(int $post_id, string $content): void
