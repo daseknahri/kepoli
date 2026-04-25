@@ -248,6 +248,8 @@ requireTextIncludes('production Apache performance config', `${wordpressDockerfi
   /Cache-Control "public, max-age=31536000, immutable"/,
   /AddOutputFilterByType DEFLATE/,
   /ExpiresByType text\/css "access plus 1 year"/,
+  /Header always set X-Frame-Options "SAMEORIGIN"/,
+  /Header always set Permissions-Policy "camera=\(\), geolocation=\(\), microphone=\(\), payment=\(\), usb=\(\)"/,
 ]);
 
 requireTextIncludes('AdSense docs consent gates', `${readme}\n${adsenseDocs}`, [
