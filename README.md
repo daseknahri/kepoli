@@ -52,6 +52,8 @@ The theme contains inactive ad placements. Live ad markup is emitted only when `
 
 The newsletter signup is a small native WordPress form on the front page and the About Kepoli page. Signups are stored in WordPress admin under `Newsletter`, where you can review them or export a CSV and follow up manually from `contact@kepoli.com` without adding a paid newsletter service.
 
+The MU plugin also serves `/.well-known/security.txt` with contact and canonical details, alongside `ads.txt` and canonical-host redirects.
+
 Before submitting to AdSense:
 
 - Review all 30 posts for culinary accuracy and originality.

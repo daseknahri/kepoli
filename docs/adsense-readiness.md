@@ -16,6 +16,7 @@ Implemented readiness items:
 - Search-result and 404 utility pages use `noindex,follow`, while editorial pages remain indexable.
 - Recipe, article, collection, organization, author, and breadcrumb structured data are emitted with canonical URLs, language, publisher identity, image objects, and image dimensions where available.
 - `ads.txt` generated only after `ADSENSE_PUB_ID` is configured.
+- `/.well-known/security.txt` served with contact and canonical metadata for a basic public trust/contact endpoint.
 - Google Site Kit installed for later account connection.
 - A small native newsletter form appears on the front page and About Kepoli page, with signups stored directly in WordPress admin.
 - Dedicated public page for `Publicitate si consimtamant`.

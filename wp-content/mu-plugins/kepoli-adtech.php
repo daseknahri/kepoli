@@ -74,6 +74,29 @@ add_action('template_redirect', static function (): void {
     exit;
 });
 
+add_action('template_redirect', static function (): void {
+    $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+    if ($path !== '/.well-known/security.txt') {
+        return;
+    }
+
+    $site_url = trailingslashit(kepoli_mu_env('SITE_URL', home_url('/')));
+    $contact_email = sanitize_email(kepoli_mu_env('SITE_EMAIL', 'contact@kepoli.com'));
+    $contact_page = trailingslashit(home_url('/contact/'));
+    $expires = gmdate('Y-m-d\T00:00:00\Z', strtotime('+12 months'));
+
+    status_header(200);
+    header('Content-Type: text/plain; charset=utf-8');
+
+    echo 'Contact: mailto:' . esc_html($contact_email) . "\n";
+    echo 'Contact: ' . esc_url_raw($contact_page) . "\n";
+    echo 'Canonical: ' . esc_url_raw($site_url . '.well-known/security.txt') . "\n";
+    echo "Preferred-Languages: ro, en\n";
+    echo 'Expires: ' . esc_html($expires) . "\n";
+
+    exit;
+});
+
 add_filter('robots_txt', static function (string $output, bool $public): string {
     if (!$public) {
         return $output;

@@ -226,6 +226,14 @@ requireTextIncludes('canonical host redirects', adtechMuPlugin, [
   /wp_redirect\(\$scheme \. ':\/\/' \. \$canonical_host \. \$request_uri,\s*301,\s*'Kepoli'\)/,
 ]);
 
+requireTextIncludes('machine-readable trust files', adtechMuPlugin, [
+  /\/ads\.txt/,
+  /\/\.well-known\/security\.txt/,
+  /Contact:\s*mailto:/,
+  /Preferred-Languages:\s*ro,\s*en/,
+  /Canonical:/,
+]);
+
 requireTextIncludes('production Apache performance config', `${wordpressDockerfile}\n${apachePerformanceConf}`, [
   /a2enmod headers expires deflate/,
   /a2enconf kepoli-performance/,
