@@ -141,3 +141,10 @@ add_filter('robots_txt', static function (string $output, bool $public): string 
 
     return $output;
 }, 10, 2);
+
+add_filter('xmlrpc_enabled', '__return_false');
+
+add_filter('wp_headers', static function (array $headers): array {
+    unset($headers['X-Pingback']);
+    return $headers;
+});

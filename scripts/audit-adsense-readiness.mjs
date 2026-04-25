@@ -237,6 +237,12 @@ requireTextIncludes('machine-readable trust files', adtechMuPlugin, [
   /theme_color'\s*=>\s*'#252416'/,
 ]);
 
+requireTextIncludes('legacy WordPress surface hardening', adtechMuPlugin, [
+  /add_filter\('xmlrpc_enabled',\s*'__return_false'\)/,
+  /add_filter\('wp_headers',\s*static function \(array \$headers\): array/,
+  /unset\(\$headers\['X-Pingback'\]\)/,
+]);
+
 requireTextIncludes('newsletter anti-spam safeguards', newsletterMuPlugin, [
   /function kepoli_newsletter_request_fingerprint\(\): string/,
   /function kepoli_newsletter_is_rate_limited\(\): bool/,
