@@ -490,6 +490,14 @@ requireThemeIncludes('functions', 'newsletter rate limit notice', [
   /prea multe incercari intr-un timp scurt/i,
 ]);
 
+requireThemeIncludes('functions', 'clean canonical URL builder', [
+  /function kepoli_current_url\(\): string/,
+  /parse_url\(\$request_uri,\s*PHP_URL_PATH\)/,
+  /\$allowed_query = \[\]/,
+  /if \(is_search\(\)\)/,
+  /add_query_arg\(\$allowed_query,\s*\$canonical\)/,
+]);
+
 requireThemeIncludes('single', 'priority single post image', [
   /fetchpriority'\s*=>\s*'high'/,
   /loading'\s*=>\s*'eager'/,

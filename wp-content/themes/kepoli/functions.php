@@ -334,7 +334,28 @@ function kepoli_current_url(): string
     }
 
     $request_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash((string) $_SERVER['REQUEST_URI']) : '/';
-    return home_url($request_uri);
+    $path = parse_url($request_uri, PHP_URL_PATH);
+    $path = is_string($path) && $path !== '' ? $path : '/';
+    $canonical = home_url($path);
+    $allowed_query = [];
+
+    if (is_search()) {
+        $search_query = get_search_query();
+        if ($search_query !== '') {
+            $allowed_query['s'] = $search_query;
+        }
+    }
+
+    $paged = max(1, (int) get_query_var('paged'), (int) get_query_var('page'));
+    if ($paged > 1 && !preg_match('#/page/\d+/?$#', $path)) {
+        $allowed_query['paged'] = $paged;
+    }
+
+    if ($allowed_query !== []) {
+        $canonical = add_query_arg($allowed_query, $canonical);
+    }
+
+    return $canonical;
 }
 
 function kepoli_ads_enabled(): bool
