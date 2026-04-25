@@ -5,6 +5,8 @@
 get_header();
 
 $hero_image = kepoli_asset_uri('hero-homepage', 'jpg');
+$hero_srcset = kepoli_home_hero_srcset();
+$hero_sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 92vw, 1536px';
 $categories = get_categories([
     'hide_empty' => true,
     'exclude' => [1],
@@ -31,7 +33,7 @@ $article_list = new WP_Query([
 ]);
 ?>
 <section class="home-hero">
-    <img class="home-hero__image" src="<?php echo esc_url($hero_image); ?>" alt=""<?php echo kepoli_asset_dimension_attributes('hero-homepage'); ?> fetchpriority="high" loading="eager" decoding="async">
+    <img class="home-hero__image" src="<?php echo esc_url($hero_image); ?>" alt=""<?php echo kepoli_asset_dimension_attributes('hero-homepage'); ?><?php echo $hero_srcset !== '' ? ' srcset="' . esc_attr($hero_srcset) . '" sizes="' . esc_attr($hero_sizes) . '"' : ''; ?> fetchpriority="high" loading="eager" decoding="async">
     <div class="home-hero__inner">
         <p class="eyebrow"><?php esc_html_e('Kepoli', 'kepoli'); ?></p>
         <h1><?php esc_html_e('Retete romanesti si ghiduri pentru gatit acasa.', 'kepoli'); ?></h1>

@@ -63,6 +63,42 @@ function kepoli_asset_dimension_attributes(string $basename): string
     return kepoli_dimension_attributes(['width' => $width, 'height' => $height]);
 }
 
+function kepoli_home_hero_sources(): array
+{
+    $base_dir = get_template_directory();
+    $base_uri = get_template_directory_uri();
+    $candidates = [
+        ['file' => 'hero-homepage-640.jpg', 'width' => 640],
+        ['file' => 'hero-homepage-960.jpg', 'width' => 960],
+        ['file' => 'hero-homepage.jpg', 'width' => 1536],
+    ];
+
+    $sources = [];
+    foreach ($candidates as $candidate) {
+        $path = '/assets/img/' . $candidate['file'];
+        if (!file_exists($base_dir . $path)) {
+            continue;
+        }
+
+        $sources[] = [
+            'url' => $base_uri . $path,
+            'width' => $candidate['width'],
+        ];
+    }
+
+    return $sources;
+}
+
+function kepoli_home_hero_srcset(): string
+{
+    $entries = [];
+    foreach (kepoli_home_hero_sources() as $source) {
+        $entries[] = esc_url($source['url']) . ' ' . (int) $source['width'] . 'w';
+    }
+
+    return implode(', ', $entries);
+}
+
 function kepoli_icon(string $name): string
 {
     $icons = [
@@ -1577,9 +1613,16 @@ add_action('wp_head', 'kepoli_meta_description', 2);
 function kepoli_priority_image_preloads(): void
 {
     if (is_front_page()) {
+        $hero_sources = kepoli_home_hero_sources();
+        $hero_srcset = kepoli_home_hero_srcset();
+        $hero_href = $hero_sources !== [] ? $hero_sources[0]['url'] : kepoli_asset_uri('hero-homepage', 'jpg');
+        $hero_sizes = '(max-width: 640px) 100vw, (max-width: 1024px) 92vw, 1536px';
+
         printf(
-            "<link rel=\"preload\" as=\"image\" href=\"%s\" fetchpriority=\"high\">\n",
-            esc_url(kepoli_asset_uri('hero-homepage', 'jpg'))
+            "<link rel=\"preload\" as=\"image\" href=\"%1\$s\"%2\$s imagesizes=\"%3\$s\" fetchpriority=\"high\">\n",
+            esc_url($hero_href),
+            $hero_srcset !== '' ? ' imagesrcset="' . esc_attr($hero_srcset) . '"' : '',
+            esc_attr($hero_sizes)
         );
         return;
     }
