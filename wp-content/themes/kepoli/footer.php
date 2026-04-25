@@ -33,7 +33,7 @@
                 wp_nav_menu([
                     'theme_location' => 'footer',
                     'container' => false,
-                    'fallback_cb' => false,
+                    'fallback_cb' => 'kepoli_footer_menu_fallback',
                 ]);
                 ?>
             </nav>

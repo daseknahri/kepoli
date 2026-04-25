@@ -16,6 +16,7 @@ const articleJs = fs.readFileSync('wp-content/themes/kepoli/assets/js/article.js
 const articleMinJs = fs.readFileSync('wp-content/themes/kepoli/assets/js/article.min.js', 'utf8');
 const themeFiles = new Map([
   ['header', fs.readFileSync('wp-content/themes/kepoli/header.php', 'utf8')],
+  ['footer', fs.readFileSync('wp-content/themes/kepoli/footer.php', 'utf8')],
   ['functions', fs.readFileSync('wp-content/themes/kepoli/functions.php', 'utf8')],
   ['front-page', fs.readFileSync('wp-content/themes/kepoli/front-page.php', 'utf8')],
   ['single', fs.readFileSync('wp-content/themes/kepoli/single.php', 'utf8')],
@@ -435,6 +436,18 @@ requireThemeIncludes('front-page', 'priority homepage hero image', [
   /class="home-hero__image"/,
   /fetchpriority="high"/,
   /loading="eager"/,
+]);
+
+requireThemeIncludes('functions', 'footer legal fallback items', [
+  /function kepoli_footer_menu_items\(\): array/,
+  /politica-editoriala/,
+  /publicitate-si-consimtamant/,
+  /politica-de-confidentialitate/,
+  /disclaimer-culinar/,
+]);
+
+requireThemeIncludes('footer', 'footer menu fallback', [
+  /fallback_cb'\s*=>\s*'kepoli_footer_menu_fallback'/,
 ]);
 
 requireThemeIncludes('single', 'priority single post image', [

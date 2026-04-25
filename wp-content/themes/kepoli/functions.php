@@ -382,6 +382,53 @@ function kepoli_render_browse_links(string $class = 'browse-links'): void
     echo '</div>';
 }
 
+function kepoli_footer_menu_items(): array
+{
+    return [
+        [
+            'label' => __('Despre Kepoli', 'kepoli'),
+            'url' => home_url('/despre-kepoli/'),
+        ],
+        [
+            'label' => __('Politica editoriala', 'kepoli'),
+            'url' => home_url('/politica-editoriala/'),
+        ],
+        [
+            'label' => __('Publicitate si consimtamant', 'kepoli'),
+            'url' => home_url('/publicitate-si-consimtamant/'),
+        ],
+        [
+            'label' => __('Politica de confidentialitate', 'kepoli'),
+            'url' => home_url('/politica-de-confidentialitate/'),
+        ],
+        [
+            'label' => __('Politica de cookies', 'kepoli'),
+            'url' => home_url('/politica-de-cookies/'),
+        ],
+        [
+            'label' => __('Disclaimer culinar', 'kepoli'),
+            'url' => home_url('/disclaimer-culinar/'),
+        ],
+        [
+            'label' => __('Termeni si conditii', 'kepoli'),
+            'url' => home_url('/termeni-si-conditii/'),
+        ],
+    ];
+}
+
+function kepoli_footer_menu_fallback(array $args = []): void
+{
+    $menu_class = !empty($args['menu_class']) ? (string) $args['menu_class'] : 'menu';
+
+    echo '<ul class="' . esc_attr($menu_class) . '">';
+    foreach (kepoli_footer_menu_items() as $item) {
+        echo '<li class="menu-item">';
+        echo '<a href="' . esc_url($item['url']) . '">' . esc_html($item['label']) . '</a>';
+        echo '</li>';
+    }
+    echo '</ul>';
+}
+
 function kepoli_fragment_cache_version(): string
 {
     $version = get_option('kepoli_fragment_cache_version', '');
