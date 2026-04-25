@@ -133,6 +133,7 @@ final class Kepoli_Author_Tools
                     'companionStatusMultiple' => __('Mai lipsesc %d lucruri importante.', 'kepoli-author-tools'),
                     'companionNoCategory' => __('Nicio sugestie clara inca', 'kepoli-author-tools'),
                     'companionNoTags' => __('Fara taguri sugerate inca', 'kepoli-author-tools'),
+                    'defaultSlugHint' => __('Slugul se va curata automat la salvare.', 'kepoli-author-tools'),
                 ],
             ]);
         }
@@ -366,6 +367,8 @@ final class Kepoli_Author_Tools
                     <li data-kepoli-check="content"><?php esc_html_e('Continut suficient', 'kepoli-author-tools'); ?></li>
                     <li data-kepoli-check="excerpt"><?php esc_html_e('Excerpt completat', 'kepoli-author-tools'); ?></li>
                     <li data-kepoli-check="meta"><?php esc_html_e('Meta description completata', 'kepoli-author-tools'); ?></li>
+                    <li data-kepoli-check="language"><?php esc_html_e('Limba coerenta', 'kepoli-author-tools'); ?></li>
+                    <li data-kepoli-check="slug"><?php esc_html_e('Slug curat', 'kepoli-author-tools'); ?></li>
                     <li data-kepoli-check="featuredImage"><?php esc_html_e('Imagine reprezentativa setata', 'kepoli-author-tools'); ?></li>
                     <li data-kepoli-check="imageAlt"><?php esc_html_e('Alt text pentru imagine', 'kepoli-author-tools'); ?></li>
                     <li data-kepoli-check="related"><?php esc_html_e('Linkuri interne pregatite', 'kepoli-author-tools'); ?></li>
@@ -399,6 +402,7 @@ final class Kepoli_Author_Tools
         $kind = isset($_POST['kepoli_post_kind']) ? sanitize_key(wp_unslash((string) $_POST['kepoli_post_kind'])) : 'recipe';
         $kind = in_array($kind, ['recipe', 'article'], true) ? $kind : 'recipe';
         update_post_meta($post_id, '_kepoli_post_kind', $kind);
+        self::maybe_clean_post_slug($post_id, $post);
 
         self::save_post_excerpt($post_id, $post);
         self::save_text_meta($post_id, '_kepoli_seo_title', 'kepoli_seo_title', 70);
@@ -797,6 +801,9 @@ final class Kepoli_Author_Tools
         $has_internal_links = $post instanceof WP_Post
             ? self::content_has_internal_links((string) $post->post_content, $post_id)
             : false;
+        $language_consistent = $post instanceof WP_Post
+            ? self::is_post_language_consistent($post_id, $post)
+            : true;
 
         if ((string) get_post_meta($post_id, '_kepoli_meta_description', true) === '') {
             $missing[] = __('meta', 'kepoli-author-tools');
@@ -804,6 +811,10 @@ final class Kepoli_Author_Tools
 
         if (!has_excerpt($post_id)) {
             $missing[] = __('excerpt', 'kepoli-author-tools');
+        }
+
+        if (!$language_consistent) {
+            $missing[] = __('limba', 'kepoli-author-tools');
         }
 
         $thumbnail_id = get_post_thumbnail_id($post_id);
@@ -891,6 +902,34 @@ final class Kepoli_Author_Tools
         $post->post_excerpt = $value;
     }
 
+    private static function maybe_clean_post_slug(int $post_id, WP_Post $post): void
+    {
+        $title = trim((string) $post->post_title);
+        if ($title === '') {
+            return;
+        }
+
+        $current_slug = (string) $post->post_name;
+        $default_slug = sanitize_title($title);
+        $clean_slug = self::clean_slug_from_title($title);
+
+        if ($clean_slug === '' || $clean_slug === $current_slug) {
+            return;
+        }
+
+        if ($current_slug !== '' && $current_slug !== $default_slug) {
+            return;
+        }
+
+        self::$is_updating_post = true;
+        wp_update_post([
+            'ID' => $post_id,
+            'post_name' => $clean_slug,
+        ]);
+        self::$is_updating_post = false;
+        $post->post_name = $clean_slug;
+    }
+
     private static function maybe_add_internal_links_to_content(int $post_id, WP_Post $post, string $kind, array $related_recipes, array $related_articles): void
     {
         $content = (string) $post->post_content;
@@ -947,6 +986,37 @@ final class Kepoli_Author_Tools
         }
 
         return self::sentence_limit($source, 155);
+    }
+
+    private static function clean_slug_from_title(string $title): string
+    {
+        $parts = preg_split('/\s+/', self::plain_text($title)) ?: [];
+        $stopwords = array_flip([
+            'si', 'sau', 'din', 'de', 'la', 'cu', 'pentru', 'despre', 'care', 'este', 'sunt',
+            'the', 'and', 'with', 'from', 'into', 'your', 'this', 'that', 'history', 'fascinating',
+            'what', 'when', 'where', 'how', 'why', 'guide', 'tips', 'best', 'more',
+        ]);
+        $kept = [];
+
+        foreach ($parts as $part) {
+            $normalized = remove_accents(function_exists('mb_strtolower') ? mb_strtolower($part, 'UTF-8') : strtolower($part));
+            $normalized = preg_replace('/[^a-z0-9-]/', '', (string) $normalized);
+            if ($normalized === '' || isset($stopwords[$normalized])) {
+                continue;
+            }
+
+            $kept[] = $normalized;
+            if (count($kept) >= 8) {
+                break;
+            }
+        }
+
+        $slug = sanitize_title(implode(' ', $kept));
+        if ($slug === '') {
+            $slug = sanitize_title($title);
+        }
+
+        return $slug;
     }
 
     private static function auto_internal_link_posts(string $kind, array $related_recipes, array $related_articles): array
@@ -1090,6 +1160,32 @@ final class Kepoli_Author_Tools
         }
 
         return $score;
+    }
+
+    private static function is_post_language_consistent(int $post_id, WP_Post $post): bool
+    {
+        $content_language = self::detect_language(implode(' ', [
+            $post->post_title,
+            $post->post_excerpt,
+            $post->post_content,
+        ]));
+
+        if ($content_language === 'unknown') {
+            return true;
+        }
+
+        $meta_language = self::detect_language((string) get_post_meta($post_id, '_kepoli_meta_description', true));
+        $slug_language = self::detect_language(str_replace('-', ' ', (string) $post->post_name));
+
+        if ($meta_language !== 'unknown' && $meta_language !== $content_language) {
+            return false;
+        }
+
+        if ($slug_language !== 'unknown' && $slug_language !== $content_language) {
+            return false;
+        }
+
+        return true;
     }
 
     private static function related_candidate_text(int $post_id): string
@@ -1295,6 +1391,47 @@ final class Kepoli_Author_Tools
         }
 
         return $score;
+    }
+
+    private static function detect_language(string $text): string
+    {
+        $plain = self::plain_text($text);
+        if ($plain === '') {
+            return 'unknown';
+        }
+
+        $normalized = function_exists('mb_strtolower') ? mb_strtolower($plain, 'UTF-8') : strtolower($plain);
+        $romanian_markers = [' si ', ' din ', ' pentru ', ' cu ', ' este ', ' sunt ', ' reteta ', ' articol ', ' gatit ', ' ciocolata ', ' desert '];
+        $english_markers = [' the ', ' and ', ' with ', ' from ', ' history ', ' guide ', ' recipe ', ' article ', ' chocolate ', ' sweet '];
+
+        $romanian_score = preg_match('/[ăâîșşțţ]/u', $normalized) ? 4 : 0;
+        $english_score = 0;
+
+        foreach ($romanian_markers as $marker) {
+            if (strpos(' ' . $normalized . ' ', $marker) !== false) {
+                $romanian_score += 2;
+            }
+        }
+
+        foreach ($english_markers as $marker) {
+            if (strpos(' ' . $normalized . ' ', $marker) !== false) {
+                $english_score += 2;
+            }
+        }
+
+        if ($romanian_score === 0 && $english_score === 0) {
+            return 'unknown';
+        }
+
+        if ($romanian_score >= $english_score + 2) {
+            return 'ro';
+        }
+
+        if ($english_score >= $romanian_score + 2) {
+            return 'en';
+        }
+
+        return 'unknown';
     }
 
     private static function posts_from_slug_queue(array $slugs, int $limit = 2): array

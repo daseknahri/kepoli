@@ -79,6 +79,22 @@
     return field ? String(field.value || '').trim() : '';
   }
 
+  function currentSlugValue() {
+    const editable = document.getElementById('editable-post-name-full');
+    if (editable && String(editable.textContent || '').trim()) {
+      return String(editable.textContent || '').trim();
+    }
+
+    const sample = document.querySelector('#sample-permalink a, #sample-permalink');
+    if (sample) {
+      const text = cleanText(sample.textContent || '');
+      const parts = text.split('/');
+      return parts.length ? String(parts[parts.length - 1] || '').trim() : '';
+    }
+
+    return '';
+  }
+
   function categoryInputs() {
     return Array.from(document.querySelectorAll('#categorychecklist input[type="checkbox"][name="post_category[]"]'));
   }
@@ -237,6 +253,99 @@
       .replace(/[^a-z0-9\s-]/g, ' ')
       .split(/\s+/)
       .filter((word) => word.length > 3 && !stopwords.has(word));
+  }
+
+  function detectLanguage(text) {
+    const clean = ` ${cleanText(text).toLowerCase()} `;
+    if (!clean.trim()) {
+      return 'unknown';
+    }
+
+    let romanianScore = /[ăâîșşțţ]/.test(clean) ? 4 : 0;
+    let englishScore = 0;
+    const romanianMarkers = [' si ', ' din ', ' pentru ', ' cu ', ' este ', ' sunt ', ' reteta ', ' articol ', ' gatit ', ' ciocolata ', ' desert '];
+    const englishMarkers = [' the ', ' and ', ' with ', ' from ', ' history ', ' guide ', ' recipe ', ' article ', ' chocolate ', ' sweet '];
+
+    romanianMarkers.forEach((marker) => {
+      if (clean.includes(marker)) {
+        romanianScore += 2;
+      }
+    });
+
+    englishMarkers.forEach((marker) => {
+      if (clean.includes(marker)) {
+        englishScore += 2;
+      }
+    });
+
+    if (romanianScore === 0 && englishScore === 0) {
+      return 'unknown';
+    }
+
+    if (romanianScore >= englishScore + 2) {
+      return 'ro';
+    }
+
+    if (englishScore >= romanianScore + 2) {
+      return 'en';
+    }
+
+    return 'unknown';
+  }
+
+  function cleanedSlugFromTitle(title) {
+    const stopwords = new Set([
+      'si', 'sau', 'din', 'de', 'la', 'cu', 'pentru', 'despre', 'care', 'este', 'sunt',
+      'the', 'and', 'with', 'from', 'into', 'your', 'this', 'that', 'history', 'fascinating',
+      'what', 'when', 'where', 'how', 'why', 'guide', 'tips', 'best', 'more'
+    ]);
+
+    const parts = cleanText(title)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .split(/\s+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    const kept = [];
+    parts.forEach((part) => {
+      if (!stopwords.has(part) && kept.length < 8) {
+        kept.push(part);
+      }
+    });
+
+    return kept.join('-');
+  }
+
+  function isSlugClean(title, slug) {
+    if (!slug) {
+      return true;
+    }
+
+    const normalizedSlug = String(slug || '').trim().toLowerCase();
+    if (!normalizedSlug) {
+      return true;
+    }
+
+    const expected = cleanedSlugFromTitle(title);
+    if (expected && normalizedSlug === expected) {
+      return true;
+    }
+
+    const parts = normalizedSlug.split('-').filter(Boolean);
+    if (parts.length > 8 || normalizedSlug.length > 60) {
+      return false;
+    }
+
+    const filler = new Set([
+      'the', 'and', 'with', 'from', 'into', 'your', 'this', 'that', 'history', 'fascinating',
+      'what', 'when', 'where', 'how', 'why', 'best', 'more'
+    ]);
+
+    const fillerCount = parts.filter((part) => filler.has(part)).length;
+    return fillerCount <= 1;
   }
 
   function preferredCategoryNames() {
@@ -966,18 +1075,23 @@
     const hasBodyLinks = hasInContentInternalLinks();
     const excerpt = currentFieldValue('textarea[name="kepoli_post_excerpt"]');
     const meta = currentFieldValue('textarea[name="kepoli_meta_description"]');
+    const slug = currentSlugValue();
     const relatedRecipes = parseListField('textarea[name="kepoli_related_recipe_slugs"]');
     const relatedArticles = parseListField('textarea[name="kepoli_related_article_slugs"]');
     const imageAlt = currentFieldValue('input[name="kepoli_image_alt"]');
     const recipeIngredients = parseListField('textarea[name="kepoli_recipe_ingredients"]');
     const recipeSteps = parseListField('textarea[name="kepoli_recipe_steps"]');
     const recipeServings = currentFieldValue('input[name="kepoli_recipe_servings"]');
+    const contentLanguage = detectLanguage(`${title} ${excerpt} ${meta} ${content}`);
+    const slugLanguage = detectLanguage(slug.replace(/-/g, ' '));
 
     return {
       title: title.length >= 6,
       content: content.length >= 320,
       excerpt: excerpt.length >= 20,
       meta: meta.length >= 20,
+      language: contentLanguage === 'unknown' || slugLanguage === 'unknown' || contentLanguage === slugLanguage,
+      slug: isSlugClean(title, slug),
       featuredImage: hasFeaturedImage(),
       imageAlt: !hasFeaturedImage() ? false : imageAlt.length >= 8,
       related: hasBodyLinks || (relatedRecipes.length + relatedArticles.length) > 0,
@@ -991,6 +1105,8 @@
       content: 'continut',
       excerpt: 'excerpt',
       meta: 'meta description',
+      language: 'limba',
+      slug: 'slug',
       featuredImage: 'imagine',
       imageAlt: 'alt text',
       related: 'linkuri interne',
