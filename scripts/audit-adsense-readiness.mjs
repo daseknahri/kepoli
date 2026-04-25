@@ -229,9 +229,12 @@ requireTextIncludes('canonical host redirects', adtechMuPlugin, [
 requireTextIncludes('machine-readable trust files', adtechMuPlugin, [
   /\/ads\.txt/,
   /\/\.well-known\/security\.txt/,
+  /\/site\.webmanifest/,
   /Contact:\s*mailto:/,
   /Preferred-Languages:\s*ro,\s*en/,
   /Canonical:/,
+  /background_color'\s*=>\s*'#fbf7ef'/,
+  /theme_color'\s*=>\s*'#252416'/,
 ]);
 
 requireTextIncludes('newsletter anti-spam safeguards', newsletterMuPlugin, [
@@ -514,6 +517,12 @@ requireThemeIncludes('functions', 'hreflang metadata', [
   /<link rel=\\"alternate\\" hreflang=\\"%s\\" href=\\"%s\\">/,
   /hreflang=\\"ro\\"/,
   /hreflang=\\"x-default\\"/,
+]);
+
+requireThemeIncludes('functions', 'manifest and theme-color metadata', [
+  /theme-color/,
+  /rel=\\"manifest\\"/,
+  /site\.webmanifest/,
 ]);
 
 requireThemeIncludes('single', 'priority single post image', [

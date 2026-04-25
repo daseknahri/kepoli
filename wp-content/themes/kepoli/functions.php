@@ -1759,6 +1759,8 @@ function kepoli_meta_description(): void
     printf("<link rel=\"alternate\" hreflang=\"%s\" href=\"%s\">\n", esc_attr($language), esc_url($canonical_url));
     printf("<link rel=\"alternate\" hreflang=\"ro\" href=\"%s\">\n", esc_url($canonical_url));
     printf("<link rel=\"alternate\" hreflang=\"x-default\" href=\"%s\">\n", esc_url($canonical_url));
+    printf("<meta name=\"theme-color\" content=\"#252416\">\n");
+    printf("<link rel=\"manifest\" href=\"%s\">\n", esc_url(home_url('/site.webmanifest')));
 
     if (is_singular('post')) {
         printf("<meta name=\"author\" content=\"%s\">\n", esc_attr(get_the_author()));

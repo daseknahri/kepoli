@@ -97,6 +97,39 @@ add_action('template_redirect', static function (): void {
     exit;
 });
 
+add_action('template_redirect', static function (): void {
+    $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+    if ($path !== '/site.webmanifest') {
+        return;
+    }
+
+    status_header(200);
+    header('Content-Type: application/manifest+json; charset=utf-8');
+
+    $manifest = [
+        'name' => 'Kepoli',
+        'short_name' => 'Kepoli',
+        'description' => 'Retete romanesti si ghiduri pentru gatit acasa.',
+        'lang' => get_bloginfo('language') ?: 'ro-RO',
+        'start_url' => home_url('/'),
+        'scope' => home_url('/'),
+        'display' => 'standalone',
+        'background_color' => '#fbf7ef',
+        'theme_color' => '#252416',
+        'icons' => [
+            [
+                'src' => get_template_directory_uri() . '/assets/img/kepoli-icon.svg',
+                'sizes' => 'any',
+                'type' => 'image/svg+xml',
+                'purpose' => 'any',
+            ],
+        ],
+    ];
+
+    echo wp_json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    exit;
+});
+
 add_filter('robots_txt', static function (string $output, bool $public): string {
     if (!$public) {
         return $output;
