@@ -403,6 +403,7 @@ final class Kepoli_Author_Tools
         $kind = in_array($kind, ['recipe', 'article'], true) ? $kind : 'recipe';
         update_post_meta($post_id, '_kepoli_post_kind', $kind);
         self::maybe_clean_post_slug($post_id, $post);
+        self::maybe_normalize_content_structure($post_id, $post);
 
         self::save_post_excerpt($post_id, $post);
         self::save_text_meta($post_id, '_kepoli_seo_title', 'kepoli_seo_title', 70);
@@ -930,6 +931,27 @@ final class Kepoli_Author_Tools
         $post->post_name = $clean_slug;
     }
 
+    private static function maybe_normalize_content_structure(int $post_id, WP_Post $post): void
+    {
+        $content = (string) $post->post_content;
+        if ($content === '') {
+            return;
+        }
+
+        $normalized = self::normalize_content_structure($content);
+        if ($normalized === '' || $normalized === $content) {
+            return;
+        }
+
+        self::$is_updating_post = true;
+        wp_update_post([
+            'ID' => $post_id,
+            'post_content' => $normalized,
+        ]);
+        self::$is_updating_post = false;
+        $post->post_content = $normalized;
+    }
+
     private static function maybe_add_internal_links_to_content(int $post_id, WP_Post $post, string $kind, array $related_recipes, array $related_articles): void
     {
         $content = (string) $post->post_content;
@@ -1017,6 +1039,34 @@ final class Kepoli_Author_Tools
         }
 
         return $slug;
+    }
+
+    private static function normalize_content_structure(string $content): string
+    {
+        $heading_index = 0;
+
+        $content = (string) preg_replace_callback(
+            '/<h([1-6])([^>]*)>(.*?)<\/h\1>/is',
+            static function (array $matches) use (&$heading_index): string {
+                $attributes = isset($matches[2]) ? (string) $matches[2] : '';
+                $inner_html = isset($matches[3]) ? trim((string) $matches[3]) : '';
+                $plain = trim(wp_strip_all_tags($inner_html));
+
+                if ($plain === '') {
+                    return '';
+                }
+
+                $target_level = $heading_index === 0 ? 2 : (((int) ($matches[1] ?? 2)) <= 2 ? 2 : 3);
+                $heading_index++;
+
+                return sprintf('<h%1$d%2$s>%3$s</h%1$d>', $target_level, $attributes, $inner_html);
+            },
+            $content
+        );
+
+        $content = (string) preg_replace('/<p>\s*<\/p>/i', '', $content);
+
+        return trim($content);
     }
 
     private static function auto_internal_link_posts(string $kind, array $related_recipes, array $related_articles): array

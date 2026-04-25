@@ -24,6 +24,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 - The scorer also applies a light diversity penalty to posts that already get suggested very often, so the site spreads internal links across more useful pages instead of reusing the same two or three posts everywhere.
 - For article posts, the auto-linker now prefers a balanced mix when possible: one practical recipe and one supporting article, instead of two links of the same kind.
 - Kepoli also checks whether the post language stays coherent across title, content, meta description, and slug. If WordPress is still using the default title slug, Kepoli can shorten and clean it automatically on save.
+- When GPT content comes in with messy heading levels, Kepoli now normalizes the article structure on save so the content starts with `H2` sections and keeps sub-sections in a simpler `H2/H3` pattern.
 - Seeded launch posts also read prefixed image metadata from `content/image-plan.json`, so the editor can show ready-made alt text, title, caption, and description even before the featured image is uploaded.
 - The `Kepoli writing tools` box stays compact and focuses on two quick-start buttons: `Structura reteta` and `Structura articol`.
 - A side box called `Kepoli publish companion` stays near Publish with one main action, `Pregateste pentru publicare`, plus optional details for category, tags, and the short review list.
