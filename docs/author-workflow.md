@@ -12,6 +12,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
   - `3 parti`: splits the current content into three WordPress pages.
 - The Text editor tab also gets the same quick buttons.
 - The split buttons now try to break long posts at cleaner section boundaries, especially around `H2` and `H3` headings, instead of cutting only by rough paragraph count.
+- The setup box also includes `Impartire automata`, so a writer can choose `2 parti` or `3 parti` and let Kepoli apply the split on save. If the post already has manual `nextpage` breaks, Kepoli leaves them alone.
 - The `Kepoli post setup` box lets the writer choose `Reteta` or `Articol`, write an excerpt, and optionally adjust manual SEO, related links, image metadata, and recipe structured data.
 - The setup box keeps one main action in front: `Completeaza automat`. Extra helper actions stay under `Mai multe unelte`, so the editor remains simple for day-to-day use.
 - Manual SEO title, meta description, and related-link slug fields now stay inside `Detalii SEO si legaturi`, so the main writing view stays focused on the essentials.
@@ -43,7 +44,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 7. Open `Mai multe unelte` only when you want a specific helper, like `Sugereaza categorie`, `Sugereaza taguri`, `Extrage schema reteta`, or `Genereaza meta imagine`.
 8. Open `Detalii SEO si legaturi` only when you want to override the SEO title, review the meta description, or manually edit related slugs.
 9. Open `Detalii imagine` only when you want to review or refine the featured-image text. For recipes, `Date reteta` opens by itself when `Reteta` is selected.
-10. For a long article, click `2 parti` or `3 parti` in the toolbar.
+10. For a long article, either click `2 parti` or `3 parti` in the toolbar, or choose `Impartire automata` in the setup box if you want Kepoli to split it on save.
 11. Open `Checklist editorial` only when you want the full list of missing items. The closed summary already tells you the current status.
 12. When you are almost done, use `Pregateste pentru publicare` near Publish for one last automatic pass, then open `Vezi detalii` only if you want the category, tags, or the short review list.
 13. Review the generated fields and inserted page breaks before publishing. If you publish with missing essentials, Kepoli will show a final warning.

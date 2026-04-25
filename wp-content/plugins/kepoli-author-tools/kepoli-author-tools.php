@@ -229,6 +229,8 @@ final class Kepoli_Author_Tools
         $meta_description = (string) get_post_meta($post->ID, '_kepoli_meta_description', true);
         $related_recipes = self::array_meta_to_text($post->ID, '_kepoli_related_recipe_slugs');
         $related_articles = self::array_meta_to_text($post->ID, '_kepoli_related_article_slugs');
+        $auto_split_parts = (int) get_post_meta($post->ID, '_kepoli_auto_split_parts', true);
+        $auto_split_parts = in_array($auto_split_parts, [2, 3], true) ? $auto_split_parts : 0;
         $recipe = self::recipe_data($post->ID);
         $image_meta = self::featured_image_meta($post->ID);
         $has_image_meta = array_filter($image_meta, static function ($value): bool {
@@ -274,6 +276,18 @@ final class Kepoli_Author_Tools
                 <label>
                     <span><?php esc_html_e('Excerpt', 'kepoli-author-tools'); ?></span>
                     <textarea name="kepoli_post_excerpt" rows="3" maxlength="260" placeholder="<?php esc_attr_e('Rezumat scurt pentru carduri, arhive si intro.', 'kepoli-author-tools'); ?>"><?php echo esc_textarea($excerpt); ?></textarea>
+                </label>
+            </div>
+
+            <div class="kepoli-post-setup__grid kepoli-post-setup__grid--single">
+                <label>
+                    <span><?php esc_html_e('Impartire automata', 'kepoli-author-tools'); ?></span>
+                    <select name="kepoli_auto_split_parts">
+                        <option value="0" <?php selected($auto_split_parts, 0); ?>><?php esc_html_e('Fara impartire automata', 'kepoli-author-tools'); ?></option>
+                        <option value="2" <?php selected($auto_split_parts, 2); ?>><?php esc_html_e('2 parti la salvare', 'kepoli-author-tools'); ?></option>
+                        <option value="3" <?php selected($auto_split_parts, 3); ?>><?php esc_html_e('3 parti la salvare', 'kepoli-author-tools'); ?></option>
+                    </select>
+                    <small><?php esc_html_e('Pauzele manuale din editor raman prioritare. Impartirea automata se aplica doar daca postarea nu are deja nextpage.', 'kepoli-author-tools'); ?></small>
                 </label>
             </div>
 
@@ -404,6 +418,9 @@ final class Kepoli_Author_Tools
         $kind = isset($_POST['kepoli_post_kind']) ? sanitize_key(wp_unslash((string) $_POST['kepoli_post_kind'])) : 'recipe';
         $kind = in_array($kind, ['recipe', 'article'], true) ? $kind : 'recipe';
         update_post_meta($post_id, '_kepoli_post_kind', $kind);
+        $auto_split_parts = isset($_POST['kepoli_auto_split_parts']) ? (int) wp_unslash((string) $_POST['kepoli_auto_split_parts']) : 0;
+        $auto_split_parts = in_array($auto_split_parts, [2, 3], true) ? $auto_split_parts : 0;
+        update_post_meta($post_id, '_kepoli_auto_split_parts', $auto_split_parts);
         self::maybe_clean_post_slug($post_id, $post);
         self::maybe_normalize_content_structure($post_id, $post);
 
@@ -432,6 +449,7 @@ final class Kepoli_Author_Tools
         }
 
         self::maybe_add_internal_links_to_content($post_id, $post, $kind, $related_recipes, $related_articles);
+        self::maybe_apply_auto_split($post_id, $post, $auto_split_parts);
         self::save_featured_image_meta($post_id);
     }
 
@@ -1008,6 +1026,26 @@ final class Kepoli_Author_Tools
         }
     }
 
+    private static function maybe_apply_auto_split(int $post_id, WP_Post $post, int $parts): void
+    {
+        if (!in_array($parts, [2, 3], true)) {
+            return;
+        }
+
+        $content = (string) $post->post_content;
+        if ($content === '' || stripos($content, '<!--nextpage-->') !== false) {
+            return;
+        }
+
+        $split = self::split_content_into_parts($content, $parts);
+        if ($split === '' || $split === $content) {
+            return;
+        }
+
+        self::update_post_content($post_id, $split);
+        $post->post_content = $split;
+    }
+
     private static function generate_post_excerpt(WP_Post $post): string
     {
         $source = self::remove_template_prompt_text(trim((string) $post->post_excerpt));
@@ -1095,6 +1133,115 @@ final class Kepoli_Author_Tools
         $content = (string) preg_replace('/<p>\s*<\/p>/i', '', $content);
 
         return trim($content);
+    }
+
+    private static function split_content_into_parts(string $content, int $parts): string
+    {
+        $blocks = self::content_blocks($content);
+        if (count($blocks) <= $parts) {
+            return $content;
+        }
+
+        $preferred = self::preferred_block_break_indexes($blocks);
+        $breaks = self::compute_split_breaks(count($blocks), $parts, $preferred);
+        if (!$breaks) {
+            return $content;
+        }
+
+        $output = [];
+        foreach ($blocks as $index => $block) {
+            if (in_array($index, $breaks, true)) {
+                $output[] = '<!--nextpage-->';
+            }
+            $output[] = $block;
+        }
+
+        return trim(implode("\n\n", $output));
+    }
+
+    private static function content_blocks(string $content): array
+    {
+        if (!class_exists('DOMDocument')) {
+            $blocks = preg_split('/\n{2,}/', trim($content)) ?: [];
+            return array_values(array_filter(array_map('trim', $blocks)));
+        }
+
+        $document = new DOMDocument('1.0', 'UTF-8');
+        $wrapped = '<div id="kepoli-split-root">' . str_replace('<!--nextpage-->', '', $content) . '</div>';
+
+        libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="utf-8" ?>' . $wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+
+        $root = $document->getElementById('kepoli-split-root');
+        if (!$root) {
+            $blocks = preg_split('/\n{2,}/', trim($content)) ?: [];
+            return array_values(array_filter(array_map('trim', $blocks)));
+        }
+
+        $blocks = [];
+        foreach ($root->childNodes as $node) {
+            if ($node->nodeType === XML_COMMENT_NODE) {
+                continue;
+            }
+
+            if ($node->nodeType === XML_TEXT_NODE && trim((string) $node->textContent) === '') {
+                continue;
+            }
+
+            $blocks[] = trim($document->saveHTML($node));
+        }
+
+        return array_values(array_filter($blocks));
+    }
+
+    private static function preferred_block_break_indexes(array $blocks): array
+    {
+        $indexes = [];
+
+        foreach ($blocks as $index => $block) {
+            if ($index === 0) {
+                continue;
+            }
+
+            if (preg_match('/^<h[23]\b/i', $block)) {
+                $indexes[] = $index;
+            }
+        }
+
+        return $indexes;
+    }
+
+    private static function compute_split_breaks(int $total, int $parts, array $preferred): array
+    {
+        $breaks = [];
+        $used = [];
+        $tolerance = max(1, (int) floor($total / ($parts * 2)));
+
+        for ($index = 1; $index < $parts; $index++) {
+            $target = max(1, (int) round(($total * $index) / $parts));
+            $chosen = $target;
+
+            foreach ($preferred as $candidate) {
+                if (isset($used[$candidate]) || $candidate <= 0 || $candidate >= $total) {
+                    continue;
+                }
+
+                if (abs($candidate - $target) <= $tolerance && abs($candidate - $target) < abs($chosen - $target)) {
+                    $chosen = $candidate;
+                }
+            }
+
+            while (isset($used[$chosen]) && $chosen < ($total - 1)) {
+                $chosen++;
+            }
+
+            $chosen = max(1, min($total - 1, $chosen));
+            $used[$chosen] = true;
+            $breaks[] = $chosen;
+        }
+
+        return $breaks;
     }
 
     private static function build_recipe_faq_block(int $post_id, string $content): string
