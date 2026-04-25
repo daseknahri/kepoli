@@ -12,6 +12,8 @@ const adtechMuPlugin = fs.readFileSync('wp-content/mu-plugins/kepoli-adtech.php'
 const newsletterMuPlugin = fs.readFileSync('wp-content/mu-plugins/kepoli-newsletter.php', 'utf8');
 const siteJs = fs.readFileSync('wp-content/themes/kepoli/assets/js/site.js', 'utf8');
 const siteMinJs = fs.readFileSync('wp-content/themes/kepoli/assets/js/site.min.js', 'utf8');
+const articleJs = fs.readFileSync('wp-content/themes/kepoli/assets/js/article.js', 'utf8');
+const articleMinJs = fs.readFileSync('wp-content/themes/kepoli/assets/js/article.min.js', 'utf8');
 const themeFiles = new Map([
   ['header', fs.readFileSync('wp-content/themes/kepoli/header.php', 'utf8')],
   ['functions', fs.readFileSync('wp-content/themes/kepoli/functions.php', 'utf8')],
@@ -42,6 +44,8 @@ const themeAssetStats = {
   styleMinCss: fs.statSync('wp-content/themes/kepoli/style.min.css').size,
   siteJs: fs.statSync('wp-content/themes/kepoli/assets/js/site.js').size,
   siteMinJs: fs.statSync('wp-content/themes/kepoli/assets/js/site.min.js').size,
+  articleJs: fs.statSync('wp-content/themes/kepoli/assets/js/article.js').size,
+  articleMinJs: fs.statSync('wp-content/themes/kepoli/assets/js/article.min.js').size,
 };
 
 const failures = [];
@@ -390,21 +394,33 @@ requireThemeIncludes('functions', 'production stylesheet enqueue', [
 
 requireThemeIncludes('functions', 'production script enqueue', [
   /site\.min\.js/,
-  /filemtime\(\$script\)/,
+  /filemtime\(\$global_script\)/,
   /wp_script_add_data\('kepoli-site',\s*'strategy',\s*'defer'\)/,
+  /article\.min\.js/,
+  /filemtime\(\$article_script\)/,
+  /wp_script_add_data\('kepoli-article',\s*'strategy',\s*'defer'\)/,
 ]);
 
-requireTextIncludes('throttled frontend script', `${siteJs}\n${siteMinJs}`, [
+requireTextIncludes('throttled frontend article script', `${articleJs}\n${articleMinJs}`, [
   /requestAnimationFrame\(updateProgress\)/,
   /scheduleProgressUpdate/,
 ]);
 
-if (/console\.(log|warn|error|debug)/.test(siteJs) || /console\.(log|warn|error|debug)/.test(siteMinJs)) {
-  failures.push('Production frontend script should not write to the browser console.');
+if (
+  /console\.(log|warn|error|debug)/.test(siteJs) ||
+  /console\.(log|warn|error|debug)/.test(siteMinJs) ||
+  /console\.(log|warn|error|debug)/.test(articleJs) ||
+  /console\.(log|warn|error|debug)/.test(articleMinJs)
+) {
+  failures.push('Production frontend scripts should not write to the browser console.');
 }
 
 if (themeAssetStats.siteMinJs >= themeAssetStats.siteJs) {
   failures.push('Minified frontend script is not smaller than site.js.');
+}
+
+if (themeAssetStats.articleMinJs >= themeAssetStats.articleJs) {
+  failures.push('Minified article script is not smaller than article.js.');
 }
 
 requireThemeIncludes('functions', 'responsive lazy post media images', [

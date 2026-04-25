@@ -346,8 +346,40 @@ function kepoli_render_browse_links(string $class = 'browse-links'): void
     echo '</div>';
 }
 
+function kepoli_fragment_cache_version(): string
+{
+    $version = get_option('kepoli_fragment_cache_version', '');
+    if ($version === '') {
+        $version = (string) microtime(true);
+        add_option('kepoli_fragment_cache_version', $version, '', false);
+    }
+
+    return $version;
+}
+
+function kepoli_fragment_cache_key(string $fragment, string $suffix = ''): string
+{
+    return 'kepoli_' . sanitize_key($fragment) . '_' . md5(kepoli_fragment_cache_version() . '|' . $suffix);
+}
+
+function kepoli_bump_fragment_cache_version(): void
+{
+    update_option('kepoli_fragment_cache_version', (string) microtime(true), false);
+}
+
+add_action('clean_post_cache', 'kepoli_bump_fragment_cache_version');
+add_action('created_category', 'kepoli_bump_fragment_cache_version');
+add_action('edited_category', 'kepoli_bump_fragment_cache_version');
+add_action('delete_category', 'kepoli_bump_fragment_cache_version');
+
 function kepoli_editorial_paths(): array
 {
+    $cache_key = kepoli_fragment_cache_key('editorial_paths');
+    $cached = get_transient($cache_key);
+    if (is_array($cached)) {
+        return $cached;
+    }
+
     $definitions = [
         [
             'eyebrow' => __('Camara si ingrediente', 'kepoli'),
@@ -401,6 +433,8 @@ function kepoli_editorial_paths(): array
             'articles' => $articles,
         ];
     }
+
+    set_transient($cache_key, $paths, 12 * HOUR_IN_SECONDS);
 
     return $paths;
 }
@@ -486,13 +520,23 @@ function kepoli_category_card_image_data(WP_Term $category): array
         return $cache[$category->term_id];
     }
 
+    $cache_key = kepoli_fragment_cache_key('category_card_image', (string) $category->term_id);
+    $cached = get_transient($cache_key);
+    if (is_array($cached)) {
+        $cache[$category->term_id] = $cached;
+        return $cached;
+    }
+
     $query = new WP_Query([
         'post_type' => 'post',
         'post_status' => 'publish',
         'posts_per_page' => 3,
+        'fields' => 'ids',
         'cat' => $category->term_id,
         'no_found_rows' => true,
         'ignore_sticky_posts' => true,
+        'update_post_meta_cache' => false,
+        'update_post_term_cache' => false,
         'meta_query' => [
             [
                 'key' => '_thumbnail_id',
@@ -506,9 +550,10 @@ function kepoli_category_card_image_data(WP_Term $category): array
     if ($query->have_posts()) {
         $gallery = [];
 
-        foreach ($query->posts as $index => $post) {
+        foreach ($query->posts as $index => $post_id) {
             $cover_size = $index === 0 ? 'medium_large' : 'thumbnail';
-            $thumbnail_id = (int) get_post_thumbnail_id($post);
+            $post_id = (int) $post_id;
+            $thumbnail_id = (int) get_post_thumbnail_id($post_id);
             $image = $thumbnail_id ? wp_get_attachment_image_src($thumbnail_id, $cover_size) : false;
             $image_url = is_array($image) ? (string) $image[0] : '';
             if (!$image_url) {
@@ -517,8 +562,8 @@ function kepoli_category_card_image_data(WP_Term $category): array
 
             $item = [
                 'url' => $image_url,
-                'alt' => kepoli_post_featured_image_alt($post->ID),
-                'title' => get_the_title($post),
+                'alt' => kepoli_post_featured_image_alt($post_id),
+                'title' => get_the_title($post_id),
                 'width' => is_array($image) ? (int) $image[1] : 0,
                 'height' => is_array($image) ? (int) $image[2] : 0,
             ];
@@ -540,6 +585,7 @@ function kepoli_category_card_image_data(WP_Term $category): array
     }
 
     wp_reset_postdata();
+    set_transient($cache_key, $data, 12 * HOUR_IN_SECONDS);
     $cache[$category->term_id] = $data;
 
     return $data;
@@ -1278,15 +1324,31 @@ function kepoli_published_kind_count(string $kind = ''): int
 
 function kepoli_latest_post_by_kind(string $kind): ?WP_Post
 {
+    $cache_key = kepoli_fragment_cache_key('latest_kind', $kind);
+    $cached_post_id = (int) get_transient($cache_key);
+    if ($cached_post_id > 0) {
+        $cached_post = get_post($cached_post_id);
+        if ($cached_post instanceof WP_Post) {
+            return $cached_post;
+        }
+    }
+
     $posts = get_posts([
         'post_type' => 'post',
         'posts_per_page' => 1,
+        'fields' => 'ids',
+        'no_found_rows' => true,
         'ignore_sticky_posts' => true,
+        'update_post_meta_cache' => false,
+        'update_post_term_cache' => false,
         'meta_key' => '_kepoli_post_kind',
         'meta_value' => $kind,
     ]);
 
-    return $posts ? $posts[0] : null;
+    $post_id = $posts ? (int) $posts[0] : 0;
+    set_transient($cache_key, $post_id, 12 * HOUR_IN_SECONDS);
+
+    return $post_id > 0 ? get_post($post_id) : null;
 }
 
 function kepoli_post_count_by_kind(string $kind): int
@@ -1314,16 +1376,36 @@ function kepoli_post_count_by_kind(string $kind): int
 
 function kepoli_recently_touched_posts_by_kind(string $kind, int $limit = 3, array $exclude_ids = []): array
 {
-    return get_posts([
+    sort($exclude_ids);
+    $cache_key = kepoli_fragment_cache_key('recently_touched_kind', $kind . '|' . $limit . '|' . implode(',', array_map('intval', $exclude_ids)));
+    $cached_ids = get_transient($cache_key);
+    if (is_array($cached_ids)) {
+        return array_values(array_filter(array_map('get_post', array_map('intval', $cached_ids)), static function ($post): bool {
+            return $post instanceof WP_Post;
+        }));
+    }
+
+    $posts = get_posts([
         'post_type' => 'post',
         'posts_per_page' => $limit,
+        'fields' => 'ids',
+        'no_found_rows' => true,
         'ignore_sticky_posts' => true,
         'post__not_in' => array_map('intval', $exclude_ids),
         'orderby' => 'modified',
         'order' => 'DESC',
+        'update_post_meta_cache' => false,
+        'update_post_term_cache' => false,
         'meta_key' => '_kepoli_post_kind',
         'meta_value' => $kind,
     ]);
+
+    $post_ids = array_map('intval', $posts);
+    set_transient($cache_key, $post_ids, 12 * HOUR_IN_SECONDS);
+
+    return array_values(array_filter(array_map('get_post', $post_ids), static function ($post): bool {
+        return $post instanceof WP_Post;
+    }));
 }
 
 function kepoli_setup(): void
@@ -1370,22 +1452,42 @@ function kepoli_scripts(): void
     }
     wp_enqueue_style('kepoli-style', $style_uri, [], (string) filemtime($style_path));
 
-    $script = get_template_directory() . '/assets/js/site.min.js';
-    $script_uri = get_template_directory_uri() . '/assets/js/site.min.js';
-    if (!file_exists($script)) {
-        $script = get_template_directory() . '/assets/js/site.js';
-        $script_uri = get_template_directory_uri() . '/assets/js/site.js';
+    $global_script = get_template_directory() . '/assets/js/site.min.js';
+    $global_script_uri = get_template_directory_uri() . '/assets/js/site.min.js';
+    if (!file_exists($global_script)) {
+        $global_script = get_template_directory() . '/assets/js/site.js';
+        $global_script_uri = get_template_directory_uri() . '/assets/js/site.js';
     }
 
-    if (file_exists($script)) {
+    if (file_exists($global_script)) {
         wp_enqueue_script(
             'kepoli-site',
-            $script_uri,
+            $global_script_uri,
             [],
-            (string) filemtime($script),
+            (string) filemtime($global_script),
             true
         );
         wp_script_add_data('kepoli-site', 'strategy', 'defer');
+    }
+
+    if (is_singular('post')) {
+        $article_script = get_template_directory() . '/assets/js/article.min.js';
+        $article_script_uri = get_template_directory_uri() . '/assets/js/article.min.js';
+        if (!file_exists($article_script)) {
+            $article_script = get_template_directory() . '/assets/js/article.js';
+            $article_script_uri = get_template_directory_uri() . '/assets/js/article.js';
+        }
+
+        if (file_exists($article_script)) {
+            wp_enqueue_script(
+                'kepoli-article',
+                $article_script_uri,
+                [],
+                (string) filemtime($article_script),
+                true
+            );
+            wp_script_add_data('kepoli-article', 'strategy', 'defer');
+        }
     }
 }
 add_action('wp_enqueue_scripts', 'kepoli_scripts');

@@ -42,7 +42,7 @@ $article_list = new WP_Query([
     </div>
 </section>
 
-<section class="section section--tight home-proof">
+<section class="section section--tight home-proof defer-section">
     <div class="section__header section__header--compact">
         <div>
             <p class="eyebrow"><?php esc_html_e('Transparenta', 'kepoli'); ?></p>
@@ -53,7 +53,7 @@ $article_list = new WP_Query([
     <?php kepoli_render_reader_trust_links('browse-links browse-links--trust home-proof__links'); ?>
 </section>
 
-<section class="section">
+<section class="section defer-section">
     <div class="section__header">
         <div>
             <p class="eyebrow"><?php esc_html_e('Retete publicate', 'kepoli'); ?></p>
@@ -95,7 +95,7 @@ $article_list = new WP_Query([
     </div>
 </section>
 
-<section class="category-band">
+<section class="category-band defer-section">
     <div class="section">
         <div class="section__header section__header--simple">
             <div>
@@ -153,7 +153,7 @@ $article_list = new WP_Query([
     </div>
 </section>
 
-<section class="section">
+<section class="section defer-section">
     <?php $editorial_paths = kepoli_editorial_paths(); ?>
     <div class="section__header">
         <div>
@@ -242,7 +242,7 @@ $article_list = new WP_Query([
     <?php endif; ?>
 </section>
 
-<section class="section section--tight">
+<section class="section section--tight defer-section">
     <div class="author-strip">
         <div class="author-strip__photo">
             <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'jpg')); ?>" alt="<?php esc_attr_e('Isalune Merovik, autoarea Kepoli', 'kepoli'); ?>"<?php echo kepoli_asset_dimension_attributes('writer-photo'); ?> loading="lazy" decoding="async">

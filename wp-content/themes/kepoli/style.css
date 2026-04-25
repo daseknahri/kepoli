@@ -16,7 +16,7 @@ Text Domain: kepoli
   --paper-soft: #f4eadc;
   --surface: #fffdf8;
   --ink: #252416;
-  --muted: #6b654f;
+  --muted: #5c5642;
   --olive: #4f5525;
   --olive-dark: #34391a;
   --copper: #c8743f;
@@ -508,12 +508,23 @@ textarea {
 
 .eyebrow {
   margin: 0 0 8px;
-  color: var(--copper);
+  color: #9b5127;
   font-family: Arial, Helvetica, sans-serif;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
+}
+
+@supports (content-visibility: auto) {
+  .defer-section {
+    content-visibility: auto;
+    contain-intrinsic-size: 760px;
+  }
+
+  .category-band.defer-section {
+    contain-intrinsic-size: 620px;
+  }
 }
 
 h1,
