@@ -965,6 +965,7 @@ final class Kepoli_Author_Tools
 
     private static function suggest_related_slugs(int $post_id, string $kind, WP_Post $post): array
     {
+        $source_category_slug = self::primary_category_slug($post_id);
         $source_words = self::keywords_from_text(implode(' ', [
             $post->post_title,
             $post->post_excerpt,
@@ -995,7 +996,7 @@ final class Kepoli_Author_Tools
                 'index' => $index,
                 'kind' => self::post_kind($candidate_id),
                 'slug' => $slug,
-                'score' => self::score_related_candidate($candidate_id, $source_words),
+                'score' => self::score_related_candidate($candidate_id, $source_words, $source_category_slug),
                 'title' => (string) get_the_title($candidate_id),
             ];
         }
@@ -1034,7 +1035,7 @@ final class Kepoli_Author_Tools
         ];
     }
 
-    private static function score_related_candidate(int $post_id, array $source_words): int
+    private static function score_related_candidate(int $post_id, array $source_words, string $source_category_slug = ''): int
     {
         if (!$source_words) {
             return 0;
@@ -1042,6 +1043,7 @@ final class Kepoli_Author_Tools
 
         $candidate_words = self::keywords_from_text(self::related_candidate_text($post_id));
         $candidate_lookup = array_flip($candidate_words);
+        $candidate_category_slug = self::primary_category_slug($post_id);
         $score = 0;
 
         foreach ($source_words as $word) {
@@ -1055,6 +1057,14 @@ final class Kepoli_Author_Tools
                     $score += 1;
                     break;
                 }
+            }
+        }
+
+        if ($source_category_slug !== '') {
+            if ($candidate_category_slug === $source_category_slug) {
+                $score += 12;
+            } elseif ($source_category_slug !== 'articole' && $candidate_category_slug !== '' && $candidate_category_slug !== 'articole') {
+                $score -= 2;
             }
         }
 
@@ -1455,6 +1465,12 @@ final class Kepoli_Author_Tools
     {
         $categories = get_the_category($post_id);
         return !empty($categories) ? $categories[0]->name : 'Retete romanesti';
+    }
+
+    private static function primary_category_slug(int $post_id): string
+    {
+        $categories = get_the_category($post_id);
+        return !empty($categories) && isset($categories[0]->slug) ? (string) $categories[0]->slug : '';
     }
 
     private static function minutes_to_iso(int $minutes): string

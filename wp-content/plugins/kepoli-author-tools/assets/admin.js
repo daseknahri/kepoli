@@ -239,7 +239,24 @@
       .filter((word) => word.length > 3 && !stopwords.has(word));
   }
 
-  function scorePost(post, sourceWords) {
+  function preferredCategoryNames() {
+    const selected = categoryInputs()
+      .filter((input) => input.checked)
+      .map((input) => {
+        const label = input.closest('label');
+        return label ? cleanText(label.textContent || '') : '';
+      })
+      .filter(Boolean);
+
+    if (selected.length) {
+      return selected;
+    }
+
+    const suggestion = suggestedCategory();
+    return suggestion ? [suggestion.name] : [];
+  }
+
+  function scorePost(post, sourceWords, preferredCategories = []) {
     const haystack = normalizeWords([
       post.title,
       post.excerpt,
@@ -257,15 +274,27 @@
       }
     });
 
+    const normalizedPreferredCategories = preferredCategories.map((category) => cleanText(category).toLowerCase());
+    const normalizedPostCategories = (post.categories || []).map((category) => cleanText(category).toLowerCase());
+
+    normalizedPreferredCategories.forEach((category) => {
+      if (normalizedPostCategories.includes(category)) {
+        score += 12;
+      } else if (category !== 'articole' && normalizedPostCategories.length) {
+        score -= 2;
+      }
+    });
+
     return score;
   }
 
   function relatedSuggestions(kind) {
     const posts = (window.kepoliAuthorTools && window.kepoliAuthorTools.relatedPosts) || [];
     const sourceWords = normalizeWords(`${currentTitle()} ${currentContentText()}`);
+    const preferredCategories = preferredCategoryNames();
 
     return posts
-      .map((post) => ({ ...post, score: scorePost(post, sourceWords) }))
+      .map((post) => ({ ...post, score: scorePost(post, sourceWords, preferredCategories) }))
       .filter((post) => post.slug && post.kind === kind)
       .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
   }

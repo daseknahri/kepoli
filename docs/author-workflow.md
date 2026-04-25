@@ -20,6 +20,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 - The setup box also shows a live editorial checklist, so the writer can see what is still missing before publishing.
 - If the writer saves a post with empty excerpt, meta description, related slugs, or featured-image metadata, Kepoli fills sensible defaults from the title/content and current post library.
 - If the writer saves a post that still has no Kepoli links inside the body, Kepoli can add a small in-content link paragraph automatically near the most relevant body paragraph, based on the strongest related posts. The intro now adapts a little depending on whether it links to recipes, articles, or both.
+- Internal-link suggestions now prefer the same category more strongly, so dessert posts stay pointed at dessert content first, and similar sections stay grouped more naturally.
 - Seeded launch posts also read prefixed image metadata from `content/image-plan.json`, so the editor can show ready-made alt text, title, caption, and description even before the featured image is uploaded.
 - The `Kepoli writing tools` box stays compact and focuses on two quick-start buttons: `Structura reteta` and `Structura articol`.
 - A side box called `Kepoli publish companion` stays near Publish with one main action, `Pregateste pentru publicare`, plus optional details for category, tags, and the short review list.
