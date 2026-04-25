@@ -492,6 +492,45 @@ function kepoli_footer_menu_fallback(array $args = []): void
     echo '</ul>';
 }
 
+function kepoli_primary_menu_items(): array
+{
+    return [
+        [
+            'label' => __('Acasa', 'kepoli'),
+            'url' => home_url('/'),
+        ],
+        [
+            'label' => __('Retete', 'kepoli'),
+            'url' => home_url('/retete/'),
+        ],
+        [
+            'label' => __('Articole', 'kepoli'),
+            'url' => home_url('/articole/'),
+        ],
+        [
+            'label' => __('Despre', 'kepoli'),
+            'url' => home_url('/despre-kepoli/'),
+        ],
+        [
+            'label' => __('Contact', 'kepoli'),
+            'url' => home_url('/contact/'),
+        ],
+    ];
+}
+
+function kepoli_primary_menu_fallback(array $args = []): void
+{
+    $menu_class = !empty($args['menu_class']) ? (string) $args['menu_class'] : 'menu';
+
+    echo '<ul class="' . esc_attr($menu_class) . '">';
+    foreach (kepoli_primary_menu_items() as $item) {
+        echo '<li class="menu-item">';
+        echo '<a href="' . esc_url($item['url']) . '">' . esc_html($item['label']) . '</a>';
+        echo '</li>';
+    }
+    echo '</ul>';
+}
+
 function kepoli_fragment_cache_version(): string
 {
     $version = get_option('kepoli_fragment_cache_version', '');

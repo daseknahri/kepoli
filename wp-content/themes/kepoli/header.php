@@ -24,7 +24,7 @@
                     wp_nav_menu([
                         'theme_location' => 'primary',
                         'container' => false,
-                        'fallback_cb' => false,
+                        'fallback_cb' => 'kepoli_primary_menu_fallback',
                     ]);
                     ?>
                 </nav>

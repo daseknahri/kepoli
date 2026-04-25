@@ -468,6 +468,18 @@ requireThemeIncludes('footer', 'footer menu fallback', [
   /fallback_cb'\s*=>\s*'kepoli_footer_menu_fallback'/,
 ]);
 
+requireThemeIncludes('functions', 'primary menu fallback items', [
+  /function kepoli_primary_menu_items\(\): array/,
+  /home_url\('\/retete\/'\)/,
+  /home_url\('\/articole\/'\)/,
+  /home_url\('\/despre-kepoli\/'\)/,
+  /home_url\('\/contact\/'\)/,
+]);
+
+requireThemeIncludes('header', 'primary menu fallback', [
+  /fallback_cb'\s*=>\s*'kepoli_primary_menu_fallback'/,
+]);
+
 requireThemeIncludes('functions', 'trust page structured data', [
   /function kepoli_static_page_json_ld\(\): void/,
   /'@type'\s*=>\s*'AboutPage'/,
