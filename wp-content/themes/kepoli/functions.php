@@ -903,8 +903,8 @@ function kepoli_post_media_image_attrs(string $context = 'card', string $class =
 {
     $sizes = match ($context) {
         'sidebar' => '(max-width: 640px) 82px, 96px',
-        'related' => '(max-width: 640px) 96px, (max-width: 980px) 50vw, 360px',
-        default => '(max-width: 640px) 104px, (max-width: 980px) 50vw, 360px',
+        'related' => '(max-width: 640px) 96px, (max-width: 980px) 46vw, 320px',
+        default => '(max-width: 640px) 104px, (max-width: 980px) 44vw, 300px',
     };
 
     return [
@@ -919,7 +919,7 @@ function kepoli_post_card_media_markup(int $post_id = 0, string $context = 'card
 {
     $post_id = $post_id ?: get_the_ID();
     $size = match ($context) {
-        'related' => 'large',
+        'related' => 'medium_large',
         'sidebar' => 'thumbnail',
         default => 'medium_large',
     };
@@ -968,7 +968,7 @@ function kepoli_post_media_markup(int $post_id = 0, string $context = 'card'): s
     $post_id = $post_id ?: get_the_ID();
     $mode = kepoli_post_media_mode($post_id);
     $media_class = 'post-media post-media--' . sanitize_html_class($context) . ' post-media--' . sanitize_html_class($mode) . ' ' . kepoli_post_tone_class($post_id);
-    $size = $context === 'related' ? 'large' : 'medium_large';
+    $size = $context === 'related' ? 'medium_large' : 'medium_large';
     $image = kepoli_post_media_url($post_id, $size);
     $image_alt = $mode === 'photo' && kepoli_post_featured_image_id($post_id) ? kepoli_post_featured_image_alt($post_id) : '';
 
