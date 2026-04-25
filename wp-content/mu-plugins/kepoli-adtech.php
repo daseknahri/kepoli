@@ -148,3 +148,11 @@ add_filter('wp_headers', static function (array $headers): array {
     unset($headers['X-Pingback']);
     return $headers;
 });
+
+add_filter('wp_sitemaps_add_provider', static function ($provider, string $name) {
+    if ($name === 'users') {
+        return false;
+    }
+
+    return $provider;
+}, 10, 2);

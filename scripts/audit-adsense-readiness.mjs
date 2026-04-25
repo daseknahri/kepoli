@@ -243,6 +243,12 @@ requireTextIncludes('legacy WordPress surface hardening', adtechMuPlugin, [
   /unset\(\$headers\['X-Pingback'\]\)/,
 ]);
 
+requireTextIncludes('WordPress sitemap pruning', adtechMuPlugin, [
+  /add_filter\('wp_sitemaps_add_provider',\s*static function \(\$provider,\s*string \$name\)/,
+  /\$name === 'users'/,
+  /return false;/,
+]);
+
 requireTextIncludes('newsletter anti-spam safeguards', newsletterMuPlugin, [
   /function kepoli_newsletter_request_fingerprint\(\): string/,
   /function kepoli_newsletter_is_rate_limited\(\): bool/,
