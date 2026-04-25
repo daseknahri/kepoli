@@ -1130,12 +1130,14 @@ final class Kepoli_Author_Tools
     private static function build_auto_internal_links_block(array $posts): string
     {
         $anchors = [];
+        $kinds = [];
 
         foreach ($posts as $post) {
             if (!$post instanceof WP_Post) {
                 continue;
             }
 
+            $kinds[] = self::post_kind($post->ID);
             $anchors[] = sprintf(
                 '<a href="%1$s">%2$s</a>',
                 esc_url(get_permalink($post)),
@@ -1150,12 +1152,38 @@ final class Kepoli_Author_Tools
         $links_text = count($anchors) === 1
             ? $anchors[0]
             : implode(' si ', $anchors);
+        $lead = self::auto_internal_links_lead($kinds, count($anchors));
 
         return self::AUTO_INTERNAL_LINKS_START
             . "\n"
-            . '<p><strong>' . esc_html__('Citeste si:', 'kepoli-author-tools') . '</strong> ' . $links_text . '.</p>'
+            . '<p><strong>' . esc_html($lead) . '</strong> ' . $links_text . '.</p>'
             . "\n"
             . self::AUTO_INTERNAL_LINKS_END;
+    }
+
+    private static function auto_internal_links_lead(array $kinds, int $count): string
+    {
+        $kinds = array_values(array_unique(array_filter($kinds)));
+
+        if ($count <= 0) {
+            return __('Citeste si:', 'kepoli-author-tools');
+        }
+
+        if ($kinds === ['recipe']) {
+            return $count === 1
+                ? __('Ca sa pui ideea in practica, vezi:', 'kepoli-author-tools')
+                : __('Ca sa pui ideile in practica, vezi:', 'kepoli-author-tools');
+        }
+
+        if ($kinds === ['article']) {
+            return $count === 1
+                ? __('Pentru context suplimentar, vezi:', 'kepoli-author-tools')
+                : __('Pentru context suplimentar, vezi si:', 'kepoli-author-tools');
+        }
+
+        return $count === 1
+            ? __('Ca sa mergi mai departe, vezi:', 'kepoli-author-tools')
+            : __('Ca sa mergi mai departe, vezi si:', 'kepoli-author-tools');
     }
 
     private static function place_auto_internal_links_in_content(string $content, array $posts): string
