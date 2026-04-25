@@ -25,6 +25,7 @@ Kepoli includes a small `kepoli-author-tools` plugin for writing posts.
 - For article posts, the auto-linker now prefers a balanced mix when possible: one practical recipe and one supporting article, instead of two links of the same kind.
 - Kepoli also checks whether the post language stays coherent across title, content, meta description, and slug. If WordPress is still using the default title slug, Kepoli can shorten and clean it automatically on save.
 - When GPT content comes in with messy heading levels, Kepoli now normalizes the article structure on save so the content starts with `H2` sections and keeps sub-sections in a simpler `H2/H3` pattern.
+- For recipe posts, if there is no FAQ section yet, Kepoli can add a small `Intrebari frecvente` block on save using only recipe data that already exists, such as servings, times, and any storage notes already written in the post.
 - Seeded launch posts also read prefixed image metadata from `content/image-plan.json`, so the editor can show ready-made alt text, title, caption, and description even before the featured image is uploaded.
 - The `Kepoli writing tools` box stays compact and focuses on two quick-start buttons: `Structura reteta` and `Structura articol`.
 - A side box called `Kepoli publish companion` stays near Publish with one main action, `Pregateste pentru publicare`, plus optional details for category, tags, and the short review list.

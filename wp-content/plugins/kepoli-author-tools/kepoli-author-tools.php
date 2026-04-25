@@ -16,6 +16,8 @@ final class Kepoli_Author_Tools
     private const VERSION = '1.8.7';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
+    private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
+    private const AUTO_FAQ_END = '<!-- kepoli-auto-faq:end -->';
     private const TEMPLATE_PROMPTS = [
         'Scrie aici de ce merita pregatita reteta, cand se potriveste si ce rezultat trebuie sa obtina cititorul.',
         'Ingredient 1',
@@ -422,14 +424,14 @@ final class Kepoli_Author_Tools
         update_post_meta($post_id, '_kepoli_related_article_slugs', $related_articles);
         update_post_meta($post_id, '_kepoli_related_slugs', array_values(array_unique(array_merge($related_recipes, $related_articles))));
 
-        self::maybe_add_internal_links_to_content($post_id, $post, $kind, $related_recipes, $related_articles);
-
         if ($kind === 'recipe') {
             self::save_recipe_json($post_id);
+            self::maybe_add_recipe_faq($post_id, $post);
         } else {
             delete_post_meta($post_id, '_kepoli_recipe_json');
         }
 
+        self::maybe_add_internal_links_to_content($post_id, $post, $kind, $related_recipes, $related_articles);
         self::save_featured_image_meta($post_id);
     }
 
@@ -980,6 +982,32 @@ final class Kepoli_Author_Tools
         }
     }
 
+    private static function maybe_add_recipe_faq(int $post_id, WP_Post $post): void
+    {
+        $content = (string) $post->post_content;
+        $clean_content = self::strip_auto_faq_block($content);
+
+        if (self::content_has_faq_section($clean_content)) {
+            if ($clean_content !== $content) {
+                self::update_post_content($post_id, $clean_content);
+            }
+            return;
+        }
+
+        $faq_block = self::build_recipe_faq_block($post_id, $clean_content);
+        if ($faq_block === '') {
+            if ($clean_content !== $content) {
+                self::update_post_content($post_id, $clean_content);
+            }
+            return;
+        }
+
+        $updated_content = rtrim($clean_content) . "\n\n" . $faq_block;
+        if ($updated_content !== $content) {
+            self::update_post_content($post_id, $updated_content);
+        }
+    }
+
     private static function generate_post_excerpt(WP_Post $post): string
     {
         $source = self::remove_template_prompt_text(trim((string) $post->post_excerpt));
@@ -1067,6 +1095,78 @@ final class Kepoli_Author_Tools
         $content = (string) preg_replace('/<p>\s*<\/p>/i', '', $content);
 
         return trim($content);
+    }
+
+    private static function build_recipe_faq_block(int $post_id, string $content): string
+    {
+        $recipe = self::recipe_data($post_id);
+        $items = [];
+
+        if ($recipe['servings'] !== '') {
+            $items[] = [
+                'question' => __('Cate portii ies din reteta?', 'kepoli-author-tools'),
+                'answer' => sprintf(
+                    __('Reteta este gandita pentru %s.', 'kepoli-author-tools'),
+                    $recipe['servings']
+                ),
+            ];
+        }
+
+        $time_answer = self::recipe_time_faq_answer($recipe);
+        if ($time_answer !== '') {
+            $items[] = [
+                'question' => __('Cat dureaza pregatirea?', 'kepoli-author-tools'),
+                'answer' => $time_answer,
+            ];
+        }
+
+        $storage_answer = self::extract_storage_answer($content);
+        if ($storage_answer !== '') {
+            $items[] = [
+                'question' => __('Cum se pastreaza?', 'kepoli-author-tools'),
+                'answer' => $storage_answer,
+            ];
+        }
+
+        if (count($items) < 2) {
+            return '';
+        }
+
+        $html = [self::AUTO_FAQ_START, '<h2>' . esc_html__('Intrebari frecvente', 'kepoli-author-tools') . '</h2>'];
+
+        foreach (array_slice($items, 0, 3) as $item) {
+            $html[] = '<h3>' . esc_html($item['question']) . '</h3>';
+            $html[] = '<p>' . esc_html($item['answer']) . '</p>';
+        }
+
+        $html[] = self::AUTO_FAQ_END;
+
+        return implode("\n", $html);
+    }
+
+    private static function recipe_time_faq_answer(array $recipe): string
+    {
+        $prep = (int) ($recipe['prep_minutes'] ?? 0);
+        $cook = (int) ($recipe['cook_minutes'] ?? 0);
+        $total = $prep + $cook;
+
+        if ($prep > 0 && $cook > 0) {
+            return sprintf(
+                __('Ai nevoie de aproximativ %1$d minute pentru pregatire, %2$d minute pentru gatire si cam %3$d minute in total.', 'kepoli-author-tools'),
+                $prep,
+                $cook,
+                $total
+            );
+        }
+
+        if ($total > 0) {
+            return sprintf(
+                __('Reteta cere aproximativ %d minute in total.', 'kepoli-author-tools'),
+                $total
+            );
+        }
+
+        return '';
     }
 
     private static function auto_internal_link_posts(string $kind, array $related_recipes, array $related_articles): array
@@ -1250,6 +1350,37 @@ final class Kepoli_Author_Tools
             is_array($categories) ? implode(' ', $categories) : '',
             is_array($tags) ? implode(' ', $tags) : '',
         ]);
+    }
+
+    private static function strip_auto_faq_block(string $content): string
+    {
+        if ($content === '') {
+            return '';
+        }
+
+        $pattern = '/' . preg_quote(self::AUTO_FAQ_START, '/') . '.*?' . preg_quote(self::AUTO_FAQ_END, '/') . '\s*/is';
+        $content = (string) preg_replace($pattern, '', $content);
+        return rtrim($content);
+    }
+
+    private static function content_has_faq_section(string $content): bool
+    {
+        $content = self::strip_auto_faq_block($content);
+        if ($content === '') {
+            return false;
+        }
+
+        return (bool) preg_match('/<h[23][^>]*>\s*Intrebari frecvente\s*<\/h[23]>/iu', $content);
+    }
+
+    private static function extract_storage_answer(string $content): string
+    {
+        if (!preg_match('/<h[23][^>]*>\s*Cum pastrezi\s*<\/h[23]>\s*(<p\b[^>]*>.*?<\/p>)/isu', $content, $matches)) {
+            return '';
+        }
+
+        $text = self::sentence_limit((string) ($matches[1] ?? ''), 220, 60);
+        return $text;
     }
 
     private static function strip_auto_internal_links_block(string $content): string
