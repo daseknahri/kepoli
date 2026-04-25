@@ -458,6 +458,15 @@ requireThemeIncludes('footer', 'footer menu fallback', [
   /fallback_cb'\s*=>\s*'kepoli_footer_menu_fallback'/,
 ]);
 
+requireThemeIncludes('functions', 'trust page structured data', [
+  /function kepoli_static_page_json_ld\(\): void/,
+  /'@type'\s*=>\s*'AboutPage'/,
+  /'@type'\s*=>\s*'ProfilePage'/,
+  /'@type'\s*=>\s*'ContactPage'/,
+  /function kepoli_editorial_policy_url\(\): string/,
+  /'publishingPrinciples'\s*=>\s*kepoli_editorial_policy_url\(\)/,
+]);
+
 requireThemeIncludes('single', 'priority single post image', [
   /fetchpriority'\s*=>\s*'high'/,
   /loading'\s*=>\s*'eager'/,

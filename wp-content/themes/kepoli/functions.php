@@ -134,6 +134,24 @@ function kepoli_author_page_url(): string
     return $page ? get_permalink($page) : home_url('/despre-autor/');
 }
 
+function kepoli_about_page_url(): string
+{
+    $page = get_page_by_path('despre-kepoli', OBJECT, 'page');
+    return $page ? get_permalink($page) : home_url('/despre-kepoli/');
+}
+
+function kepoli_contact_page_url(): string
+{
+    $page = get_page_by_path('contact', OBJECT, 'page');
+    return $page ? get_permalink($page) : home_url('/contact/');
+}
+
+function kepoli_editorial_policy_url(): string
+{
+    $page = get_page_by_path('politica-editoriala', OBJECT, 'page');
+    return $page ? get_permalink($page) : home_url('/politica-editoriala/');
+}
+
 function kepoli_brand_description(): string
 {
     return 'Kepoli publica retete romanesti, articole culinare si ghiduri practice pentru gatit acasa.';
@@ -281,6 +299,15 @@ function kepoli_schema_publisher(): array
         '@id' => home_url('/#organization'),
         'name' => 'Kepoli',
         'url' => home_url('/'),
+        'email' => kepoli_env('SITE_EMAIL', 'contact@kepoli.com'),
+        'contactPoint' => [
+            '@type' => 'ContactPoint',
+            'contactType' => 'editorial',
+            'email' => kepoli_env('SITE_EMAIL', 'contact@kepoli.com'),
+            'url' => kepoli_contact_page_url(),
+            'availableLanguage' => ['ro', 'en'],
+        ],
+        'publishingPrinciples' => kepoli_editorial_policy_url(),
         'logo' => kepoli_schema_asset_image_object('kepoli-icon', 'svg', 'Kepoli'),
     ];
 }
@@ -2313,6 +2340,14 @@ function kepoli_site_json_ld(): void
                 'url' => home_url('/'),
                 'email' => kepoli_env('SITE_EMAIL', 'contact@kepoli.com'),
                 'description' => kepoli_brand_description(),
+                'contactPoint' => [
+                    '@type' => 'ContactPoint',
+                    'contactType' => 'editorial',
+                    'email' => kepoli_env('SITE_EMAIL', 'contact@kepoli.com'),
+                    'url' => kepoli_contact_page_url(),
+                    'availableLanguage' => ['ro', 'en'],
+                ],
+                'publishingPrinciples' => kepoli_editorial_policy_url(),
                 'logo' => kepoli_schema_asset_image_object('kepoli-wordmark', 'svg', 'Kepoli'),
             ],
             [
@@ -2347,6 +2382,64 @@ function kepoli_site_json_ld(): void
     echo '<script type="application/ld+json">' . wp_json_encode($graph, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
 }
 add_action('wp_head', 'kepoli_site_json_ld', 19);
+
+function kepoli_static_page_json_ld(): void
+{
+    if (is_admin() || !is_page()) {
+        return;
+    }
+
+    $schema = null;
+
+    if (is_page('despre-kepoli')) {
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'AboutPage',
+            'name' => get_the_title(),
+            'url' => get_permalink(),
+            'description' => kepoli_current_description(),
+            'inLanguage' => get_bloginfo('language') ?: 'ro-RO',
+            'isPartOf' => ['@id' => home_url('/#website')],
+            'mainEntity' => ['@id' => home_url('/#organization')],
+            'about' => ['@id' => home_url('/#organization')],
+        ];
+    } elseif (is_page('despre-autor')) {
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'ProfilePage',
+            'name' => get_the_title(),
+            'url' => get_permalink(),
+            'description' => kepoli_current_description(),
+            'inLanguage' => get_bloginfo('language') ?: 'ro-RO',
+            'isPartOf' => ['@id' => home_url('/#website')],
+            'mainEntity' => ['@id' => kepoli_author_page_url() . '#person'],
+        ];
+    } elseif (is_page('contact')) {
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'ContactPage',
+            'name' => get_the_title(),
+            'url' => get_permalink(),
+            'description' => kepoli_current_description(),
+            'inLanguage' => get_bloginfo('language') ?: 'ro-RO',
+            'isPartOf' => ['@id' => home_url('/#website')],
+            'mainEntity' => [
+                '@type' => 'ContactPoint',
+                'contactType' => 'editorial',
+                'email' => kepoli_env('SITE_EMAIL', 'contact@kepoli.com'),
+                'url' => kepoli_contact_page_url(),
+                'availableLanguage' => ['ro', 'en'],
+            ],
+        ];
+    }
+
+    if ($schema === null) {
+        return;
+    }
+
+    echo '<script type="application/ld+json">' . wp_json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "</script>\n";
+}
+add_action('wp_head', 'kepoli_static_page_json_ld', 24);
 
 function kepoli_collection_schema_posts(): array
 {
