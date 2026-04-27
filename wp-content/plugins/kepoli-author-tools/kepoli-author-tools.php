@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: Kepoli Author Tools
- * Description: Simplifies the Kepoli post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.7
- * Author: Kepoli
+ * Plugin Name: Food Blog Author Tools
+ * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
+ * Version: 1.8.17
+ * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
 
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.7';
+    private const VERSION = '1.8.15';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -32,7 +32,17 @@ final class Kepoli_Author_Tools
         'Prezinta subiectul si spune cititorului ce va invata din articol.',
         'Explica punctele importante in paragrafe scurte, cu exemple concrete.',
         'Leaga sfaturile de retete, ingrediente sau obiceiuri de gatit acasa.',
-        'Adauga linkuri interne catre retete sau ghiduri Kepoli apropiate.',
+        'Adauga linkuri interne catre retete sau ghiduri apropiate.',
+        'Write 2-3 sentences about the result, occasion, and texture.',
+        'Add ingredients in a list, one per line.',
+        'Add the steps in order, with time, temperature, and visual signs where useful.',
+        'Note mistakes to avoid, adjustments, and useful variations.',
+        'Explain storage, reheating, and safe consumption.',
+        'Answer practically, with realistic time ranges.',
+        'Introduce the topic and tell the reader what they will learn.',
+        'Explain the important points in short paragraphs with concrete examples.',
+        'Connect the advice to recipes, ingredients, or home cooking habits.',
+        'Add internal links to nearby recipes or guides.',
     ];
     private const TEMPLATE_OUTLINE_LABELS = [
         'Pe scurt',
@@ -46,8 +56,40 @@ final class Kepoli_Author_Tools
         'Ce merita retinut',
         'Cum aplici in bucatarie',
         'Legaturi utile',
+        'What to know first',
+        'Ingredients',
+        'Method',
+        'Success notes',
+        'Storage',
+        'Frequently asked questions',
+        'Can I prepare this recipe ahead?',
+        'Main idea',
+        'What to remember',
+        'How to use it in the kitchen',
+        'Useful links',
     ];
     private static $is_updating_post = false;
+
+    private static function is_english(): bool
+    {
+        return str_starts_with(strtolower((string) get_bloginfo('language')), 'en');
+    }
+
+    private static function ui_text(string $ro, string $en): string
+    {
+        unset($ro);
+        return $en;
+    }
+
+    private static function content_text(string $ro, string $en): string
+    {
+        return self::is_english() ? $en : $ro;
+    }
+
+    private static function site_name(): string
+    {
+        return get_bloginfo('name') ?: 'Food Blog';
+    }
 
     public static function init(): void
     {
@@ -121,21 +163,23 @@ final class Kepoli_Author_Tools
 
             wp_localize_script('kepoli-author-tools-admin', 'kepoliAuthorTools', [
                 'currentPostId' => self::current_post_id(),
+                'siteName' => self::site_name(),
+                'isEnglish' => self::is_english(),
                 'relatedPosts' => self::related_posts_payload(self::current_post_id()),
                 'categories' => self::category_payload(),
                 'strings' => [
-                    'checkReady' => __('Setup aproape complet. Mai verifica naturaletea textului inainte de publicare.', 'kepoli-author-tools'),
-                    'checkMissingPrefix' => __('De completat inainte de publicare:', 'kepoli-author-tools'),
-                    'publishConfirmPrefix' => __('Postarea mai are campuri lipsa:', 'kepoli-author-tools'),
-                    'publishConfirmSuffix' => __('Continui totusi publicarea?', 'kepoli-author-tools'),
-                    'companionReady' => __('Postarea arata bine pentru urmatorul pas. Fa doar o ultima lectura inainte de publicare.', 'kepoli-author-tools'),
-                    'companionReview' => __('Mai sunt cateva lucruri de verificat inainte sa publici.', 'kepoli-author-tools'),
-                    'companionStatusReady' => __('Gata pentru o ultima lectura.', 'kepoli-author-tools'),
-                    'companionStatusSingle' => __('Mai lipseste 1 lucru important.', 'kepoli-author-tools'),
-                    'companionStatusMultiple' => __('Mai lipsesc %d lucruri importante.', 'kepoli-author-tools'),
-                    'companionNoCategory' => __('Nicio sugestie clara inca', 'kepoli-author-tools'),
-                    'companionNoTags' => __('Fara taguri sugerate inca', 'kepoli-author-tools'),
-                    'defaultSlugHint' => __('Slugul se va curata automat la salvare.', 'kepoli-author-tools'),
+                    'checkReady' => self::ui_text('Setup aproape complet. Mai verifica naturaletea textului inainte de publicare.', 'Setup is almost complete. Review the text once before publishing.'),
+                    'checkMissingPrefix' => self::ui_text('De completat inainte de publicare:', 'Complete before publishing:'),
+                    'publishConfirmPrefix' => self::ui_text('Postarea mai are campuri lipsa:', 'The post still has missing fields:'),
+                    'publishConfirmSuffix' => self::ui_text('Continui totusi publicarea?', 'Publish anyway?'),
+                    'companionReady' => self::ui_text('Postarea arata bine pentru urmatorul pas. Fa doar o ultima lectura inainte de publicare.', 'The post looks ready for the next step. Give it one final read before publishing.'),
+                    'companionReview' => self::ui_text('Mai sunt cateva lucruri de verificat inainte sa publici.', 'A few things still need review before publishing.'),
+                    'companionStatusReady' => self::ui_text('Gata pentru o ultima lectura.', 'Ready for a final read.'),
+                    'companionStatusSingle' => self::ui_text('Mai lipseste 1 lucru important.', '1 important item is still missing.'),
+                    'companionStatusMultiple' => self::ui_text('Mai lipsesc %d lucruri importante.', '%d important items are still missing.'),
+                    'companionNoCategory' => self::ui_text('Nicio sugestie clara inca', 'No clear suggestion yet'),
+                    'companionNoTags' => self::ui_text('Fara taguri sugerate inca', 'No suggested tags yet'),
+                    'defaultSlugHint' => self::ui_text('Slugul se va curata automat la salvare.', 'The slug will be cleaned automatically on save.'),
                 ],
             ]);
         }
@@ -145,7 +189,7 @@ final class Kepoli_Author_Tools
     {
         add_meta_box(
             'kepoli-publish-companion',
-            __('Kepoli publish companion', 'kepoli-author-tools'),
+            self::ui_text('Asistent publicare', 'Publish helper'),
             [self::class, 'render_publish_companion_box'],
             'post',
             'side',
@@ -157,24 +201,24 @@ final class Kepoli_Author_Tools
     {
         ?>
         <div class="kepoli-publish-companion" data-kepoli-publish-companion>
-            <p class="kepoli-publish-companion__intro"><?php esc_html_e('Cand esti aproape gata, foloseste acest buton pentru completarea automata finala.', 'kepoli-author-tools'); ?></p>
+            <p class="kepoli-publish-companion__intro"><?php echo esc_html(self::ui_text('Cand esti aproape gata, foloseste acest buton pentru completarea automata finala.', 'When the post is almost ready, use this button for the final automatic setup.')); ?></p>
             <div class="kepoli-publish-companion__actions">
-                <button type="button" class="button button-primary" data-kepoli-companion-complete><?php esc_html_e('Pregateste pentru publicare', 'kepoli-author-tools'); ?></button>
+                <button type="button" class="button button-primary" data-kepoli-companion-complete><?php echo esc_html(self::ui_text('Pregateste pentru publicare', 'Prepare for publishing')); ?></button>
                 <p class="kepoli-publish-companion__status" data-kepoli-companion-status></p>
             </div>
             <p class="kepoli-publish-companion__summary" data-kepoli-companion-summary></p>
             <details class="kepoli-publish-companion__details">
-                <summary><?php esc_html_e('Vezi detalii', 'kepoli-author-tools'); ?></summary>
+                <summary><?php echo esc_html(self::ui_text('Vezi detalii', 'View details')); ?></summary>
                 <div class="kepoli-publish-companion__block">
-                    <span class="kepoli-publish-companion__label"><?php esc_html_e('Categoria sugerata', 'kepoli-author-tools'); ?></span>
-                    <strong data-kepoli-companion-category><?php esc_html_e('Se calculeaza...', 'kepoli-author-tools'); ?></strong>
+                    <span class="kepoli-publish-companion__label"><?php echo esc_html(self::ui_text('Categoria sugerata', 'Suggested category')); ?></span>
+                    <strong data-kepoli-companion-category><?php echo esc_html(self::ui_text('Se calculeaza...', 'Calculating...')); ?></strong>
                 </div>
                 <div class="kepoli-publish-companion__block">
-                    <span class="kepoli-publish-companion__label"><?php esc_html_e('Taguri sugerate', 'kepoli-author-tools'); ?></span>
-                    <p data-kepoli-companion-tags><?php esc_html_e('Se calculeaza...', 'kepoli-author-tools'); ?></p>
+                    <span class="kepoli-publish-companion__label"><?php echo esc_html(self::ui_text('Taguri sugerate', 'Suggested tags')); ?></span>
+                    <p data-kepoli-companion-tags><?php echo esc_html(self::ui_text('Se calculeaza...', 'Calculating...')); ?></p>
                 </div>
                 <div class="kepoli-publish-companion__block">
-                    <span class="kepoli-publish-companion__label"><?php esc_html_e('Mai verifica', 'kepoli-author-tools'); ?></span>
+                    <span class="kepoli-publish-companion__label"><?php echo esc_html(self::ui_text('Mai verifica', 'Review')); ?></span>
                     <ul class="kepoli-publish-companion__checks" data-kepoli-companion-checks></ul>
                 </div>
             </details>
@@ -186,7 +230,7 @@ final class Kepoli_Author_Tools
     {
         add_meta_box(
             'kepoli-author-guide',
-            __('Kepoli writing tools', 'kepoli-author-tools'),
+            self::ui_text('Unelte de scriere', 'Writing tools'),
             [self::class, 'render_writer_guide_box'],
             'post',
             'side',
@@ -198,12 +242,24 @@ final class Kepoli_Author_Tools
     {
         ?>
         <div class="kepoli-author-guide">
-            <p class="kepoli-author-guide__intro"><strong><?php esc_html_e('Porneste rapid cu o structura gata facuta.', 'kepoli-author-tools'); ?></strong></p>
+            <p class="kepoli-author-guide__intro"><strong><?php echo esc_html(self::ui_text('Porneste rapid cu o structura gata facuta.', 'Start quickly with a ready structure.')); ?></strong></p>
             <div class="kepoli-template-actions">
-                <button type="button" class="button" data-kepoli-template="recipe"><?php esc_html_e('Structura reteta', 'kepoli-author-tools'); ?></button>
-                <button type="button" class="button" data-kepoli-template="article"><?php esc_html_e('Structura articol', 'kepoli-author-tools'); ?></button>
+                <button type="button" class="button" data-kepoli-template="recipe"><?php echo esc_html(self::ui_text('Structura reteta', 'Recipe structure')); ?></button>
+                <button type="button" class="button" data-kepoli-template="article"><?php echo esc_html(self::ui_text('Structura articol', 'Article structure')); ?></button>
             </div>
-            <p class="kepoli-author-guide__note"><?php esc_html_e('Pentru articole lungi, foloseste `Pauza`, `2 parti` sau `3 parti` din toolbar.', 'kepoli-author-tools'); ?></p>
+            <p class="kepoli-author-guide__note"><?php echo esc_html(self::ui_text('Pentru articole lungi, foloseste `Pauza`, `2 parti` sau `3 parti` din toolbar.', 'For long posts, use `Break`, `2 parts`, or `3 parts` in the toolbar.')); ?></p>
+            <details class="kepoli-author-guide__prompt-helper">
+                <summary><?php echo esc_html(self::ui_text('Prompt AI', 'AI prompt')); ?></summary>
+                <p class="kepoli-author-guide__note"><?php echo esc_html(self::ui_text('Promptul de mai jos cere exact structura pe care Kepoli o completeaza si o poate citi cel mai bine.', 'The prompt below asks for the exact structure that Kepoli can fill and read most reliably.')); ?></p>
+                <div class="kepoli-template-actions">
+                    <button type="button" class="button" data-kepoli-prompt-kind="recipe"><?php echo esc_html(self::ui_text('Prompt reteta', 'Recipe prompt')); ?></button>
+                    <button type="button" class="button" data-kepoli-prompt-kind="article"><?php echo esc_html(self::ui_text('Prompt articol', 'Article prompt')); ?></button>
+                    <button type="button" class="button button-primary" data-kepoli-copy-prompt><?php echo esc_html(self::ui_text('Copiaza promptul', 'Copy prompt')); ?></button>
+                </div>
+                <label class="kepoli-post-setup__prompt">
+                    <textarea rows="12" readonly data-kepoli-prompt-output></textarea>
+                </label>
+            </details>
         </div>
         <?php
     }
@@ -212,7 +268,7 @@ final class Kepoli_Author_Tools
     {
         add_meta_box(
             'kepoli-post-setup',
-            __('Kepoli post setup', 'kepoli-author-tools'),
+            self::ui_text('Setup postare', 'Post setup'),
             [self::class, 'render_post_setup_box'],
             'post',
             'normal',
@@ -242,131 +298,131 @@ final class Kepoli_Author_Tools
         ?>
         <div class="kepoli-post-setup">
             <div class="kepoli-automation-actions kepoli-automation-actions--primary">
-                <button type="button" class="button button-primary" data-kepoli-complete-setup><?php esc_html_e('Completeaza automat', 'kepoli-author-tools'); ?></button>
+                <button type="button" class="button button-primary" data-kepoli-complete-setup><?php echo esc_html(self::ui_text('Completeaza automat', 'Auto fill')); ?></button>
                 <span class="kepoli-automation-actions__status" data-kepoli-automation-status></span>
             </div>
-            <p class="kepoli-automation-actions__note"><?php esc_html_e('Acesta este butonul principal pentru lucru rapid. Kepoli incearca sa completeze campurile goale si iti lasa doar verificarea finala.', 'kepoli-author-tools'); ?></p>
+            <p class="kepoli-automation-actions__note"><?php echo esc_html(self::ui_text('Acesta este butonul principal pentru lucru rapid. Site-ul incearca sa completeze campurile goale si iti lasa doar verificarea finala.', 'This is the main quick-work button. It fills empty fields where possible and leaves only the final review.')); ?></p>
             <details class="kepoli-automation-more">
-                <summary><?php esc_html_e('Mai multe unelte', 'kepoli-author-tools'); ?></summary>
+                <summary><?php echo esc_html(self::ui_text('Mai multe unelte', 'More tools')); ?></summary>
                 <div class="kepoli-automation-actions kepoli-automation-actions--secondary">
-                    <button type="button" class="button" data-kepoli-suggest-category><?php esc_html_e('Sugereaza categorie', 'kepoli-author-tools'); ?></button>
-                    <button type="button" class="button" data-kepoli-suggest-tags><?php esc_html_e('Sugereaza taguri', 'kepoli-author-tools'); ?></button>
-                    <button type="button" class="button" data-kepoli-extract-recipe><?php esc_html_e('Extrage schema reteta', 'kepoli-author-tools'); ?></button>
-                    <button type="button" class="button" data-kepoli-generate-excerpt><?php esc_html_e('Genereaza excerpt', 'kepoli-author-tools'); ?></button>
-                    <button type="button" class="button" data-kepoli-generate-meta><?php esc_html_e('Genereaza meta description', 'kepoli-author-tools'); ?></button>
-                    <button type="button" class="button" data-kepoli-suggest-related><?php esc_html_e('Sugereaza linkuri interne', 'kepoli-author-tools'); ?></button>
-                    <button type="button" class="button" data-kepoli-generate-image-meta><?php esc_html_e('Genereaza meta imagine', 'kepoli-author-tools'); ?></button>
+                    <button type="button" class="button" data-kepoli-suggest-category><?php echo esc_html(self::ui_text('Sugereaza categorie', 'Suggest category')); ?></button>
+                    <button type="button" class="button" data-kepoli-suggest-tags><?php echo esc_html(self::ui_text('Sugereaza taguri', 'Suggest tags')); ?></button>
+                    <button type="button" class="button" data-kepoli-extract-recipe><?php echo esc_html(self::ui_text('Extrage schema reteta', 'Extract recipe schema')); ?></button>
+                    <button type="button" class="button" data-kepoli-generate-excerpt><?php echo esc_html(self::ui_text('Genereaza excerpt', 'Generate excerpt')); ?></button>
+                    <button type="button" class="button" data-kepoli-generate-meta><?php echo esc_html(self::ui_text('Genereaza meta description', 'Generate meta description')); ?></button>
+                    <button type="button" class="button" data-kepoli-suggest-related><?php echo esc_html(self::ui_text('Sugereaza linkuri interne', 'Suggest internal links')); ?></button>
+                    <button type="button" class="button" data-kepoli-generate-image-meta><?php echo esc_html(self::ui_text('Genereaza meta imagine', 'Generate image metadata')); ?></button>
                 </div>
-                <p class="kepoli-automation-actions__note"><?php esc_html_e('Pentru retete, Extrage schema reteta citeste ingredientele si pasii din continut daca folosesti structura Kepoli.', 'kepoli-author-tools'); ?></p>
+                <p class="kepoli-automation-actions__note"><?php echo esc_html(self::ui_text('Pentru retete, Extrage schema reteta citeste ingredientele si pasii din continut daca folosesti structura pregatita.', 'For recipes, Extract recipe schema reads ingredients and steps from the post if you use the prepared structure.')); ?></p>
             </details>
 
             <fieldset class="kepoli-post-setup__group">
-                <legend><?php esc_html_e('Tip continut', 'kepoli-author-tools'); ?></legend>
+                <legend><?php echo esc_html(self::ui_text('Tip continut', 'Content type')); ?></legend>
                 <label class="kepoli-choice">
                     <input type="radio" name="kepoli_post_kind" value="recipe" <?php checked($kind, 'recipe'); ?>>
-                    <span><?php esc_html_e('Reteta', 'kepoli-author-tools'); ?></span>
+                    <span><?php echo esc_html(self::ui_text('Reteta', 'Recipe')); ?></span>
                 </label>
                 <label class="kepoli-choice">
                     <input type="radio" name="kepoli_post_kind" value="article" <?php checked($kind, 'article'); ?>>
-                    <span><?php esc_html_e('Articol', 'kepoli-author-tools'); ?></span>
+                    <span><?php echo esc_html(self::ui_text('Articol', 'Article')); ?></span>
                 </label>
             </fieldset>
 
             <div class="kepoli-post-setup__grid kepoli-post-setup__grid--single">
                 <label>
                     <span><?php esc_html_e('Excerpt', 'kepoli-author-tools'); ?></span>
-                    <textarea name="kepoli_post_excerpt" rows="3" maxlength="260" placeholder="<?php esc_attr_e('Rezumat scurt pentru carduri, arhive si intro.', 'kepoli-author-tools'); ?>"><?php echo esc_textarea($excerpt); ?></textarea>
+                    <textarea name="kepoli_post_excerpt" rows="3" maxlength="260" placeholder="<?php echo esc_attr(self::ui_text('Rezumat scurt pentru carduri, arhive si intro.', 'Short summary for cards, archives, and the post intro.')); ?>"><?php echo esc_textarea($excerpt); ?></textarea>
                 </label>
             </div>
 
             <div class="kepoli-post-setup__grid kepoli-post-setup__grid--single">
                 <label>
-                    <span><?php esc_html_e('Impartire automata', 'kepoli-author-tools'); ?></span>
+                    <span><?php echo esc_html(self::ui_text('Impartire automata', 'Automatic split')); ?></span>
                     <select name="kepoli_auto_split_parts">
-                        <option value="0" <?php selected($auto_split_parts, 0); ?>><?php esc_html_e('Fara impartire automata', 'kepoli-author-tools'); ?></option>
-                        <option value="2" <?php selected($auto_split_parts, 2); ?>><?php esc_html_e('2 parti la salvare', 'kepoli-author-tools'); ?></option>
-                        <option value="3" <?php selected($auto_split_parts, 3); ?>><?php esc_html_e('3 parti la salvare', 'kepoli-author-tools'); ?></option>
+                        <option value="0" <?php selected($auto_split_parts, 0); ?>><?php echo esc_html(self::ui_text('Fara impartire automata', 'No automatic split')); ?></option>
+                        <option value="2" <?php selected($auto_split_parts, 2); ?>><?php echo esc_html(self::ui_text('2 parti la salvare', '2 parts on save')); ?></option>
+                        <option value="3" <?php selected($auto_split_parts, 3); ?>><?php echo esc_html(self::ui_text('3 parti la salvare', '3 parts on save')); ?></option>
                     </select>
-                    <small><?php esc_html_e('Pauzele manuale din editor raman prioritare. Impartirea automata se aplica doar daca postarea nu are deja nextpage.', 'kepoli-author-tools'); ?></small>
+                    <small><?php echo esc_html(self::ui_text('Pauzele manuale din editor raman prioritare. Impartirea automata se aplica doar daca postarea nu are deja nextpage.', 'Manual page breaks stay in control. Automatic split only runs if the post does not already have nextpage markers.')); ?></small>
                 </label>
             </div>
 
             <details class="kepoli-setup-section kepoli-seo-fields" <?php echo $has_seo_details ? ' open' : ''; ?>>
-                <summary><?php esc_html_e('Detalii SEO si legaturi', 'kepoli-author-tools'); ?></summary>
-                <p><?php esc_html_e('Aceste campuri sunt optionale pentru lucru manual. Daca le lasi goale, Kepoli incearca sa le completeze automat.', 'kepoli-author-tools'); ?></p>
+                <summary><?php echo esc_html(self::ui_text('Detalii SEO si legaturi', 'SEO and links')); ?></summary>
+                <p><?php echo esc_html(self::ui_text('Aceste campuri sunt optionale pentru lucru manual. Daca le lasi goale, site-ul incearca sa le completeze automat.', 'These fields are optional for manual work. If you leave them empty, the site will try to fill them automatically.')); ?></p>
                 <div class="kepoli-post-setup__grid kepoli-post-setup__grid--single">
                     <label>
-                        <span><?php esc_html_e('SEO title optional', 'kepoli-author-tools'); ?></span>
-                        <input type="text" name="kepoli_seo_title" value="<?php echo esc_attr($seo_title); ?>" placeholder="<?php esc_attr_e('Daca ramane gol, se foloseste titlul postarii.', 'kepoli-author-tools'); ?>">
+                        <span><?php echo esc_html(self::ui_text('SEO title optional', 'Optional SEO title')); ?></span>
+                        <input type="text" name="kepoli_seo_title" value="<?php echo esc_attr($seo_title); ?>" placeholder="<?php echo esc_attr(self::ui_text('Daca ramane gol, se foloseste titlul postarii.', 'If empty, the post title will be used.')); ?>">
                     </label>
                 </div>
                 <div class="kepoli-post-setup__grid kepoli-post-setup__grid--single">
                     <label>
                         <span><?php esc_html_e('Meta description', 'kepoli-author-tools'); ?></span>
-                        <textarea name="kepoli_meta_description" rows="3" maxlength="180" placeholder="<?php esc_attr_e('Rezumat scurt pentru Google si distribuire sociala.', 'kepoli-author-tools'); ?>"><?php echo esc_textarea($meta_description); ?></textarea>
+                        <textarea name="kepoli_meta_description" rows="3" maxlength="180" placeholder="<?php echo esc_attr(self::ui_text('Rezumat scurt pentru Google si distribuire sociala.', 'Short summary for Google and social sharing.')); ?>"><?php echo esc_textarea($meta_description); ?></textarea>
                     </label>
                 </div>
                 <div class="kepoli-post-setup__grid">
                     <label>
-                        <span><?php esc_html_e('Related recipe slugs', 'kepoli-author-tools'); ?></span>
+                        <span><?php echo esc_html(self::ui_text('Sluguri retete recomandate', 'Related recipe slugs')); ?></span>
                         <textarea name="kepoli_related_recipe_slugs" rows="3" placeholder="sarmale-in-foi-de-varza, ciorba-radauteana"><?php echo esc_textarea($related_recipes); ?></textarea>
                     </label>
                     <label>
-                        <span><?php esc_html_e('Related article slugs', 'kepoli-author-tools'); ?></span>
+                        <span><?php echo esc_html(self::ui_text('Sluguri articole recomandate', 'Related article slugs')); ?></span>
                         <textarea name="kepoli_related_article_slugs" rows="3" placeholder="ghidul-camarii-romanesti"><?php echo esc_textarea($related_articles); ?></textarea>
                     </label>
                 </div>
             </details>
 
             <details class="kepoli-setup-section kepoli-image-fields" <?php echo $has_image_meta ? ' open' : ''; ?>>
-                <summary><?php esc_html_e('Detalii imagine', 'kepoli-author-tools'); ?></summary>
-                <p><?php esc_html_e('Completeaza aceste campuri pentru imaginea reprezentativa. La salvare, Kepoli le aplica pe featured image daca exista una selectata.', 'kepoli-author-tools'); ?></p>
+                <summary><?php echo esc_html(self::ui_text('Detalii imagine', 'Image details')); ?></summary>
+                <p><?php echo esc_html(self::ui_text('Completeaza aceste campuri pentru imaginea reprezentativa. La salvare, site-ul le aplica pe featured image daca exista una selectata.', 'Fill these fields for the featured image. On save, the site applies them to the selected featured image.')); ?></p>
                 <div class="kepoli-post-setup__grid">
                     <label>
                         <span><?php esc_html_e('Alt text', 'kepoli-author-tools'); ?></span>
-                        <input type="text" name="kepoli_image_alt" value="<?php echo esc_attr($image_meta['alt']); ?>" placeholder="<?php esc_attr_e('Descriere scurta si precisa a imaginii.', 'kepoli-author-tools'); ?>">
+                        <input type="text" name="kepoli_image_alt" value="<?php echo esc_attr($image_meta['alt']); ?>" placeholder="<?php echo esc_attr(self::ui_text('Descriere scurta si precisa a imaginii.', 'Short, accurate description of the image.')); ?>">
                     </label>
                     <label>
                         <span><?php esc_html_e('Image title', 'kepoli-author-tools'); ?></span>
-                        <input type="text" name="kepoli_image_title" value="<?php echo esc_attr($image_meta['title']); ?>" placeholder="<?php esc_attr_e('Titlu imagine in Media Library.', 'kepoli-author-tools'); ?>">
+                        <input type="text" name="kepoli_image_title" value="<?php echo esc_attr($image_meta['title']); ?>" placeholder="<?php echo esc_attr(self::ui_text('Titlu imagine in Media Library.', 'Image title in the Media Library.')); ?>">
                     </label>
                 </div>
                 <div class="kepoli-post-setup__grid">
                     <label>
                         <span><?php esc_html_e('Caption', 'kepoli-author-tools'); ?></span>
-                        <input type="text" name="kepoli_image_caption" value="<?php echo esc_attr($image_meta['caption']); ?>" placeholder="<?php esc_attr_e('Text optional afisat/subtitrare imagine.', 'kepoli-author-tools'); ?>">
+                        <input type="text" name="kepoli_image_caption" value="<?php echo esc_attr($image_meta['caption']); ?>" placeholder="<?php echo esc_attr(self::ui_text('Text optional afisat/subtitrare imagine.', 'Optional text shown as the image caption.')); ?>">
                     </label>
                     <label>
                         <span><?php esc_html_e('Description', 'kepoli-author-tools'); ?></span>
-                        <textarea name="kepoli_image_description" rows="2" placeholder="<?php esc_attr_e('Descriere interna pentru Media Library.', 'kepoli-author-tools'); ?>"><?php echo esc_textarea($image_meta['description']); ?></textarea>
+                        <textarea name="kepoli_image_description" rows="2" placeholder="<?php echo esc_attr(self::ui_text('Descriere interna pentru Media Library.', 'Internal description for the Media Library.')); ?>"><?php echo esc_textarea($image_meta['description']); ?></textarea>
                     </label>
                 </div>
             </details>
 
             <details class="kepoli-setup-section kepoli-recipe-fields" data-kepoli-recipe-fields <?php echo $kind === 'recipe' ? ' open' : ''; ?>>
-                <summary><?php esc_html_e('Date reteta', 'kepoli-author-tools'); ?></summary>
-                <p><?php esc_html_e('Completeaza aceste campuri pentru retete noi. Ele alimenteaza schema Recipe folosita de Google.', 'kepoli-author-tools'); ?></p>
+                <summary><?php echo esc_html(self::ui_text('Date reteta', 'Recipe data')); ?></summary>
+                <p><?php echo esc_html(self::ui_text('Completeaza aceste campuri pentru retete noi. Ele alimenteaza schema Recipe folosita de Google.', 'Fill these fields for new recipes. They power the Recipe schema used by Google.')); ?></p>
                 <div class="kepoli-post-setup__grid kepoli-post-setup__grid--thirds">
                     <label>
-                        <span><?php esc_html_e('Portii', 'kepoli-author-tools'); ?></span>
-                        <input type="text" name="kepoli_recipe_servings" value="<?php echo esc_attr($recipe['servings']); ?>" placeholder="4 portii">
+                        <span><?php echo esc_html(self::ui_text('Portii', 'Servings')); ?></span>
+                        <input type="text" name="kepoli_recipe_servings" value="<?php echo esc_attr($recipe['servings']); ?>" placeholder="<?php echo esc_attr(self::ui_text('4 portii', '4 servings')); ?>">
                     </label>
                     <label>
-                        <span><?php esc_html_e('Pregatire minute', 'kepoli-author-tools'); ?></span>
+                        <span><?php echo esc_html(self::ui_text('Pregatire minute', 'Prep minutes')); ?></span>
                         <input type="number" min="0" step="1" name="kepoli_recipe_prep_minutes" value="<?php echo esc_attr($recipe['prep_minutes']); ?>">
                     </label>
                     <label>
-                        <span><?php esc_html_e('Gatire minute', 'kepoli-author-tools'); ?></span>
+                        <span><?php echo esc_html(self::ui_text('Gatire minute', 'Cook minutes')); ?></span>
                         <input type="number" min="0" step="1" name="kepoli_recipe_cook_minutes" value="<?php echo esc_attr($recipe['cook_minutes']); ?>">
                     </label>
                 </div>
                 <div class="kepoli-post-setup__grid">
                     <label>
-                        <span><?php esc_html_e('Ingrediente, cate unul pe linie', 'kepoli-author-tools'); ?></span>
+                        <span><?php echo esc_html(self::ui_text('Ingrediente, cate unul pe linie', 'Ingredients, one per line')); ?></span>
                         <textarea name="kepoli_recipe_ingredients" rows="6"><?php echo esc_textarea(implode("\n", $recipe['ingredients'])); ?></textarea>
                     </label>
                     <label>
-                        <span><?php esc_html_e('Pasi, cate unul pe linie', 'kepoli-author-tools'); ?></span>
+                        <span><?php echo esc_html(self::ui_text('Pasi, cate unul pe linie', 'Steps, one per line')); ?></span>
                         <textarea name="kepoli_recipe_steps" rows="6"><?php echo esc_textarea(implode("\n", $recipe['steps'])); ?></textarea>
                     </label>
                 </div>
@@ -374,21 +430,21 @@ final class Kepoli_Author_Tools
 
             <details class="kepoli-editor-checklist" data-kepoli-editor-checklist>
                 <summary class="kepoli-editor-checklist__toggle">
-                    <span class="kepoli-editor-checklist__title"><?php esc_html_e('Checklist editorial', 'kepoli-author-tools'); ?></span>
+                    <span class="kepoli-editor-checklist__title"><?php echo esc_html(self::ui_text('Checklist editorial', 'Editorial checklist')); ?></span>
                     <span class="kepoli-editor-checklist__summary" data-kepoli-checklist-summary></span>
                 </summary>
-                <p class="kepoli-editor-checklist__intro"><?php esc_html_e('Deschide lista doar daca vrei sa vezi exact ce mai lipseste.', 'kepoli-author-tools'); ?></p>
+                <p class="kepoli-editor-checklist__intro"><?php echo esc_html(self::ui_text('Deschide lista doar daca vrei sa vezi exact ce mai lipseste.', 'Open the list only when you want to see exactly what is still missing.')); ?></p>
                 <ul class="kepoli-editor-checklist__items">
-                    <li data-kepoli-check="title"><?php esc_html_e('Titlu clar', 'kepoli-author-tools'); ?></li>
-                    <li data-kepoli-check="content"><?php esc_html_e('Continut suficient', 'kepoli-author-tools'); ?></li>
-                    <li data-kepoli-check="excerpt"><?php esc_html_e('Excerpt completat', 'kepoli-author-tools'); ?></li>
-                    <li data-kepoli-check="meta"><?php esc_html_e('Meta description completata', 'kepoli-author-tools'); ?></li>
-                    <li data-kepoli-check="language"><?php esc_html_e('Limba coerenta', 'kepoli-author-tools'); ?></li>
-                    <li data-kepoli-check="slug"><?php esc_html_e('Slug curat', 'kepoli-author-tools'); ?></li>
-                    <li data-kepoli-check="featuredImage"><?php esc_html_e('Imagine reprezentativa setata', 'kepoli-author-tools'); ?></li>
-                    <li data-kepoli-check="imageAlt"><?php esc_html_e('Alt text pentru imagine', 'kepoli-author-tools'); ?></li>
-                    <li data-kepoli-check="related"><?php esc_html_e('Linkuri interne pregatite', 'kepoli-author-tools'); ?></li>
-                    <li data-kepoli-check="recipe"><?php esc_html_e('Schema reteta completata', 'kepoli-author-tools'); ?></li>
+                    <li data-kepoli-check="title"><?php echo esc_html(self::ui_text('Titlu clar', 'Clear title')); ?></li>
+                    <li data-kepoli-check="content"><?php echo esc_html(self::ui_text('Continut suficient', 'Enough content')); ?></li>
+                    <li data-kepoli-check="excerpt"><?php echo esc_html(self::ui_text('Excerpt completat', 'Excerpt filled')); ?></li>
+                    <li data-kepoli-check="meta"><?php echo esc_html(self::ui_text('Meta description completata', 'Meta description filled')); ?></li>
+                    <li data-kepoli-check="language"><?php echo esc_html(self::ui_text('Limba coerenta', 'Consistent language')); ?></li>
+                    <li data-kepoli-check="slug"><?php echo esc_html(self::ui_text('Slug curat', 'Clean slug')); ?></li>
+                    <li data-kepoli-check="featuredImage"><?php echo esc_html(self::ui_text('Imagine reprezentativa setata', 'Featured image set')); ?></li>
+                    <li data-kepoli-check="imageAlt"><?php echo esc_html(self::ui_text('Alt text pentru imagine', 'Image alt text')); ?></li>
+                    <li data-kepoli-check="related"><?php echo esc_html(self::ui_text('Linkuri interne pregatite', 'Internal links ready')); ?></li>
+                    <li data-kepoli-check="recipe"><?php echo esc_html(self::ui_text('Schema reteta completata', 'Recipe schema filled')); ?></li>
                 </ul>
             </details>
         </div>
@@ -425,27 +481,27 @@ final class Kepoli_Author_Tools
         self::maybe_normalize_content_structure($post_id, $post);
 
         self::save_post_excerpt($post_id, $post);
-        self::save_text_meta($post_id, '_kepoli_seo_title', 'kepoli_seo_title', 70);
+        self::save_seo_title($post_id, $post);
         self::save_meta_description($post_id, $post);
+        self::maybe_apply_suggested_category($post_id, $kind, $post);
+        self::maybe_apply_suggested_tags($post_id, $kind, $post);
 
-        $related_recipes = self::posted_slugs('kepoli_related_recipe_slugs');
-        $related_articles = self::posted_slugs('kepoli_related_article_slugs');
-
-        if (!$related_recipes && !$related_articles) {
-            $suggested_related = self::suggest_related_slugs($post_id, $kind, $post);
-            $related_recipes = $suggested_related['recipes'];
-            $related_articles = $suggested_related['articles'];
-        }
+        $related = self::resolve_related_slugs($post_id, $kind, $post);
+        $related_recipes = $related['recipes'];
+        $related_articles = $related['articles'];
 
         update_post_meta($post_id, '_kepoli_related_recipe_slugs', $related_recipes);
         update_post_meta($post_id, '_kepoli_related_article_slugs', $related_articles);
         update_post_meta($post_id, '_kepoli_related_slugs', array_values(array_unique(array_merge($related_recipes, $related_articles))));
+        self::store_auto_text_flag($post_id, '_kepoli_auto_related_slugs', !empty($related['is_auto']));
 
         if ($kind === 'recipe') {
-            self::save_recipe_json($post_id);
+            self::save_recipe_json($post_id, $post);
             self::maybe_add_recipe_faq($post_id, $post);
         } else {
             delete_post_meta($post_id, '_kepoli_recipe_json');
+            delete_post_meta($post_id, '_kepoli_auto_recipe_json');
+            self::maybe_remove_recipe_faq($post_id, $post);
         }
 
         self::maybe_add_internal_links_to_content($post_id, $post, $kind, $related_recipes, $related_articles);
@@ -461,7 +517,7 @@ final class Kepoli_Author_Tools
             $updated[$key] = $label;
 
             if ($key === 'title') {
-                $updated['kepoli_kind'] = __('Tip Kepoli', 'kepoli-author-tools');
+                $updated['kepoli_kind'] = self::ui_text('Tip continut', 'Content type');
                 $updated['kepoli_readiness'] = __('Setup', 'kepoli-author-tools');
             }
         }
@@ -473,7 +529,7 @@ final class Kepoli_Author_Tools
     {
         if ($column === 'kepoli_kind') {
             $kind = self::post_kind($post_id);
-            $label = $kind === 'article' ? __('Articol', 'kepoli-author-tools') : __('Reteta', 'kepoli-author-tools');
+            $label = $kind === 'article' ? self::ui_text('Articol', 'Article') : self::ui_text('Reteta', 'Recipe');
 
             echo '<span class="kepoli-status-pill kepoli-status-pill--' . esc_attr($kind) . '">' . esc_html($label) . '</span>';
             return;
@@ -483,11 +539,11 @@ final class Kepoli_Author_Tools
             $missing = self::post_missing_items($post_id);
 
             if (!$missing) {
-                echo '<span class="kepoli-status-pill kepoli-status-pill--ready">' . esc_html__('Complet', 'kepoli-author-tools') . '</span>';
+                echo '<span class="kepoli-status-pill kepoli-status-pill--ready">' . esc_html(self::ui_text('Complet', 'Complete')) . '</span>';
                 return;
             }
 
-            echo '<span class="kepoli-status-pill kepoli-status-pill--needs">' . esc_html__('De completat', 'kepoli-author-tools') . '</span>';
+            echo '<span class="kepoli-status-pill kepoli-status-pill--needs">' . esc_html(self::ui_text('De completat', 'Needs work')) . '</span>';
             echo '<span class="kepoli-admin-note">' . esc_html(implode(', ', $missing)) . '</span>';
         }
     }
@@ -500,11 +556,11 @@ final class Kepoli_Author_Tools
 
         $selected = isset($_GET['kepoli_post_kind_filter']) ? sanitize_key(wp_unslash((string) $_GET['kepoli_post_kind_filter'])) : '';
         ?>
-        <label class="screen-reader-text" for="kepoli-post-kind-filter"><?php esc_html_e('Filtreaza dupa tip Kepoli', 'kepoli-author-tools'); ?></label>
+        <label class="screen-reader-text" for="kepoli-post-kind-filter"><?php echo esc_html(self::ui_text('Filtreaza dupa tip continut', 'Filter by content type')); ?></label>
         <select id="kepoli-post-kind-filter" name="kepoli_post_kind_filter">
-            <option value=""><?php esc_html_e('Toate tipurile Kepoli', 'kepoli-author-tools'); ?></option>
-            <option value="recipe" <?php selected($selected, 'recipe'); ?>><?php esc_html_e('Retete', 'kepoli-author-tools'); ?></option>
-            <option value="article" <?php selected($selected, 'article'); ?>><?php esc_html_e('Articole', 'kepoli-author-tools'); ?></option>
+            <option value=""><?php echo esc_html(self::ui_text('Toate tipurile', 'All types')); ?></option>
+            <option value="recipe" <?php selected($selected, 'recipe'); ?>><?php echo esc_html(self::ui_text('Retete', 'Recipes')); ?></option>
+            <option value="article" <?php selected($selected, 'article'); ?>><?php echo esc_html(self::ui_text('Articole', 'Articles')); ?></option>
         </select>
         <?php
     }
@@ -708,18 +764,24 @@ final class Kepoli_Author_Tools
     private static function featured_image_meta(int $post_id): array
     {
         $planned = self::planned_image_meta($post_id);
+        $pending = self::pending_image_meta($post_id);
         $thumbnail_id = get_post_thumbnail_id($post_id);
         if (!$thumbnail_id) {
-            return $planned;
+            return [
+                'alt' => $pending['alt'] !== '' ? $pending['alt'] : $planned['alt'],
+                'title' => $pending['title'] !== '' ? $pending['title'] : $planned['title'],
+                'caption' => $pending['caption'] !== '' ? $pending['caption'] : $planned['caption'],
+                'description' => $pending['description'] !== '' ? $pending['description'] : $planned['description'],
+            ];
         }
 
         $attachment = get_post($thumbnail_id);
 
         return [
-            'alt' => (string) get_post_meta($thumbnail_id, '_wp_attachment_image_alt', true) ?: $planned['alt'],
-            'title' => ($attachment ? $attachment->post_title : '') ?: $planned['title'],
-            'caption' => ($attachment ? $attachment->post_excerpt : '') ?: $planned['caption'],
-            'description' => ($attachment ? $attachment->post_content : '') ?: $planned['description'],
+            'alt' => (string) get_post_meta($thumbnail_id, '_wp_attachment_image_alt', true) ?: ($pending['alt'] !== '' ? $pending['alt'] : $planned['alt']),
+            'title' => ($attachment ? $attachment->post_title : '') ?: ($pending['title'] !== '' ? $pending['title'] : $planned['title']),
+            'caption' => ($attachment ? $attachment->post_excerpt : '') ?: ($pending['caption'] !== '' ? $pending['caption'] : $planned['caption']),
+            'description' => ($attachment ? $attachment->post_content : '') ?: ($pending['description'] !== '' ? $pending['description'] : $planned['description']),
         ];
     }
 
@@ -733,8 +795,94 @@ final class Kepoli_Author_Tools
         ];
     }
 
+    private static function pending_image_meta(int $post_id): array
+    {
+        return [
+            'alt' => (string) get_post_meta($post_id, '_kepoli_image_alt', true),
+            'title' => (string) get_post_meta($post_id, '_kepoli_image_title', true),
+            'caption' => (string) get_post_meta($post_id, '_kepoli_image_caption', true),
+            'description' => (string) get_post_meta($post_id, '_kepoli_image_description', true),
+        ];
+    }
+
+    private static function normalized_image_meta_values(array $meta): array
+    {
+        return [
+            'alt' => self::limit_text(sanitize_text_field(trim((string) ($meta['alt'] ?? ''))), 160),
+            'title' => self::limit_text(sanitize_text_field(trim((string) ($meta['title'] ?? ''))), 90),
+            'caption' => self::limit_text(sanitize_text_field(trim((string) ($meta['caption'] ?? ''))), 180),
+            'description' => self::limit_text(sanitize_textarea_field(trim((string) ($meta['description'] ?? ''))), 320),
+        ];
+    }
+
+    private static function image_meta_is_empty(array $meta): bool
+    {
+        $meta = self::normalized_image_meta_values($meta);
+        return $meta['alt'] === '' && $meta['title'] === '' && $meta['caption'] === '' && $meta['description'] === '';
+    }
+
+    private static function image_meta_matches(array $left, array $right): bool
+    {
+        return self::normalized_image_meta_values($left) === self::normalized_image_meta_values($right);
+    }
+
+    private static function store_post_image_meta(int $post_id, array $meta): void
+    {
+        $limits = [
+            'alt' => 160,
+            'title' => 90,
+            'caption' => 180,
+            'description' => 320,
+        ];
+
+        foreach ($limits as $key => $limit) {
+            $value = isset($meta[$key]) ? trim((string) $meta[$key]) : '';
+            $meta_key = '_kepoli_image_' . $key;
+
+            if ($value === '') {
+                delete_post_meta($post_id, $meta_key);
+                continue;
+            }
+
+            $clean = $key === 'description'
+                ? sanitize_textarea_field($value)
+                : sanitize_text_field($value);
+
+            update_post_meta($post_id, $meta_key, self::limit_text($clean, $limit));
+        }
+    }
+
     private static function save_featured_image_meta(int $post_id): void
     {
+        $pending = self::pending_image_meta($post_id);
+        $planned = self::planned_image_meta($post_id);
+        $generated = self::generated_image_meta($post_id);
+        $posted_meta = [
+            'alt' => isset($_POST['kepoli_image_alt']) ? sanitize_text_field(wp_unslash((string) $_POST['kepoli_image_alt'])) : '',
+            'title' => isset($_POST['kepoli_image_title']) ? sanitize_text_field(wp_unslash((string) $_POST['kepoli_image_title'])) : '',
+            'caption' => isset($_POST['kepoli_image_caption']) ? sanitize_text_field(wp_unslash((string) $_POST['kepoli_image_caption'])) : '',
+            'description' => isset($_POST['kepoli_image_description']) ? sanitize_textarea_field(wp_unslash((string) $_POST['kepoli_image_description'])) : '',
+        ];
+        $auto_generated = self::text_was_auto_generated($post_id, '_kepoli_auto_image_meta');
+        $should_refresh = ($auto_generated && self::image_meta_matches($posted_meta, $pending))
+            || (!$auto_generated && self::image_meta_is_empty($posted_meta) && self::image_meta_is_empty($pending) && self::image_meta_is_empty($planned));
+
+        if ($should_refresh) {
+            $resolved_meta = $generated;
+            $is_auto = true;
+        } else {
+            $resolved_meta = [
+                'alt' => $posted_meta['alt'] !== '' ? $posted_meta['alt'] : ($pending['alt'] !== '' ? $pending['alt'] : ($planned['alt'] !== '' ? $planned['alt'] : $generated['alt'])),
+                'title' => $posted_meta['title'] !== '' ? $posted_meta['title'] : ($pending['title'] !== '' ? $pending['title'] : ($planned['title'] !== '' ? $planned['title'] : $generated['title'])),
+                'caption' => $posted_meta['caption'] !== '' ? $posted_meta['caption'] : ($pending['caption'] !== '' ? $pending['caption'] : ($planned['caption'] !== '' ? $planned['caption'] : $generated['caption'])),
+                'description' => $posted_meta['description'] !== '' ? $posted_meta['description'] : ($pending['description'] !== '' ? $pending['description'] : ($planned['description'] !== '' ? $planned['description'] : $generated['description'])),
+            ];
+            $is_auto = !self::image_meta_is_empty($posted_meta) && self::image_meta_matches($posted_meta, $generated);
+        }
+
+        self::store_post_image_meta($post_id, $resolved_meta);
+        self::store_auto_text_flag($post_id, '_kepoli_auto_image_meta', $is_auto);
+
         $thumbnail_id = get_post_thumbnail_id($post_id);
         if (!$thumbnail_id && isset($_POST['_thumbnail_id'])) {
             $posted_thumbnail_id = absint(wp_unslash((string) $_POST['_thumbnail_id']));
@@ -746,16 +894,10 @@ final class Kepoli_Author_Tools
         }
 
         $existing = self::attachment_image_meta($thumbnail_id);
-        $generated = self::generated_image_meta($post_id);
-        $alt = isset($_POST['kepoli_image_alt']) ? sanitize_text_field(wp_unslash((string) $_POST['kepoli_image_alt'])) : '';
-        $title = isset($_POST['kepoli_image_title']) ? sanitize_text_field(wp_unslash((string) $_POST['kepoli_image_title'])) : '';
-        $caption = isset($_POST['kepoli_image_caption']) ? sanitize_text_field(wp_unslash((string) $_POST['kepoli_image_caption'])) : '';
-        $description = isset($_POST['kepoli_image_description']) ? sanitize_textarea_field(wp_unslash((string) $_POST['kepoli_image_description'])) : '';
-
-        $alt = $alt !== '' ? $alt : ($existing['alt'] !== '' ? $existing['alt'] : $generated['alt']);
-        $title = $title !== '' ? $title : ($existing['title'] !== '' ? $existing['title'] : $generated['title']);
-        $caption = $caption !== '' ? $caption : ($existing['caption'] !== '' ? $existing['caption'] : $generated['caption']);
-        $description = $description !== '' ? $description : ($existing['description'] !== '' ? $existing['description'] : $generated['description']);
+        $alt = $posted_meta['alt'] !== '' ? $posted_meta['alt'] : ($existing['alt'] !== '' ? $existing['alt'] : $resolved_meta['alt']);
+        $title = $posted_meta['title'] !== '' ? $posted_meta['title'] : ($existing['title'] !== '' ? $existing['title'] : $resolved_meta['title']);
+        $caption = $posted_meta['caption'] !== '' ? $posted_meta['caption'] : ($existing['caption'] !== '' ? $existing['caption'] : $resolved_meta['caption']);
+        $description = $posted_meta['description'] !== '' ? $posted_meta['description'] : ($existing['description'] !== '' ? $existing['description'] : $resolved_meta['description']);
 
         if ($alt !== '') {
             update_post_meta($thumbnail_id, '_wp_attachment_image_alt', self::limit_text($alt, 160));
@@ -793,15 +935,18 @@ final class Kepoli_Author_Tools
     {
         $post = get_post($post_id);
         $title = $post ? trim((string) $post->post_title) : '';
-        $title = $title !== '' ? $title : __('Reteta Kepoli', 'kepoli-author-tools');
+        $title = $title !== '' ? $title : sprintf(self::content_text('Reteta %s', '%s recipe'), self::site_name());
         $kind = self::post_kind($post_id);
-        $prefix = $kind === 'article' ? __('Imagine editoriala pentru', 'kepoli-author-tools') : __('Fotografie culinara pentru', 'kepoli-author-tools');
+        $prefix = $kind === 'article'
+            ? self::content_text('Imagine editoriala pentru', 'Editorial image for')
+            : self::content_text('Fotografie culinara pentru', 'Food photo for');
+        $published_on = sprintf(self::content_text('publicata pe %s.', 'published on %s.'), self::site_name());
 
         return [
-            'alt' => self::sentence_limit($prefix . ' ' . $title . ', publicata pe blogul romanesc Kepoli.', 150),
+            'alt' => self::sentence_limit($prefix . ' ' . $title . ', ' . $published_on, 150),
             'title' => self::limit_text($title, 90),
-            'caption' => self::sentence_limit($title . ' pe Kepoli.', 120),
-            'description' => self::sentence_limit('Imagine reprezentativa pentru ' . $title . ', folosita in articolul culinar Kepoli.', 220),
+            'caption' => self::sentence_limit(sprintf(self::content_text('%1$s pe %2$s.', '%1$s on %2$s.'), $title, self::site_name()), 120),
+            'description' => self::sentence_limit(sprintf(self::content_text('Imagine reprezentativa pentru %1$s, folosita in articolul culinar %2$s.', 'Representative image for %1$s, used in a %2$s food article.'), $title, self::site_name()), 220),
         ];
     }
 
@@ -827,32 +972,32 @@ final class Kepoli_Author_Tools
             : true;
 
         if ((string) get_post_meta($post_id, '_kepoli_meta_description', true) === '') {
-            $missing[] = __('meta', 'kepoli-author-tools');
+            $missing[] = 'meta';
         }
 
         if (!has_excerpt($post_id)) {
-            $missing[] = __('excerpt', 'kepoli-author-tools');
+            $missing[] = 'excerpt';
         }
 
         if (!$language_consistent) {
-            $missing[] = __('limba', 'kepoli-author-tools');
+            $missing[] = 'language';
         }
 
         $thumbnail_id = get_post_thumbnail_id($post_id);
         if (!$thumbnail_id) {
-            $missing[] = __('imagine', 'kepoli-author-tools');
+            $missing[] = 'image';
         } elseif ((string) get_post_meta($thumbnail_id, '_wp_attachment_image_alt', true) === '') {
-            $missing[] = __('image meta', 'kepoli-author-tools');
+            $missing[] = 'image meta';
         }
 
         if (!$has_internal_links && $related_count === 0) {
-            $missing[] = __('linkuri', 'kepoli-author-tools');
+            $missing[] = 'internal links';
         }
 
         if ($kind === 'recipe') {
             $recipe = self::recipe_data($post_id);
-            if (!$recipe['ingredients'] || !$recipe['steps'] || $recipe['servings'] === '') {
-                $missing[] = __('schema reteta', 'kepoli-author-tools');
+            if (!self::recipe_data_complete($recipe)) {
+                $missing[] = 'recipe schema';
             }
         }
 
@@ -872,7 +1017,7 @@ final class Kepoli_Author_Tools
         $data = is_array($data) ? $data : [];
 
         return [
-            'servings' => isset($data['servings']) ? (string) $data['servings'] : '',
+            'servings' => self::recipe_servings_has_value(isset($data['servings']) ? (string) $data['servings'] : '') ? (string) $data['servings'] : '',
             'prep_minutes' => self::iso_to_minutes((string) ($data['prep_iso'] ?? '')),
             'cook_minutes' => self::iso_to_minutes((string) ($data['cook_iso'] ?? '')),
             'ingredients' => isset($data['ingredients']) && is_array($data['ingredients']) ? $data['ingredients'] : [],
@@ -880,37 +1025,241 @@ final class Kepoli_Author_Tools
         ];
     }
 
+    private static function recipe_data_complete(array $recipe): bool
+    {
+        return !empty($recipe['ingredients'])
+            && !empty($recipe['steps'])
+            && self::recipe_servings_has_value((string) ($recipe['servings'] ?? ''))
+            && (int) ($recipe['prep_minutes'] ?? 0) > 0
+            && (int) ($recipe['cook_minutes'] ?? 0) > 0;
+    }
+
+    private static function recipe_servings_has_value(string $servings): bool
+    {
+        $servings = trim(sanitize_text_field($servings));
+        if ($servings === '') {
+            return false;
+        }
+
+        if (!preg_match('/\d+/', $servings, $matches)) {
+            return true;
+        }
+
+        return isset($matches[0]) && (int) $matches[0] > 0;
+    }
+
+    private static function normalized_heading(string $text): string
+    {
+        $text = self::plain_text($text);
+        $text = function_exists('mb_strtolower') ? mb_strtolower($text, 'UTF-8') : strtolower($text);
+        $text = remove_accents($text);
+        $text = preg_replace('/[^a-z0-9\s]/', ' ', $text);
+
+        return trim((string) preg_replace('/\s+/', ' ', (string) $text));
+    }
+
+    private static function normalized_recipe_text(string $text): string
+    {
+        $text = self::plain_text($text);
+        $text = function_exists('mb_strtolower') ? mb_strtolower($text, 'UTF-8') : strtolower($text);
+        $text = remove_accents($text);
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        return trim((string) $text);
+    }
+
+    private static function recipe_section_targets(string $section): array
+    {
+        if ($section === 'ingredients') {
+            return ['ingrediente', 'ingredients', 'ingredient list'];
+        }
+
+        return ['mod de preparare', 'preparare', 'pasi', 'pasii', 'method', 'instructions', 'directions', 'preparation', 'steps'];
+    }
+
+    private static function recipe_section_items_from_content(string $content, string $section): array
+    {
+        $targets = array_map([self::class, 'normalized_heading'], self::recipe_section_targets($section));
+        if (!$targets) {
+            return [];
+        }
+
+        if (!class_exists('DOMDocument')) {
+            return [];
+        }
+
+        $document = new DOMDocument('1.0', 'UTF-8');
+        $wrapped = '<div id="kepoli-recipe-root">' . $content . '</div>';
+
+        libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="utf-8" ?>' . $wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+
+        $root = $document->getElementById('kepoli-recipe-root');
+        if (!$root) {
+            return [];
+        }
+
+        $items = [];
+        $active = false;
+
+        foreach ($root->childNodes as $node) {
+            if ($node->nodeType === XML_COMMENT_NODE) {
+                continue;
+            }
+
+            if ($node->nodeType === XML_TEXT_NODE && trim((string) $node->textContent) === '') {
+                continue;
+            }
+
+            if ($node->nodeType !== XML_ELEMENT_NODE) {
+                continue;
+            }
+
+            $tag = strtolower((string) $node->nodeName);
+            if (preg_match('/^h[1-6]$/', $tag)) {
+                $heading = self::normalized_heading((string) $node->textContent);
+                $active = in_array($heading, $targets, true);
+                continue;
+            }
+
+            if (!$active) {
+                continue;
+            }
+
+            if ($tag === 'ul' || $tag === 'ol') {
+                foreach ($node->childNodes as $child) {
+                    if ($child->nodeType !== XML_ELEMENT_NODE || strtolower((string) $child->nodeName) !== 'li') {
+                        continue;
+                    }
+
+                    $text = self::plain_text($document->saveHTML($child));
+                    if ($text !== '') {
+                        $items[] = $text;
+                    }
+                }
+
+                continue;
+            }
+
+            $text = self::plain_text($document->saveHTML($node));
+            if ($text === '') {
+                continue;
+            }
+
+            if ($section === 'ingredients') {
+                $parts = preg_split('/\s*[,;\r\n]+\s*/', $text) ?: [];
+                foreach ($parts as $part) {
+                    $part = trim((string) $part);
+                    if ($part !== '') {
+                        $items[] = $part;
+                    }
+                }
+                continue;
+            }
+
+            $items[] = $text;
+        }
+
+        return array_values(array_unique(array_filter(array_map('trim', $items))));
+    }
+
+    private static function recipe_minutes_from_text(string $text, array $labels): int
+    {
+        if ($text === '' || !$labels) {
+            return 0;
+        }
+
+        $quoted = implode('|', array_map(static fn (string $label): string => preg_quote($label, '/'), $labels));
+        if (!preg_match('/(?:' . $quoted . ')[^0-9]{0,24}(\d{1,3})\s*(?:min(?:ute)?|mins?)?/i', $text, $matches)) {
+            return 0;
+        }
+
+        return isset($matches[1]) ? max(0, (int) $matches[1]) : 0;
+    }
+
+    private static function recipe_servings_from_text(string $text): string
+    {
+        if ($text === '') {
+            return '';
+        }
+
+        if (!preg_match('/(?:portii|portie|persoane|servings?|serves|yield|pentru|aproximativ|cam)[^0-9]{0,24}(\d{1,2}(?:\s*(?:portii|persoane|servings?|people|persons))?)/i', $text, $matches)) {
+            return '';
+        }
+
+        return trim((string) ($matches[1] ?? ''));
+    }
+
+    private static function extract_recipe_data_from_content(string $content): array
+    {
+        $normalized = self::normalized_recipe_text($content);
+
+        return [
+            'servings' => self::recipe_servings_from_text($normalized),
+            'prep_minutes' => self::recipe_minutes_from_text($normalized, ['pregatire', 'preparare', 'prep']),
+            'cook_minutes' => self::recipe_minutes_from_text($normalized, ['gatire', 'coacere', 'fierbere', 'cook', 'cooking', 'bake', 'baking', 'boil', 'simmer']),
+            'ingredients' => self::recipe_section_items_from_content($content, 'ingredients'),
+            'steps' => self::recipe_section_items_from_content($content, 'steps'),
+        ];
+    }
+
     private static function save_meta_description(int $post_id, WP_Post $post): void
     {
-        $value = isset($_POST['kepoli_meta_description']) ? sanitize_textarea_field(wp_unslash((string) $_POST['kepoli_meta_description'])) : '';
-        $value = self::remove_template_prompt_text($value);
-        $value = $value !== '' ? $value : self::generate_meta_description($post);
+        $existing = (string) get_post_meta($post_id, '_kepoli_meta_description', true);
+        $posted = isset($_POST['kepoli_meta_description']) ? sanitize_textarea_field(wp_unslash((string) $_POST['kepoli_meta_description'])) : '';
+        $posted = self::remove_template_prompt_text($posted);
+        $auto_generated = self::text_was_auto_generated($post_id, '_kepoli_auto_meta_description');
+        $generated = self::limit_text(self::plain_text(self::generate_meta_description($post)), 180);
+
+        if (self::should_refresh_auto_text($posted, $existing, $auto_generated)) {
+            $value = $generated;
+            $is_auto = true;
+        } else {
+            $value = $posted !== '' ? $posted : $existing;
+            $is_auto = self::plain_text($value) !== '' && self::plain_text($value) === self::plain_text($generated);
+        }
+
         $value = self::limit_text(self::plain_text($value), 180);
         if (self::word_count($value) < 8) {
-            $value = self::limit_text(self::plain_text(self::generate_meta_description($post)), 180);
+            $value = $generated;
+            $is_auto = true;
         }
 
         if ($value === '') {
             delete_post_meta($post_id, '_kepoli_meta_description');
+            self::store_auto_text_flag($post_id, '_kepoli_auto_meta_description', false);
             return;
         }
 
         update_post_meta($post_id, '_kepoli_meta_description', $value);
+        self::store_auto_text_flag($post_id, '_kepoli_auto_meta_description', $is_auto);
     }
 
     private static function save_post_excerpt(int $post_id, WP_Post $post): void
     {
-        $value = isset($_POST['kepoli_post_excerpt']) ? sanitize_textarea_field(wp_unslash((string) $_POST['kepoli_post_excerpt'])) : '';
-        $value = self::remove_template_prompt_text($value);
-        $value = $value !== '' ? $value : trim((string) $post->post_excerpt);
-        $value = self::remove_template_prompt_text($value);
-        $value = $value !== '' ? $value : self::generate_post_excerpt($post);
+        $existing = trim((string) $post->post_excerpt);
+        $posted = isset($_POST['kepoli_post_excerpt']) ? sanitize_textarea_field(wp_unslash((string) $_POST['kepoli_post_excerpt'])) : '';
+        $posted = self::remove_template_prompt_text($posted);
+        $auto_generated = self::text_was_auto_generated($post_id, '_kepoli_auto_excerpt');
+        $generated = self::limit_text(self::plain_text(self::generate_post_excerpt($post)), 260);
+
+        if (self::should_refresh_auto_text($posted, $existing, $auto_generated)) {
+            $value = $generated;
+            $is_auto = true;
+        } else {
+            $value = $posted !== '' ? $posted : $existing;
+            $is_auto = self::plain_text($value) !== '' && self::plain_text($value) === self::plain_text($generated);
+        }
+
         $value = self::limit_text(self::plain_text($value), 260);
         if (self::word_count($value) < 8) {
-            $value = self::limit_text(self::plain_text(self::generate_post_excerpt($post)), 260);
+            $value = $generated;
+            $is_auto = true;
         }
 
         if ($value === '' || $value === (string) $post->post_excerpt) {
+            self::store_auto_text_flag($post_id, '_kepoli_auto_excerpt', $is_auto && $value !== '');
             return;
         }
 
@@ -921,6 +1270,7 @@ final class Kepoli_Author_Tools
         ]);
         self::$is_updating_post = false;
         $post->post_excerpt = $value;
+        self::store_auto_text_flag($post_id, '_kepoli_auto_excerpt', $is_auto);
     }
 
     private static function maybe_clean_post_slug(int $post_id, WP_Post $post): void
@@ -1026,6 +1376,17 @@ final class Kepoli_Author_Tools
         }
     }
 
+    private static function maybe_remove_recipe_faq(int $post_id, WP_Post $post): void
+    {
+        $content = (string) $post->post_content;
+        $clean_content = self::strip_auto_faq_block($content);
+
+        if ($clean_content !== $content) {
+            self::update_post_content($post_id, $clean_content);
+            $post->post_content = $clean_content;
+        }
+    }
+
     private static function maybe_apply_auto_split(int $post_id, WP_Post $post, int $parts): void
     {
         if (!in_array($parts, [2, 3], true)) {
@@ -1074,6 +1435,573 @@ final class Kepoli_Author_Tools
         }
 
         return self::sentence_limit($source, 155);
+    }
+
+    private static function generate_seo_title(WP_Post $post): string
+    {
+        $title = trim((string) $post->post_title);
+        if ($title === '') {
+            return '';
+        }
+
+        $title = self::remove_template_prompt_text($title);
+        return rtrim(self::sentence_limit($title, 65, 30), '. ');
+    }
+
+    private static function text_was_auto_generated(int $post_id, string $meta_key): bool
+    {
+        return get_post_meta($post_id, $meta_key, true) === '1';
+    }
+
+    private static function store_auto_text_flag(int $post_id, string $meta_key, bool $auto_generated): void
+    {
+        if ($auto_generated) {
+            update_post_meta($post_id, $meta_key, '1');
+            return;
+        }
+
+        delete_post_meta($post_id, $meta_key);
+    }
+
+    private static function should_refresh_auto_text(string $posted_value, string $existing_value, bool $auto_generated): bool
+    {
+        if ($posted_value === '') {
+            return true;
+        }
+
+        if (!$auto_generated) {
+            return false;
+        }
+
+        return self::plain_text($posted_value) === self::plain_text($existing_value);
+    }
+
+    private static function field_was_posted(string $field): bool
+    {
+        return is_array($_POST) && array_key_exists($field, $_POST);
+    }
+
+    private static function normalized_slug_values(array $values): array
+    {
+        $slugs = [];
+
+        foreach ($values as $value) {
+            $slug = sanitize_title((string) $value);
+            if ($slug !== '' && !in_array($slug, $slugs, true)) {
+                $slugs[] = $slug;
+            }
+        }
+
+        return $slugs;
+    }
+
+    private static function stored_slug_meta(int $post_id, string $meta_key): array
+    {
+        $values = get_post_meta($post_id, $meta_key, true);
+        return is_array($values) ? self::normalized_slug_values($values) : [];
+    }
+
+    private static function slug_lists_match(array $left, array $right): bool
+    {
+        return self::normalized_slug_values($left) === self::normalized_slug_values($right);
+    }
+
+    private static function resolve_related_slugs(int $post_id, string $kind, WP_Post $post): array
+    {
+        $posted_recipes = self::posted_slugs('kepoli_related_recipe_slugs');
+        $posted_articles = self::posted_slugs('kepoli_related_article_slugs');
+        $existing_recipes = self::stored_slug_meta($post_id, '_kepoli_related_recipe_slugs');
+        $existing_articles = self::stored_slug_meta($post_id, '_kepoli_related_article_slugs');
+        $auto_generated = self::text_was_auto_generated($post_id, '_kepoli_auto_related_slugs');
+        $should_refresh = ($existing_recipes === [] && $existing_articles === [] && $posted_recipes === [] && $posted_articles === [])
+            || ($auto_generated
+                && self::slug_lists_match($posted_recipes, $existing_recipes)
+                && self::slug_lists_match($posted_articles, $existing_articles));
+
+        $suggested = self::suggest_related_slugs($post_id, $kind, $post);
+        $suggested_recipes = self::normalized_slug_values($suggested['recipes'] ?? []);
+        $suggested_articles = self::normalized_slug_values($suggested['articles'] ?? []);
+
+        if ($should_refresh) {
+            return [
+                'recipes' => $suggested_recipes,
+                'articles' => $suggested_articles,
+                'is_auto' => true,
+            ];
+        }
+
+        $recipes = self::field_was_posted('kepoli_related_recipe_slugs') ? $posted_recipes : $existing_recipes;
+        $articles = self::field_was_posted('kepoli_related_article_slugs') ? $posted_articles : $existing_articles;
+
+        return [
+            'recipes' => $recipes,
+            'articles' => $articles,
+            'is_auto' => self::slug_lists_match($recipes, $suggested_recipes) && self::slug_lists_match($articles, $suggested_articles),
+        ];
+    }
+
+    private static function save_seo_title(int $post_id, WP_Post $post): void
+    {
+        $existing = (string) get_post_meta($post_id, '_kepoli_seo_title', true);
+        $posted = isset($_POST['kepoli_seo_title']) ? sanitize_text_field(wp_unslash((string) $_POST['kepoli_seo_title'])) : '';
+        $posted = self::limit_text(self::remove_template_prompt_text($posted), 70);
+        $auto_generated = self::text_was_auto_generated($post_id, '_kepoli_auto_seo_title');
+        $generated = self::limit_text(self::generate_seo_title($post), 70);
+
+        if (self::should_refresh_auto_text($posted, $existing, $auto_generated)) {
+            $value = $generated;
+            $is_auto = true;
+        } else {
+            $value = $posted !== '' ? $posted : $existing;
+            $value = self::limit_text($value, 70);
+            $is_auto = $value !== '' && self::plain_text($value) === self::plain_text($generated);
+        }
+
+        if ($value === '') {
+            delete_post_meta($post_id, '_kepoli_seo_title');
+            self::store_auto_text_flag($post_id, '_kepoli_auto_seo_title', false);
+            return;
+        }
+
+        update_post_meta($post_id, '_kepoli_seo_title', $value);
+        self::store_auto_text_flag($post_id, '_kepoli_auto_seo_title', $is_auto);
+    }
+
+    private static function posted_category_ids(): array
+    {
+        $raw = isset($_POST['post_category']) ? (array) wp_unslash($_POST['post_category']) : [];
+        $ids = [];
+
+        foreach ($raw as $value) {
+            $id = absint((string) $value);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    private static function posted_tags(): array
+    {
+        if (!isset($_POST['tax_input']) || !is_array($_POST['tax_input']) || !isset($_POST['tax_input']['post_tag'])) {
+            return [];
+        }
+
+        $raw = wp_unslash($_POST['tax_input']['post_tag']);
+        $parts = is_array($raw) ? $raw : preg_split('/,/', (string) $raw);
+        $tags = [];
+
+        foreach ((array) $parts as $part) {
+            $tag = trim(sanitize_text_field((string) $part));
+            if ($tag !== '') {
+                $tags[] = $tag;
+            }
+        }
+
+        return array_values(array_unique($tags));
+    }
+
+    private static function has_non_default_category(array $category_ids): bool
+    {
+        $default_category = (int) get_option('default_category');
+
+        foreach ($category_ids as $category_id) {
+            if ((int) $category_id > 0 && (int) $category_id !== $default_category) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function normalized_category_ids(array $category_ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map(static fn ($value): int => absint((string) $value), $category_ids))));
+        sort($ids);
+        return $ids;
+    }
+
+    private static function normalized_tags(array $tags): array
+    {
+        $normalized = [];
+
+        foreach ($tags as $tag) {
+            $clean = trim(sanitize_text_field((string) $tag));
+            if ($clean !== '') {
+                $normalized[] = strtolower($clean);
+            }
+        }
+
+        $normalized = array_values(array_unique($normalized));
+        sort($normalized);
+        return $normalized;
+    }
+
+    private static function is_article_category_term(WP_Term $category): bool
+    {
+        $label = self::normalized_recipe_text(implode(' ', [
+            (string) $category->slug,
+            (string) $category->name,
+            (string) $category->description,
+        ]));
+
+        return (string) $category->slug === 'articole'
+            || str_contains($label, 'article')
+            || str_contains($label, 'guide');
+    }
+
+    private static function article_category_id(): int
+    {
+        $categories = get_terms([
+            'taxonomy' => 'category',
+            'hide_empty' => false,
+        ]);
+
+        if (!is_array($categories)) {
+            return 0;
+        }
+
+        foreach ($categories as $category) {
+            if ($category instanceof WP_Term && self::is_article_category_term($category)) {
+                return (int) $category->term_id;
+            }
+        }
+
+        return 0;
+    }
+
+    private static function recipe_category_ids(): array
+    {
+        $categories = get_terms([
+            'taxonomy' => 'category',
+            'hide_empty' => false,
+        ]);
+
+        if (!is_array($categories)) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($categories as $category) {
+            if (!$category instanceof WP_Term || (int) $category->term_id === 1 || self::is_article_category_term($category)) {
+                continue;
+            }
+
+            $ids[] = (int) $category->term_id;
+        }
+
+        return self::normalized_category_ids($ids);
+    }
+
+    private static function category_ids_intersect(array $left, array $right): bool
+    {
+        $lookup = array_flip(self::normalized_category_ids($right));
+
+        foreach (self::normalized_category_ids($left) as $id) {
+            if (isset($lookup[$id])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function intersect_category_ids_in_order(array $source, array $allowed): array
+    {
+        $allowed_lookup = array_flip(self::normalized_category_ids($allowed));
+        $result = [];
+
+        foreach ($source as $value) {
+            $id = absint((string) $value);
+            if ($id > 0 && isset($allowed_lookup[$id]) && !in_array($id, $result, true)) {
+                $result[] = $id;
+            }
+        }
+
+        return $result;
+    }
+
+    private static function maybe_apply_suggested_category(int $post_id, string $kind, WP_Post $post): void
+    {
+        $article_category_id = self::article_category_id();
+        $recipe_category_ids = self::recipe_category_ids();
+        $posted_categories = self::posted_category_ids();
+
+        if ($kind === 'article') {
+            if ($article_category_id > 0) {
+                wp_set_post_categories($post_id, [$article_category_id], false);
+                update_post_meta($post_id, '_kepoli_auto_category_id', $article_category_id);
+            }
+            return;
+        }
+
+        $posted_recipe_categories = self::intersect_category_ids_in_order($posted_categories, $recipe_category_ids);
+        $suggested_category_id = self::suggested_category_id($kind, $post);
+        if ($posted_recipe_categories !== []) {
+            wp_set_post_categories($post_id, [$posted_recipe_categories[0]], false);
+            if ($suggested_category_id > 0 && $posted_recipe_categories[0] === $suggested_category_id) {
+                update_post_meta($post_id, '_kepoli_auto_category_id', $suggested_category_id);
+            } else {
+                delete_post_meta($post_id, '_kepoli_auto_category_id');
+            }
+            return;
+        }
+
+        $current_categories = wp_get_post_categories($post_id);
+        $current_categories = is_array($current_categories) ? $current_categories : [];
+        $current_recipe_categories = self::intersect_category_ids_in_order($current_categories, $recipe_category_ids);
+        $auto_category_id = (int) get_post_meta($post_id, '_kepoli_auto_category_id', true);
+        $is_current_auto = $auto_category_id > 0 && self::normalized_category_ids($current_categories) === self::normalized_category_ids([$auto_category_id]);
+
+        if ($current_recipe_categories !== [] && !$is_current_auto) {
+            wp_set_post_categories($post_id, [$current_recipe_categories[0]], false);
+            return;
+        }
+
+        if ($suggested_category_id > 0) {
+            wp_set_post_categories($post_id, [$suggested_category_id], false);
+            update_post_meta($post_id, '_kepoli_auto_category_id', $suggested_category_id);
+        }
+    }
+
+    private static function maybe_apply_suggested_tags(int $post_id, string $kind, WP_Post $post): void
+    {
+        $posted_tags = self::posted_tags();
+        $suggested_tags = self::suggested_tags($post_id, $kind, $post);
+        if ($posted_tags) {
+            if (self::normalized_tags($posted_tags) === self::normalized_tags($suggested_tags)) {
+                wp_set_post_terms($post_id, $suggested_tags, 'post_tag', false);
+                update_post_meta($post_id, '_kepoli_auto_tags', array_values($suggested_tags));
+            } else {
+                delete_post_meta($post_id, '_kepoli_auto_tags');
+            }
+            return;
+        }
+
+        $current_tags = wp_get_post_tags($post_id, ['fields' => 'names']);
+        $current_tags = is_array($current_tags) ? $current_tags : [];
+        $auto_tags = get_post_meta($post_id, '_kepoli_auto_tags', true);
+        $auto_tags = is_array($auto_tags) ? $auto_tags : [];
+        $has_manual_tags = $current_tags !== [] && self::normalized_tags($current_tags) !== self::normalized_tags($auto_tags);
+
+        if ($has_manual_tags) {
+            return;
+        }
+
+        if ($suggested_tags !== []) {
+            wp_set_post_terms($post_id, $suggested_tags, 'post_tag', false);
+            update_post_meta($post_id, '_kepoli_auto_tags', array_values($suggested_tags));
+        }
+    }
+
+    private static function category_keyword_map(): array
+    {
+        return [
+            'ciorbe-si-supe' => ['ciorba', 'bors', 'supa', 'supa crema', 'zeama', 'galuste', 'radauteana', 'soup', 'soups', 'stew', 'broth', 'cream soup'],
+            'feluri-principale' => ['sarmale', 'tochitura', 'tocanita', 'friptura', 'mamaliga', 'ostropel', 'snitel', 'varza', 'pilaf', 'chiftele', 'dinner', 'lunch', 'main dish', 'family meal'],
+            'patiserie-si-deserturi' => ['desert', 'prajitura', 'cozonac', 'placinta', 'clatite', 'papanasi', 'chec', 'cornulete', 'aluat', 'foi', 'dessert', 'cake', 'chocolate', 'sweet', 'cookies', 'pie', 'pastry', 'baking'],
+            'conserve-si-garnituri' => ['zacusca', 'muraturi', 'salata', 'garnitura', 'borcan', 'compot', 'bulion', 'gem', 'dulceata', 'piure', 'side dish', 'salad', 'preserves', 'pickle', 'jam', 'sauce', 'vegetables'],
+            'articole' => ['ghid', 'cum', 'calendar', 'meniuri', 'tehnici', 'organizare', 'ingrediente', 'bucatarie', 'pastrare', 'explica', 'guide', 'how', 'tips', 'history', 'explained', 'storage', 'pantry', 'ingredients', 'technique'],
+        ];
+    }
+
+    private static function text_contains_keyword(string $source, string $keyword): bool
+    {
+        $needle = self::normalized_recipe_text($keyword);
+        return $needle !== '' && str_contains($source, $needle);
+    }
+
+    private static function suggested_category_id(string $kind, WP_Post $post): int
+    {
+        $categories = get_terms([
+            'taxonomy' => 'category',
+            'hide_empty' => false,
+        ]);
+
+        if (!is_array($categories)) {
+            return 0;
+        }
+
+        if ($kind === 'article') {
+            return self::article_category_id();
+        }
+
+        $source_text = self::normalized_recipe_text(implode(' ', [
+            $post->post_title,
+            $post->post_excerpt,
+            $post->post_content,
+        ]));
+        $source_words = self::keywords_from_text($source_text);
+        $keyword_map = self::category_keyword_map();
+        $best_id = 0;
+        $best_score = PHP_INT_MIN;
+
+        foreach ($categories as $category) {
+            if (
+                !$category instanceof WP_Term
+                || (int) $category->term_id === 1
+                || self::is_article_category_term($category)
+            ) {
+                continue;
+            }
+
+            $label = self::normalized_recipe_text(implode(' ', [
+                (string) $category->slug,
+                (string) $category->name,
+                (string) $category->description,
+            ]));
+            $haystack = self::keywords_from_text($category->name . ' ' . $category->description);
+            $score = 0;
+
+            foreach ($source_words as $word) {
+                if (in_array($word, $haystack, true)) {
+                    $score += 2;
+                }
+            }
+
+            foreach ($keyword_map[(string) $category->slug] ?? [] as $keyword) {
+                if (self::text_contains_keyword($source_text, $keyword)) {
+                    $score += 6;
+                }
+            }
+
+            if ($score > $best_score) {
+                $best_score = $score;
+                $best_id = (int) $category->term_id;
+            }
+        }
+
+        return $best_score > 0 ? $best_id : 0;
+    }
+
+    private static function title_keyword_tag_map(): array
+    {
+        return [
+            'ciorba' => ['ciorba'],
+            'supa' => ['supa'],
+            'soup' => ['soup'],
+            'stew' => ['stew', 'comfort food'],
+            'chicken' => ['chicken', 'dinner'],
+            'pasta' => ['pasta', 'dinner'],
+            'rice' => ['rice', 'side dish'],
+            'papanasi' => ['papanasi', 'desert'],
+            'placinta' => ['placinta', 'desert'],
+            'pie' => ['pie', 'dessert'],
+            'cake' => ['cake', 'dessert'],
+            'chocolate' => ['chocolate', 'dessert'],
+            'cookies' => ['cookies', 'dessert'],
+            'bread' => ['bread', 'baking'],
+            'cozonac' => ['cozonac', 'aluat'],
+            'zacusca' => ['zacusca', 'conserve'],
+            'muraturi' => ['muraturi', 'conserve'],
+            'ghid' => ['ingrediente'],
+            'guide' => ['ingredients', 'kitchen tips'],
+            'meniu' => ['meniu', 'familie'],
+            'menu' => ['menu', 'family meals'],
+            'aluat' => ['aluat', 'patiserie'],
+            'dough' => ['dough', 'baking'],
+            'sezon' => ['sezon'],
+            'season' => ['seasonal'],
+            'pastrare' => ['pastrare', 'organizare'],
+            'storage' => ['storage', 'kitchen tips'],
+        ];
+    }
+
+    private static function suggested_tags(int $post_id, string $kind, WP_Post $post): array
+    {
+        $source_words = self::keywords_from_text(implode(' ', [
+            $post->post_title,
+            $post->post_excerpt,
+            $post->post_content,
+        ]));
+        $usage_counts = self::related_slug_usage_counts($post_id);
+        $source_category_slug = self::primary_category_slug($post_id);
+        $query = new WP_Query([
+            'post_type' => 'post',
+            'post_status' => ['publish', 'draft', 'pending', 'future'],
+            'posts_per_page' => 120,
+            'post__not_in' => $post_id ? [$post_id] : [],
+            'orderby' => 'date',
+            'order' => 'DESC',
+            'fields' => 'ids',
+        ]);
+
+        $matched_posts = [];
+        foreach ($query->posts as $candidate_id) {
+            $candidate_id = (int) $candidate_id;
+            $slug = (string) get_post_field('post_name', $candidate_id);
+            $score = self::score_related_candidate(
+                $candidate_id,
+                $source_words,
+                $source_category_slug,
+                (int) ($usage_counts[$slug] ?? 0)
+            );
+
+            if ($score > 0) {
+                $matched_posts[] = [
+                    'id' => $candidate_id,
+                    'score' => $score,
+                    'tags' => wp_get_post_tags($candidate_id, ['fields' => 'names']),
+                ];
+            }
+        }
+
+        usort($matched_posts, static function (array $a, array $b): int {
+            return $b['score'] <=> $a['score'];
+        });
+
+        $matched_posts = array_slice($matched_posts, 0, 8);
+        $tag_scores = [];
+        $seed_tags = $kind === 'article'
+            ? ['ingrediente', 'organizare', 'tehnici']
+            : ['retete romanesti'];
+
+        foreach ($seed_tags as $tag) {
+            $tag_scores[$tag] = (int) ($tag_scores[$tag] ?? 0) + 1;
+        }
+
+        foreach ($matched_posts as $matched) {
+            foreach ((array) ($matched['tags'] ?? []) as $tag) {
+                $tag = trim((string) $tag);
+                if ($tag === '') {
+                    continue;
+                }
+
+                $tag_scores[$tag] = (int) ($tag_scores[$tag] ?? 0) + max(1, (int) $matched['score']);
+
+                foreach ($source_words as $word) {
+                    foreach (self::keywords_from_text($tag) as $normalized_tag_word) {
+                        if ($normalized_tag_word === $word) {
+                            $tag_scores[$tag] += 2;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        $title_text = self::normalized_recipe_text($post->post_title);
+        foreach (self::title_keyword_tag_map() as $keyword => $tags) {
+            if (!self::text_contains_keyword($title_text, $keyword)) {
+                continue;
+            }
+
+            foreach ($tags as $tag) {
+                $tag_scores[$tag] = (int) ($tag_scores[$tag] ?? 0) + 5;
+            }
+        }
+
+        if ($tag_scores === []) {
+            return [];
+        }
+
+        uksort($tag_scores, static function (string $left, string $right) use ($tag_scores): int {
+            $score_compare = $tag_scores[$right] <=> $tag_scores[$left];
+            return $score_compare !== 0 ? $score_compare : strcasecmp($left, $right);
+        });
+
+        return array_slice(array_keys($tag_scores), 0, 5);
     }
 
     private static function clean_slug_from_title(string $title): string
@@ -1251,9 +2179,9 @@ final class Kepoli_Author_Tools
 
         if ($recipe['servings'] !== '') {
             $items[] = [
-                'question' => __('Cate portii ies din reteta?', 'kepoli-author-tools'),
+                'question' => self::content_text('Cate portii ies din reteta?', 'How many servings does this recipe make?'),
                 'answer' => sprintf(
-                    __('Reteta este gandita pentru %s.', 'kepoli-author-tools'),
+                    self::content_text('Reteta este gandita pentru %s.', 'The recipe is designed for %s.'),
                     $recipe['servings']
                 ),
             ];
@@ -1262,7 +2190,7 @@ final class Kepoli_Author_Tools
         $time_answer = self::recipe_time_faq_answer($recipe);
         if ($time_answer !== '') {
             $items[] = [
-                'question' => __('Cat dureaza pregatirea?', 'kepoli-author-tools'),
+                'question' => self::content_text('Cat dureaza pregatirea?', 'How long does it take?'),
                 'answer' => $time_answer,
             ];
         }
@@ -1270,7 +2198,7 @@ final class Kepoli_Author_Tools
         $storage_answer = self::extract_storage_answer($content);
         if ($storage_answer !== '') {
             $items[] = [
-                'question' => __('Cum se pastreaza?', 'kepoli-author-tools'),
+                'question' => self::content_text('Cum se pastreaza?', 'How should it be stored?'),
                 'answer' => $storage_answer,
             ];
         }
@@ -1279,7 +2207,7 @@ final class Kepoli_Author_Tools
             return '';
         }
 
-        $html = [self::AUTO_FAQ_START, '<h2>' . esc_html__('Intrebari frecvente', 'kepoli-author-tools') . '</h2>'];
+        $html = [self::AUTO_FAQ_START, '<h2>' . esc_html(self::content_text('Intrebari frecvente', 'Frequently asked questions')) . '</h2>'];
 
         foreach (array_slice($items, 0, 3) as $item) {
             $html[] = '<h3>' . esc_html($item['question']) . '</h3>';
@@ -1299,7 +2227,7 @@ final class Kepoli_Author_Tools
 
         if ($prep > 0 && $cook > 0) {
             return sprintf(
-                __('Ai nevoie de aproximativ %1$d minute pentru pregatire, %2$d minute pentru gatire si cam %3$d minute in total.', 'kepoli-author-tools'),
+                self::content_text('Ai nevoie de aproximativ %1$d minute pentru pregatire, %2$d minute pentru gatire si cam %3$d minute in total.', 'You need about %1$d minutes for prep, %2$d minutes for cooking, and about %3$d minutes in total.'),
                 $prep,
                 $cook,
                 $total
@@ -1308,7 +2236,7 @@ final class Kepoli_Author_Tools
 
         if ($total > 0) {
             return sprintf(
-                __('Reteta cere aproximativ %d minute in total.', 'kepoli-author-tools'),
+                self::content_text('Reteta cere aproximativ %d minute in total.', 'The recipe takes about %d minutes in total.'),
                 $total
             );
         }
@@ -1517,12 +2445,12 @@ final class Kepoli_Author_Tools
             return false;
         }
 
-        return (bool) preg_match('/<h[23][^>]*>\s*Intrebari frecvente\s*<\/h[23]>/iu', $content);
+        return (bool) preg_match('/<h[23][^>]*>\s*(?:Intrebari frecvente|Frequently asked questions|FAQs?)\s*<\/h[23]>/iu', $content);
     }
 
     private static function extract_storage_answer(string $content): string
     {
-        if (!preg_match('/<h[23][^>]*>\s*Cum pastrezi\s*<\/h[23]>\s*(<p\b[^>]*>.*?<\/p>)/isu', $content, $matches)) {
+        if (!preg_match('/<h[23][^>]*>\s*(?:Cum pastrezi|Cum se pastreaza|Storage)\s*<\/h[23]>\s*(<p\b[^>]*>.*?<\/p>)/isu', $content, $matches)) {
             return '';
         }
 
@@ -1604,9 +2532,10 @@ final class Kepoli_Author_Tools
             return '';
         }
 
+        $separator = self::content_text(' si ', ' and ');
         $links_text = count($anchors) === 1
             ? $anchors[0]
-            : implode(' si ', $anchors);
+            : implode($separator, $anchors);
         $lead = self::auto_internal_links_lead($kinds, count($anchors));
 
         return self::AUTO_INTERNAL_LINKS_START
@@ -1621,24 +2550,24 @@ final class Kepoli_Author_Tools
         $kinds = array_values(array_unique(array_filter($kinds)));
 
         if ($count <= 0) {
-            return __('Citeste si:', 'kepoli-author-tools');
+            return self::content_text('Citeste si:', 'Read also:');
         }
 
         if ($kinds === ['recipe']) {
             return $count === 1
-                ? __('Ca sa pui ideea in practica, vezi:', 'kepoli-author-tools')
-                : __('Ca sa pui ideile in practica, vezi:', 'kepoli-author-tools');
+                ? self::content_text('Ca sa pui ideea in practica, vezi:', 'To put the idea into practice, see:')
+                : self::content_text('Ca sa pui ideile in practica, vezi:', 'To put the ideas into practice, see:');
         }
 
         if ($kinds === ['article']) {
             return $count === 1
-                ? __('Pentru context suplimentar, vezi:', 'kepoli-author-tools')
-                : __('Pentru context suplimentar, vezi si:', 'kepoli-author-tools');
+                ? self::content_text('Pentru context suplimentar, vezi:', 'For more context, see:')
+                : self::content_text('Pentru context suplimentar, vezi si:', 'For more context, also see:');
         }
 
         return $count === 1
-            ? __('Ca sa mergi mai departe, vezi:', 'kepoli-author-tools')
-            : __('Ca sa mergi mai departe, vezi si:', 'kepoli-author-tools');
+            ? self::content_text('Ca sa mergi mai departe, vezi:', 'To continue, see:')
+            : self::content_text('Ca sa mergi mai departe, vezi si:', 'To continue, also see:');
     }
 
     private static function place_auto_internal_links_in_content(string $content, array $posts): string
@@ -1946,28 +2875,153 @@ final class Kepoli_Author_Tools
         return $clean;
     }
 
-    private static function save_recipe_json(int $post_id): void
+    private static function normalized_text_lines(array $lines): array
     {
-        $ingredients = self::posted_lines('kepoli_recipe_ingredients');
-        $steps = self::posted_lines('kepoli_recipe_steps');
-        $servings = isset($_POST['kepoli_recipe_servings']) ? sanitize_text_field(wp_unslash((string) $_POST['kepoli_recipe_servings'])) : '';
-        $prep_minutes = isset($_POST['kepoli_recipe_prep_minutes']) ? absint(wp_unslash((string) $_POST['kepoli_recipe_prep_minutes'])) : 0;
-        $cook_minutes = isset($_POST['kepoli_recipe_cook_minutes']) ? absint(wp_unslash((string) $_POST['kepoli_recipe_cook_minutes'])) : 0;
+        $clean = [];
 
-        if (!$ingredients && !$steps && $servings === '') {
+        foreach ($lines as $line) {
+            $value = trim(sanitize_text_field((string) $line));
+            if ($value !== '') {
+                $clean[] = $value;
+            }
+        }
+
+        return $clean;
+    }
+
+    private static function stored_recipe_data(int $post_id): array
+    {
+        $json = (string) get_post_meta($post_id, '_kepoli_recipe_json', true);
+        $data = json_decode($json, true);
+
+        if (!is_array($data)) {
+            return [
+                'servings' => '',
+                'prep_minutes' => 0,
+                'cook_minutes' => 0,
+                'ingredients' => [],
+                'steps' => [],
+            ];
+        }
+
+        return [
+            'servings' => self::recipe_servings_has_value((string) ($data['servings'] ?? '')) ? sanitize_text_field((string) ($data['servings'] ?? '')) : '',
+            'prep_minutes' => isset($data['prep_iso']) ? self::iso_to_minutes((string) $data['prep_iso']) : 0,
+            'cook_minutes' => isset($data['cook_iso']) ? self::iso_to_minutes((string) $data['cook_iso']) : 0,
+            'ingredients' => self::normalized_text_lines(isset($data['ingredients']) && is_array($data['ingredients']) ? $data['ingredients'] : []),
+            'steps' => self::normalized_text_lines(isset($data['steps']) && is_array($data['steps']) ? $data['steps'] : []),
+        ];
+    }
+
+    private static function recipe_data_is_empty(array $data): bool
+    {
+        return ($data['servings'] ?? '') === ''
+            && (int) ($data['prep_minutes'] ?? 0) === 0
+            && (int) ($data['cook_minutes'] ?? 0) === 0
+            && ($data['ingredients'] ?? []) === []
+            && ($data['steps'] ?? []) === [];
+    }
+
+    private static function recipe_data_matches(array $left, array $right): bool
+    {
+        return [
+            'servings' => self::recipe_servings_has_value((string) ($left['servings'] ?? '')) ? sanitize_text_field((string) ($left['servings'] ?? '')) : '',
+            'prep_minutes' => max(0, (int) ($left['prep_minutes'] ?? 0)),
+            'cook_minutes' => max(0, (int) ($left['cook_minutes'] ?? 0)),
+            'ingredients' => self::normalized_text_lines($left['ingredients'] ?? []),
+            'steps' => self::normalized_text_lines($left['steps'] ?? []),
+        ] === [
+            'servings' => self::recipe_servings_has_value((string) ($right['servings'] ?? '')) ? sanitize_text_field((string) ($right['servings'] ?? '')) : '',
+            'prep_minutes' => max(0, (int) ($right['prep_minutes'] ?? 0)),
+            'cook_minutes' => max(0, (int) ($right['cook_minutes'] ?? 0)),
+            'ingredients' => self::normalized_text_lines($right['ingredients'] ?? []),
+            'steps' => self::normalized_text_lines($right['steps'] ?? []),
+        ];
+    }
+
+    private static function save_recipe_json(int $post_id, WP_Post $post): void
+    {
+        $posted = [
+            'ingredients' => self::posted_lines('kepoli_recipe_ingredients'),
+            'steps' => self::posted_lines('kepoli_recipe_steps'),
+            'servings' => self::recipe_servings_has_value(isset($_POST['kepoli_recipe_servings']) ? (string) wp_unslash((string) $_POST['kepoli_recipe_servings']) : '')
+                ? sanitize_text_field(wp_unslash((string) $_POST['kepoli_recipe_servings']))
+                : '',
+            'prep_minutes' => isset($_POST['kepoli_recipe_prep_minutes']) ? absint(wp_unslash((string) $_POST['kepoli_recipe_prep_minutes'])) : 0,
+            'cook_minutes' => isset($_POST['kepoli_recipe_cook_minutes']) ? absint(wp_unslash((string) $_POST['kepoli_recipe_cook_minutes'])) : 0,
+        ];
+        $existing = self::stored_recipe_data($post_id);
+        $auto_generated = self::text_was_auto_generated($post_id, '_kepoli_auto_recipe_json');
+        $should_refresh = (self::recipe_data_is_empty($existing) && self::recipe_data_is_empty($posted))
+            || ($auto_generated && self::recipe_data_matches($posted, $existing));
+        $extracted = self::extract_recipe_data_from_content((string) $post->post_content);
+        $extracted_data = [
+            'ingredients' => !empty($extracted['ingredients']) && is_array($extracted['ingredients']) ? self::normalized_text_lines($extracted['ingredients']) : [],
+            'steps' => !empty($extracted['steps']) && is_array($extracted['steps']) ? self::normalized_text_lines($extracted['steps']) : [],
+            'servings' => self::recipe_servings_has_value((string) ($extracted['servings'] ?? '')) ? sanitize_text_field((string) $extracted['servings']) : '',
+            'prep_minutes' => !empty($extracted['prep_minutes']) ? max(0, (int) $extracted['prep_minutes']) : 0,
+            'cook_minutes' => isset($extracted['cook_minutes']) ? max(0, (int) $extracted['cook_minutes']) : 0,
+        ];
+
+        if ($should_refresh) {
+            $resolved_data = [
+                'ingredients' => $extracted_data['ingredients'] !== [] ? $extracted_data['ingredients'] : $existing['ingredients'],
+                'steps' => $extracted_data['steps'] !== [] ? $extracted_data['steps'] : $existing['steps'],
+                'servings' => $extracted_data['servings'] !== '' ? $extracted_data['servings'] : $existing['servings'],
+                'prep_minutes' => $extracted_data['prep_minutes'] > 0 ? $extracted_data['prep_minutes'] : $existing['prep_minutes'],
+                'cook_minutes' => $extracted_data['cook_minutes'] > 0 ? $extracted_data['cook_minutes'] : $existing['cook_minutes'],
+            ];
+            $is_auto = true;
+        } else {
+            $resolved_data = $posted;
+
+            if ($resolved_data['ingredients'] === [] && $extracted_data['ingredients'] !== []) {
+                $resolved_data['ingredients'] = $extracted_data['ingredients'];
+            }
+
+            if ($resolved_data['steps'] === [] && $extracted_data['steps'] !== []) {
+                $resolved_data['steps'] = $extracted_data['steps'];
+            }
+
+            if ($resolved_data['servings'] === '' && $extracted_data['servings'] !== '') {
+                $resolved_data['servings'] = $extracted_data['servings'];
+            }
+
+            if ((int) $resolved_data['prep_minutes'] === 0 && $extracted_data['prep_minutes'] > 0) {
+                $resolved_data['prep_minutes'] = $extracted_data['prep_minutes'];
+            }
+
+            if ((int) $resolved_data['cook_minutes'] === 0 && $extracted_data['cook_minutes'] > 0) {
+                $resolved_data['cook_minutes'] = $extracted_data['cook_minutes'];
+            }
+
+            $is_auto = !self::recipe_data_is_empty($extracted_data) && self::recipe_data_matches($resolved_data, $extracted_data);
+        }
+
+        $resolved_data = [
+            'ingredients' => self::normalized_text_lines($resolved_data['ingredients'] ?? []),
+            'steps' => self::normalized_text_lines($resolved_data['steps'] ?? []),
+            'servings' => self::recipe_servings_has_value((string) ($resolved_data['servings'] ?? '')) ? sanitize_text_field((string) ($resolved_data['servings'] ?? '')) : '',
+            'prep_minutes' => max(0, (int) ($resolved_data['prep_minutes'] ?? 0)),
+            'cook_minutes' => max(0, (int) ($resolved_data['cook_minutes'] ?? 0)),
+        ];
+
+        if (self::recipe_data_is_empty($resolved_data)) {
             delete_post_meta($post_id, '_kepoli_recipe_json');
+            self::store_auto_text_flag($post_id, '_kepoli_auto_recipe_json', false);
             return;
         }
 
         update_post_meta($post_id, '_kepoli_recipe_json', wp_json_encode([
             'category' => self::primary_category_name($post_id),
-            'servings' => $servings,
-            'prep_iso' => self::minutes_to_iso($prep_minutes),
-            'cook_iso' => self::minutes_to_iso($cook_minutes),
-            'total_iso' => self::minutes_to_iso($prep_minutes + $cook_minutes),
-            'ingredients' => $ingredients,
-            'steps' => $steps,
+            'servings' => $resolved_data['servings'],
+            'prep_iso' => self::minutes_to_iso($resolved_data['prep_minutes']),
+            'cook_iso' => self::minutes_to_iso($resolved_data['cook_minutes']),
+            'total_iso' => self::minutes_to_iso($resolved_data['prep_minutes'] + $resolved_data['cook_minutes']),
+            'ingredients' => $resolved_data['ingredients'],
+            'steps' => $resolved_data['steps'],
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        self::store_auto_text_flag($post_id, '_kepoli_auto_recipe_json', $is_auto);
     }
 
     private static function primary_category_name(int $post_id): string

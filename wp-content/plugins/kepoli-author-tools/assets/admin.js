@@ -1,5 +1,12 @@
 (function () {
   const PAGE_BREAK = '<!--nextpage-->';
+  const CONFIG = window.kepoliAuthorTools || {};
+  const SITE_NAME = CONFIG.siteName || 'Food Blog';
+  const SITE_IS_ENGLISH = !!CONFIG.isEnglish;
+
+  function contentText(ro, en) {
+    return SITE_IS_ENGLISH ? en : ro;
+  }
 
   function getTextarea() {
     return document.getElementById('content');
@@ -449,15 +456,17 @@
   }
 
   function generatedImageMeta() {
-    const title = currentTitle() || 'Reteta Kepoli';
+    const title = currentTitle() || contentText(`Reteta ${SITE_NAME}`, `${SITE_NAME} recipe`);
     const kind = currentKind();
-    const prefix = kind === 'article' ? 'Imagine editoriala pentru' : 'Fotografie culinara pentru';
+    const prefix = kind === 'article'
+      ? contentText('Imagine editoriala pentru', 'Editorial image for')
+      : contentText('Fotografie culinara pentru', 'Food photo for');
 
     return {
-      alt: shortSentence(`${prefix} ${title}, publicata pe blogul romanesc Kepoli.`, 150),
+      alt: shortSentence(`${prefix} ${title}, ${contentText(`publicata pe ${SITE_NAME}.`, `published on ${SITE_NAME}.`)}`, 150),
       title: title,
-      caption: shortSentence(`${title} pe Kepoli.`, 120),
-      description: shortSentence(`Imagine reprezentativa pentru ${title}, folosita in articolul culinar Kepoli.`, 220)
+      caption: shortSentence(contentText(`${title} pe ${SITE_NAME}.`, `${title} on ${SITE_NAME}.`), 120),
+      description: shortSentence(contentText(`Imagine reprezentativa pentru ${title}, folosita in articolul culinar ${SITE_NAME}.`, `Representative image for ${title}, used in a ${SITE_NAME} food article.`), 220)
     };
   }
 
@@ -488,8 +497,8 @@
 
     const tagScores = new Map();
     const seedTags = kind === 'article'
-      ? ['ingrediente', 'organizare', 'tehnici']
-      : ['retete romanesti'];
+      ? (SITE_IS_ENGLISH ? ['ingredients', 'kitchen tips', 'cooking techniques'] : ['ingrediente', 'organizare', 'tehnici'])
+      : (SITE_IS_ENGLISH ? ['recipes', 'home cooking'] : ['retete romanesti']);
 
     seedTags.forEach((tag) => tagScores.set(tag, (tagScores.get(tag) || 0) + 1));
 
@@ -514,16 +523,31 @@
     const quickTagMap = {
       ciorba: ['ciorba'],
       supa: ['supa'],
+      soup: ['soup'],
+      stew: ['stew', 'comfort food'],
+      chicken: ['chicken', 'dinner'],
+      pasta: ['pasta', 'dinner'],
+      rice: ['rice', 'side dish'],
       papanasi: ['papanasi', 'desert'],
       placinta: ['placinta', 'desert'],
+      pie: ['pie', 'dessert'],
+      cake: ['cake', 'dessert'],
+      chocolate: ['chocolate', 'dessert'],
+      cookies: ['cookies', 'dessert'],
+      bread: ['bread', 'baking'],
       cozonac: ['cozonac', 'aluat'],
       zacusca: ['zacusca', 'conserve'],
       muraturi: ['muraturi', 'conserve'],
       ghid: ['ingrediente'],
+      guide: ['ingredients', 'kitchen tips'],
       meniu: ['meniu', 'familie'],
+      menu: ['menu', 'family meals'],
       aluat: ['aluat', 'patiserie'],
+      dough: ['dough', 'baking'],
       sezon: ['sezon'],
-      pastrare: ['pastrare', 'organizare']
+      season: ['seasonal'],
+      pastrare: ['pastrare', 'organizare'],
+      storage: ['storage', 'kitchen tips']
     };
 
     Object.keys(quickTagMap).forEach((keyword) => {
@@ -562,6 +586,25 @@
 
   function suggestedCategory() {
     const categories = (window.kepoliAuthorTools && window.kepoliAuthorTools.categories) || [];
+    const isArticleCategory = (category) => {
+      if (!category) {
+        return false;
+      }
+
+      const label = normalizeWords([category.slug, category.name, category.description].join(' ')).join(' ');
+      return category.slug === 'articole' || label.includes('article') || label.includes('guide');
+    };
+    const articleCategory = categories.find((category) => isArticleCategory(category)) || null;
+
+    if (currentKind() === 'article') {
+      return articleCategory;
+    }
+
+    const recipeCategories = categories.filter((category) => !isArticleCategory(category));
+    if (!recipeCategories.length) {
+      return null;
+    }
+
     const text = `${currentTitle()} ${currentContentText()}`;
     const titleWords = normalizeWords(currentTitle());
     const sourceWords = normalizeWords(text);
@@ -574,11 +617,40 @@
       'conserve-si-garnituri': ['zacusca', 'muraturi', 'salata', 'garnitura', 'borcan', 'compot', 'bulion', 'gem', 'dulceata', 'piure'],
       'articole': ['ghid', 'cum', 'calendar', 'meniuri', 'tehnici', 'organizare', 'ingrediente', 'bucatarie', 'pastrare', 'explica']
     };
+    const keywordGroups = [
+      {
+        match: ['soup', 'soups', 'stew', 'broth', 'ciorbe', 'supe'],
+        terms: ['soup', 'soups', 'stew', 'broth', 'cream soup', 'comfort food']
+      },
+      {
+        match: ['main', 'dinner', 'lunch', 'entree', 'feluri', 'principale'],
+        terms: ['dinner', 'lunch', 'main dish', 'chicken', 'pasta', 'rice', 'stew', 'family meal']
+      },
+      {
+        match: ['dessert', 'desserts', 'baking', 'pastry', 'sweet', 'patiserie'],
+        terms: ['dessert', 'cake', 'chocolate', 'sweet', 'cookies', 'pie', 'pastry', 'baking', 'treat']
+      },
+      {
+        match: ['side', 'sides', 'salad', 'preserve', 'preserves', 'garnituri', 'conserve'],
+        terms: ['side dish', 'salad', 'preserves', 'pickle', 'jam', 'sauce', 'vegetables']
+      },
+      {
+        match: ['article', 'articles', 'guide', 'guides', 'tips', 'how-to', 'howto', 'articole'],
+        terms: ['guide', 'how', 'tips', 'history', 'explained', 'storage', 'pantry', 'ingredients', 'technique']
+      }
+    ];
 
-    categories.forEach((category) => {
+    recipeCategories.forEach((category) => {
       let score = 0;
       const haystack = normalizeWords([category.name, category.description].join(' '));
-      const keywords = slugKeywords[category.slug] || [];
+      const categoryLabel = normalizeWords([category.slug, category.name, category.description].join(' ')).join(' ');
+      const keywords = [...(slugKeywords[category.slug] || [])];
+
+      keywordGroups.forEach((group) => {
+        if (group.match.some((marker) => categoryLabel.includes(marker))) {
+          keywords.push(...group.terms);
+        }
+      });
 
       sourceWords.forEach((word) => {
         if (haystack.includes(word)) {
@@ -597,14 +669,6 @@
         }
       });
 
-      if (currentKind() === 'article' && category.slug === 'articole') {
-        score += 12;
-      }
-
-      if (currentKind() === 'recipe' && category.slug === 'articole') {
-        score -= 10;
-      }
-
       posts.forEach((post) => {
         const postWords = normalizeWords([post.title, post.excerpt, (post.tags || []).join(' ')].join(' '));
         const overlap = titleWords.filter((word) => postWords.includes(word)).length;
@@ -613,7 +677,7 @@
         }
 
         (post.categories || []).forEach((categoryName) => {
-          const matchingCategory = categories.find((item) => item.name === categoryName);
+          const matchingCategory = recipeCategories.find((item) => item.name === categoryName);
           if (matchingCategory && matchingCategory.id === category.id) {
             score += overlap * 2;
           }
@@ -623,7 +687,7 @@
       categoryScores.set(category.id, score);
     });
 
-    return categories
+    return recipeCategories
       .map((category) => ({ ...category, score: categoryScores.get(category.id) || 0 }))
       .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))[0] || null;
   }
@@ -667,11 +731,14 @@
     container.innerHTML = html;
 
     const sectionHeadings = {
-      ingredients: ['ingrediente'],
+      ingredients: ['ingrediente', 'ingredients', 'ingredient list'],
       steps: ['mod de preparare', 'preparare', 'pasi', 'pași']
     };
 
-    const targetHeadings = sectionHeadings[sectionName] || [];
+    const targetHeadings = [...(sectionHeadings[sectionName] || [])];
+    if (sectionName === 'steps') {
+      targetHeadings.push('method', 'instructions', 'directions', 'preparation', 'steps');
+    }
     const sectionItems = [];
     let active = false;
 
@@ -728,9 +795,9 @@
 
   function extractRecipeMetaFromText() {
     const text = currentContentText();
-    const servingsMatch = text.match(/(?:pentru|aproximativ|cam)?\s*(\d{1,2}\s*(?:portii|porții|persoane))/i);
-    const prepMatch = text.match(/(?:pregatire|preparare)\s*:?\s*(\d{1,3})\s*(?:min|minute)/i);
-    const cookMatch = text.match(/(?:gatire|coacere|fierbere)\s*:?\s*(\d{1,3})\s*(?:min|minute)/i);
+    const servingsMatch = text.match(/(?:serves|servings|makes|yield|pentru|aproximativ|cam)?\s*(\d{1,2}\s*(?:servings?|people|persons|portii|porții|persoane))/i);
+    const prepMatch = text.match(/(?:prep|preparation|pregatire|preparare)\s*:?\s*(\d{1,3})\s*(?:min|mins|minutes|minute)/i);
+    const cookMatch = text.match(/(?:cook|cooking|bake|baking|boil|simmer|gatire|coacere|fierbere)\s*:?\s*(\d{1,3})\s*(?:min|mins|minutes|minute)/i);
 
     return {
       servings: servingsMatch ? servingsMatch[1] : '',
@@ -792,7 +859,7 @@
     completeSetup();
 
     if (showStatus) {
-      setStatus('Kepoli a completat automat campurile goale pe baza titlului si continutului curent.');
+      setStatus('Empty fields were filled from the current title and content.');
     }
 
     return true;
@@ -811,7 +878,7 @@
     if (setupButton) {
       setupButton.addEventListener('click', () => {
         completeSetup();
-        setStatus('Campurile goale au fost completate automat. Verifica rezultatul inainte de publicare.');
+        setStatus('Empty fields were filled automatically. Review the result before publishing.');
       });
     }
 
@@ -820,8 +887,8 @@
         const suggestion = applySuggestedCategory(true);
         setStatus(
           suggestion
-            ? `Categoria sugerata a fost selectata: ${suggestion.name}.`
-            : 'Nu am gasit o categorie suficient de clara in continut.'
+            ? `Suggested category selected: ${suggestion.name}.`
+            : 'No clear category was found in the content.'
         );
       });
     }
@@ -831,8 +898,8 @@
         const tags = applySuggestedTags(true);
         setStatus(
           tags.length
-            ? `Tagurile sugerate au fost completate: ${tags.join(', ')}.`
-            : 'Nu am gasit destule repere pentru taguri clare.'
+            ? `Suggested tags were filled: ${tags.join(', ')}.`
+            : 'Not enough clear signals were found for tags.'
         );
       });
     }
@@ -843,8 +910,8 @@
         const hasData = data.ingredients.length || data.steps.length || data.servings || data.prepMinutes || data.cookMinutes;
         setStatus(
           hasData
-            ? 'Schema retetei a fost extrasa din continut. Verifica ingredientele, pasii si timpii.'
-            : 'Nu am gasit destule repere in continut. Foloseste titlurile Ingrediente si Mod de preparare sau completeaza manual.'
+            ? 'Recipe schema was extracted from the content. Review ingredients, steps, and times.'
+            : 'Not enough recipe signals were found. Use Ingredients and Method headings, or fill the fields manually.'
         );
       });
     }
@@ -852,14 +919,14 @@
     if (excerptButton) {
       excerptButton.addEventListener('click', () => {
         setField('textarea[name="kepoli_post_excerpt"]', generatedExcerpt());
-        setStatus('Excerpt generat. Ajusteaza-l daca vrei un rezumat mai editorial.');
+        setStatus('Excerpt generated. Adjust it if you want a more editorial summary.');
       });
     }
 
     if (metaButton) {
       metaButton.addEventListener('click', () => {
         setField('textarea[name="kepoli_meta_description"]', generatedMetaDescription());
-        setStatus('Meta description generata. Verifica textul inainte de publicare.');
+        setStatus('Meta description generated. Review it before publishing.');
       });
     }
 
@@ -869,7 +936,7 @@
 
         setField('textarea[name="kepoli_related_recipe_slugs"]', related.recipes.join(', '));
         setField('textarea[name="kepoli_related_article_slugs"]', related.articles.join(', '));
-        setStatus('Linkuri interne sugerate. Ajusteaza lista daca vrei alte recomandari.');
+        setStatus('Internal links suggested. Adjust the list if you want different recommendations.');
       });
     }
 
@@ -881,7 +948,7 @@
         setField('input[name="kepoli_image_title"]', imageMeta.title);
         setField('input[name="kepoli_image_caption"]', imageMeta.caption);
         setField('textarea[name="kepoli_image_description"]', imageMeta.description);
-        setStatus('Image meta generata. Verifica daca descrie corect imaginea aleasa.');
+        setStatus('Image metadata generated. Check that it describes the selected image correctly.');
       });
     }
   }
@@ -982,40 +1049,277 @@
       return;
     }
 
-    window.QTags.addButton('kepoli_nextpage', 'Pauza', `\n${PAGE_BREAK}\n`, '', 'p', 'Adauga pauza de pagina', 121);
-    window.QTags.addButton('kepoli_split_two', '2 parti', () => splitTextarea(2), '', '2', 'Imparte continutul in doua pagini', 122);
-    window.QTags.addButton('kepoli_split_three', '3 parti', () => splitTextarea(3), '', '3', 'Imparte continutul in trei pagini', 123);
+    window.QTags.addButton('kepoli_nextpage', 'Break', `\n${PAGE_BREAK}\n`, '', 'p', 'Add a page break at the cursor', 121);
+    window.QTags.addButton('kepoli_split_two', '2 parts', () => splitTextarea(2), '', '2', 'Split content into two pages', 122);
+    window.QTags.addButton('kepoli_split_three', '3 parts', () => splitTextarea(3), '', '3', 'Split content into three pages', 123);
   }
 
   function recipeTemplate() {
-    return [
+    const ro = [
       '<h2>Pe scurt</h2>',
-      '<!-- Kepoli: scrie 2-3 fraze despre rezultat, ocazie si textura. -->',
+      '<!-- Scrie 2-3 fraze despre rezultat, ocazie si textura. -->',
+      '<h2>Detalii despre reteta</h2>',
+      '<p>Timp de pregatire: 0 minute</p>',
+      '<p>Timp de gatire: 0 minute</p>',
+      '<p>Portii: 0</p>',
+      '<p>Nivel: usor</p>',
       '<h2>Ingrediente</h2>',
-      '<!-- Kepoli: adauga ingredientele intr-o lista, cate unul pe rand. -->',
+      '<!-- Adauga ingredientele intr-o lista, cate unul pe rand. -->',
       '<h2>Mod de preparare</h2>',
-      '<!-- Kepoli: adauga pasii in ordine, cu timp, temperatura si semne vizuale cand este util. -->',
-      '<h2>Sfaturi pentru reusita</h2>',
-      '<!-- Kepoli: noteaza greseli de evitat, ajustari si variante utile. -->',
-      '<h2>Cum pastrezi</h2>',
-      '<!-- Kepoli: explica pastrarea, reincalzirea si consumul in siguranta. -->',
+      '<!-- Adauga pasii in ordine, cu timp, temperatura si semne vizuale cand este util. -->',
+      '<h2>Cum se serveste</h2>',
+      '<!-- Spune cu ce merge bine si in ce ocazii se potriveste. -->',
+      '<h2>Sfaturi pentru o reteta reusita</h2>',
+      '<!-- Noteaza greseli de evitat, ajustari si variante utile. -->',
+      '<h2>Variatii ale retetei</h2>',
+      '<!-- Adauga 2-3 variante simple, daca se potriveste. -->',
+      '<h2>Cum se pastreaza</h2>',
+      '<!-- Explica pastrarea, reincalzirea si consumul in siguranta. -->',
       '<h2>Intrebari frecvente</h2>',
       '<h3>Pot pregati reteta in avans?</h3>',
-      '<!-- Kepoli: raspunde practic, cu intervale realiste. -->',
+      '<!-- Raspunde practic, cu intervale realiste. -->',
     ].join('\n');
+
+    const en = [
+      '<h2>What to know first</h2>',
+      '<!-- Write 2-3 sentences about the result, occasion, and texture. -->',
+      '<h2>Recipe details</h2>',
+      '<p>Prep time: 0 minutes</p>',
+      '<p>Cook time: 0 minutes</p>',
+      '<p>Servings: 0</p>',
+      '<p>Difficulty: easy</p>',
+      '<h2>Ingredients</h2>',
+      '<!-- Add ingredients in a list, one per line. -->',
+      '<h2>Method</h2>',
+      '<!-- Add the steps in order, with time, temperature, and visual signs where useful. -->',
+      '<h2>How to serve it</h2>',
+      '<!-- Explain what to serve it with and when it fits best. -->',
+      '<h2>Success notes</h2>',
+      '<!-- Note mistakes to avoid, adjustments, and useful variations. -->',
+      '<h2>Variations</h2>',
+      '<!-- Add 2-3 simple variations when they make sense. -->',
+      '<h2>Storage</h2>',
+      '<!-- Explain storage, reheating, and safe consumption. -->',
+      '<h2>Frequently asked questions</h2>',
+      '<h3>Can I prepare this recipe ahead?</h3>',
+      '<!-- Answer practically, with realistic time ranges. -->',
+    ].join('\n');
+
+    return contentText(ro, en);
   }
 
   function articleTemplate() {
-    return [
+    const ro = [
       '<h2>Ideea principala</h2>',
-      '<!-- Kepoli: prezinta subiectul si spune cititorului ce va afla. -->',
+      '<!-- Prezinta subiectul si spune cititorului ce va afla. -->',
       '<h2>Ce merita retinut</h2>',
-      '<!-- Kepoli: explica punctele importante in paragrafe scurte, cu exemple concrete. -->',
+      '<!-- Explica punctele importante in paragrafe scurte, cu exemple concrete. -->',
       '<h2>Cum aplici in bucatarie</h2>',
-      '<!-- Kepoli: leaga sfaturile de retete, ingrediente sau obiceiuri de gatit acasa. -->',
+      '<!-- Leaga sfaturile de retete, ingrediente sau obiceiuri de gatit acasa. -->',
       '<h2>Legaturi utile</h2>',
-      '<!-- Kepoli: adauga linkuri interne catre retete sau ghiduri apropiate. -->',
+      '<!-- Adauga linkuri interne catre retete sau ghiduri apropiate. -->',
     ].join('\n');
+
+    const en = [
+      '<h2>Main idea</h2>',
+      '<!-- Introduce the topic and tell the reader what they will learn. -->',
+      '<h2>What to remember</h2>',
+      '<!-- Explain the important points in short paragraphs with concrete examples. -->',
+      '<h2>How to use it in the kitchen</h2>',
+      '<!-- Connect the advice to recipes, ingredients, or home cooking habits. -->',
+      '<h2>Useful links</h2>',
+      '<!-- Add internal links to nearby recipes or guides. -->',
+    ].join('\n');
+
+    return contentText(ro, en);
+  }
+
+  function promptTopic() {
+    return currentTitle() || contentText('reteta de completat', 'recipe topic to fill in');
+  }
+
+  function recipePrompt() {
+    const ro = [
+      `Scrie o postare WordPress originala in limba romana pentru blogul ${SITE_NAME}.`,
+      `Tema: "${promptTopic()}".`,
+      '',
+      'Cerinte obligatorii:',
+      '- Ton clar, natural, util pentru gatit acasa.',
+      '- Foloseste diacritice.',
+      '- Nu inventa istorie, beneficii medicale sau afirmatii neverificabile.',
+      '- Nu repeta inutil ideile.',
+      '- Gandeste reteta ca articol culinar practic, nu ca reclama.',
+      '',
+      'Returneaza in aceasta ordine:',
+      '1. Titlu SEO scurt.',
+      '2. Excerpt in 1-2 fraze.',
+      '3. Meta description de maximum 155 caractere.',
+      '4. Categoria recomandata: alege exact una dintre Ciorbe si supe, Feluri principale, Patiserie si deserturi, Conserve si garnituri.',
+      '5. 3-5 taguri relevante.',
+      '6. Portii.',
+      '7. Timp de pregatire in minute.',
+      '8. Timp de gatire in minute.',
+      '9. Continutul final in HTML simplu pentru WordPress.',
+      '',
+      'Structura HTML trebuie sa respecte exact aceste sectiuni H2:',
+      '- <h2>Pe scurt</h2>',
+      '- <h2>Detalii despre reteta</h2>',
+      '- <h2>Ingrediente</h2>',
+      '- <h2>Mod de preparare</h2>',
+      '- <h2>Cum se serveste</h2>',
+      '- <h2>Sfaturi pentru o reteta reusita</h2>',
+      '- <h2>Variatii ale retetei</h2>',
+      '- <h2>Cum se pastreaza</h2>',
+      '- <h2>Intrebari frecvente</h2>',
+      '- <h2>Concluzie</h2>',
+      '',
+      'Reguli de format:',
+      '- In sectiunea "Detalii despre reteta", foloseste exact aceste linii: "Timp de pregatire: X minute", "Timp de gatire: Y minute", "Portii: Z", "Nivel: usor/mediu".',
+      '- In sectiunea "Ingrediente", foloseste un singur <ul> cu <li> pentru fiecare ingredient.',
+      '- In sectiunea "Mod de preparare", foloseste un singur <ol> cu pasi clari, numerotati.',
+      '- In FAQ, foloseste intrebari ca subtitluri <h3> urmate de raspunsuri scurte.',
+      '- Daca nu stii timpii exacti, estimeaza-i realist si scrie doar numere intregi.',
+      '- Nu adauga markdown. Doar text normal pentru punctele 1-8 si apoi HTML pentru punctul 9.',
+    ];
+
+    const en = [
+      `Write an original WordPress recipe post in English for ${SITE_NAME}.`,
+      `Topic: "${promptTopic()}".`,
+      '',
+      'Requirements:',
+      '- Clear, practical, natural tone for home cooking.',
+      '- No invented history, medical claims, or unverifiable statements.',
+      '- Avoid filler and repetition.',
+      '',
+      'Return in this order:',
+      '1. Short SEO title.',
+      '2. Excerpt in 1-2 sentences.',
+      '3. Meta description under 155 characters.',
+      '4. Recommended category: choose exactly one recipe category.',
+      '5. 3-5 relevant tags.',
+      '6. Servings.',
+      '7. Prep time in minutes.',
+      '8. Cook time in minutes.',
+      '9. Final HTML content for WordPress.',
+      '',
+      'Use these exact H2 sections:',
+      '- <h2>What to know first</h2>',
+      '- <h2>Recipe details</h2>',
+      '- <h2>Ingredients</h2>',
+      '- <h2>Method</h2>',
+      '- <h2>How to serve it</h2>',
+      '- <h2>Success notes</h2>',
+      '- <h2>Variations</h2>',
+      '- <h2>Storage</h2>',
+      '- <h2>Frequently asked questions</h2>',
+      '- <h2>Conclusion</h2>',
+      '',
+      'Formatting rules:',
+      '- In "Recipe details", use these exact lines: "Prep time: X minutes", "Cook time: Y minutes", "Servings: Z", "Difficulty: easy/medium".',
+      '- In "Ingredients", use one <ul> with one <li> per ingredient.',
+      '- In "Method", use one <ol> with numbered steps.',
+      '- In FAQ, use <h3> question headings followed by short answers.',
+      '- If exact timings are unknown, estimate realistic whole numbers.',
+      '- Do not use markdown.',
+    ];
+
+    return contentText(ro.join('\n'), en.join('\n'));
+  }
+
+  function articlePrompt() {
+    const ro = [
+      `Scrie un articol WordPress original in limba romana pentru blogul ${SITE_NAME}.`,
+      `Tema: "${promptTopic()}".`,
+      '',
+      'Cerinte obligatorii:',
+      '- Ton clar, util, bine organizat.',
+      '- Foloseste diacritice.',
+      '- Nu inventa istorie sau afirmatii neverificabile.',
+      '- Leaga ideile de gatit acasa, ingrediente, organizare sau servire.',
+      '',
+      'Returneaza in aceasta ordine:',
+      '1. Titlu SEO scurt.',
+      '2. Excerpt in 1-2 fraze.',
+      '3. Meta description de maximum 155 caractere.',
+      '4. Categoria recomandata: Articole.',
+      '5. 3-5 taguri relevante.',
+      '6. Continutul final in HTML simplu pentru WordPress.',
+      '',
+      'Structura HTML trebuie sa respecte exact aceste sectiuni H2:',
+      '- <h2>Ideea principala</h2>',
+      '- <h2>Ce merita retinut</h2>',
+      '- <h2>Cum aplici in bucatarie</h2>',
+      '- <h2>Intrebari frecvente</h2>',
+      '- <h2>Concluzie</h2>',
+      '',
+      'Reguli de format:',
+      '- Foloseste paragrafe scurte si clare.',
+      '- In FAQ, foloseste intrebari ca subtitluri <h3> urmate de raspunsuri scurte.',
+      '- Nu adauga markdown. Doar text normal pentru punctele 1-5 si apoi HTML pentru punctul 6.',
+    ];
+
+    const en = [
+      `Write an original WordPress article in English for ${SITE_NAME}.`,
+      `Topic: "${promptTopic()}".`,
+      '',
+      'Requirements:',
+      '- Clear, useful, well-structured tone.',
+      '- No invented history or unverifiable claims.',
+      '- Connect the ideas to home cooking, ingredients, planning, or serving.',
+      '',
+      'Return in this order:',
+      '1. Short SEO title.',
+      '2. Excerpt in 1-2 sentences.',
+      '3. Meta description under 155 characters.',
+      '4. Recommended category: Articles.',
+      '5. 3-5 relevant tags.',
+      '6. Final HTML content for WordPress.',
+      '',
+      'Use these exact H2 sections:',
+      '- <h2>Main idea</h2>',
+      '- <h2>What to remember</h2>',
+      '- <h2>How to use it in the kitchen</h2>',
+      '- <h2>Frequently asked questions</h2>',
+      '- <h2>Conclusion</h2>',
+      '',
+      'Formatting rules:',
+      '- Use short, clear paragraphs.',
+      '- In FAQ, use <h3> question headings followed by short answers.',
+      '- Do not use markdown.',
+    ];
+
+    return contentText(ro.join('\n'), en.join('\n'));
+  }
+
+  function promptForKind(kind) {
+    return kind === 'article' ? articlePrompt() : recipePrompt();
+  }
+
+  function updatePromptOutput(kind) {
+    const output = document.querySelector('[data-kepoli-prompt-output]');
+    if (!output) {
+      return '';
+    }
+
+    const value = promptForKind(kind || currentKind());
+    output.value = value;
+    return value;
+  }
+
+  async function copyPromptText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+
+    const output = document.querySelector('[data-kepoli-prompt-output]');
+    if (!output) {
+      return false;
+    }
+
+    output.focus();
+    output.select();
+    return document.execCommand('copy');
   }
 
   function setKind(kind) {
@@ -1044,6 +1348,49 @@
         }
       });
     });
+  }
+
+  function bindPromptHelper() {
+    const output = document.querySelector('[data-kepoli-prompt-output]');
+    const copyButton = document.querySelector('[data-kepoli-copy-prompt]');
+    const titleField = document.getElementById('title');
+    const kindInputs = Array.from(document.querySelectorAll('input[name="kepoli_post_kind"]'));
+
+    if (!output) {
+      return;
+    }
+
+    const refresh = (kind) => updatePromptOutput(kind || currentKind());
+
+    document.querySelectorAll('[data-kepoli-prompt-kind]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const kind = button.getAttribute('data-kepoli-prompt-kind') || currentKind();
+        refresh(kind);
+      });
+    });
+
+    if (copyButton) {
+      copyButton.addEventListener('click', async () => {
+        const text = output.value || refresh(currentKind());
+        try {
+          const copied = await copyPromptText(text);
+          setStatus(copied ? 'Prompt copied. Paste it into your AI tool and bring the result back here.' : 'Copy failed. Select the prompt manually and copy it.');
+        } catch (error) {
+          setStatus('Copy failed. Select the prompt manually and copy it.');
+        }
+      });
+    }
+
+    if (titleField) {
+      titleField.addEventListener('input', () => refresh(currentKind()));
+      titleField.addEventListener('change', () => refresh(currentKind()));
+    }
+
+    kindInputs.forEach((input) => {
+      input.addEventListener('change', () => refresh(input.value));
+    });
+
+    refresh(currentKind());
   }
 
   function bindKindToggle() {
@@ -1098,6 +1445,37 @@
 
       contentField.addEventListener('blur', triggerContentAutofill);
       contentField.addEventListener('paste', () => window.setTimeout(triggerContentAutofill, 180));
+
+      const bindVisualEditorAutofill = () => {
+        if (!window.tinymce || !window.tinymce.get) {
+          return;
+        }
+
+        const editor = window.tinymce.get('content');
+        if (!editor || editor.__kepoliPassiveAutofillBound) {
+          return;
+        }
+
+        editor.__kepoliPassiveAutofillBound = true;
+        const schedule = () => window.setTimeout(triggerContentAutofill, 180);
+
+        editor.on('blur', triggerContentAutofill);
+        editor.on('change', triggerContentAutofill);
+        editor.on('input', schedule);
+        editor.on('paste', schedule);
+        editor.on('SetContent', schedule);
+      };
+
+      bindVisualEditorAutofill();
+      window.setTimeout(bindVisualEditorAutofill, 250);
+
+      if (window.tinymce && typeof window.tinymce.on === 'function') {
+        window.tinymce.on('AddEditor', (event) => {
+          if (event && event.editor && event.editor.id === 'content') {
+            window.setTimeout(bindVisualEditorAutofill, 150);
+          }
+        });
+      }
     }
 
     kindInputs.forEach((input) => {
@@ -1129,8 +1507,13 @@
     const recipeIngredients = parseListField('textarea[name="kepoli_recipe_ingredients"]');
     const recipeSteps = parseListField('textarea[name="kepoli_recipe_steps"]');
     const recipeServings = currentFieldValue('input[name="kepoli_recipe_servings"]');
+    const recipePrepMinutes = Number.parseInt(currentFieldValue('input[name="kepoli_recipe_prep_minutes"]'), 10) || 0;
+    const recipeCookMinutes = Number.parseInt(currentFieldValue('input[name="kepoli_recipe_cook_minutes"]'), 10) || 0;
     const contentLanguage = detectLanguage(`${title} ${excerpt} ${meta} ${content}`);
     const slugLanguage = detectLanguage(slug.replace(/-/g, ' '));
+    const servingsMatch = recipeServings.match(/\d+/);
+    const recipeServingsValid = recipeServings.trim().length > 0
+      && (!servingsMatch || Number.parseInt(servingsMatch[0], 10) > 0);
 
     return {
       title: title.length >= 6,
@@ -1142,22 +1525,28 @@
       featuredImage: hasFeaturedImage(),
       imageAlt: !hasFeaturedImage() ? false : imageAlt.length >= 8,
       related: hasBodyLinks || (relatedRecipes.length + relatedArticles.length) > 0,
-      recipe: kind !== 'recipe' || (recipeIngredients.length > 0 && recipeSteps.length > 0 && recipeServings.length > 0)
+      recipe: kind !== 'recipe' || (
+        recipeIngredients.length > 0
+        && recipeSteps.length > 0
+        && recipeServingsValid
+        && recipePrepMinutes > 0
+        && recipeCookMinutes > 0
+      )
     };
   }
 
   function missingChecklistLabels(state) {
     const labels = {
-      title: 'titlu',
-      content: 'continut',
+      title: 'title',
+      content: 'content',
       excerpt: 'excerpt',
       meta: 'meta description',
-      language: 'limba',
+      language: 'language',
       slug: 'slug',
-      featuredImage: 'imagine',
+      featuredImage: 'featured image',
       imageAlt: 'alt text',
-      related: 'linkuri interne',
-      recipe: 'schema reteta'
+      related: 'internal links',
+      recipe: 'recipe schema'
     };
 
     return Object.keys(state)
@@ -1186,17 +1575,17 @@
       item.classList.toggle('is-missing', !done);
     });
 
-    const missing = missingChecklistLabels(state).filter((label) => !(kind !== 'recipe' && label === 'schema reteta'));
+    const missing = missingChecklistLabels(state).filter((label) => !(kind !== 'recipe' && label === 'recipe schema'));
     const strings = (window.kepoliAuthorTools && window.kepoliAuthorTools.strings) || {};
 
     if (!missing.length) {
-      summary.textContent = strings.checkReady || 'Setup aproape complet.';
+      summary.textContent = strings.checkReady || 'Setup is almost complete.';
       summary.classList.add('is-ready');
       summary.classList.remove('is-missing');
       return;
     }
 
-    summary.textContent = `${strings.checkMissingPrefix || 'De completat:'} ${missing.join(', ')}.`;
+    summary.textContent = `${strings.checkMissingPrefix || 'Complete before publishing:'} ${missing.join(', ')}.`;
     summary.classList.add('is-missing');
     summary.classList.remove('is-ready');
   }
@@ -1216,10 +1605,10 @@
     const category = suggestedCategory();
     const tags = suggestedTags();
     const state = checklistState();
-    const missing = missingChecklistLabels(state).filter((label) => !(currentKind() !== 'recipe' && label === 'schema reteta'));
+    const missing = missingChecklistLabels(state).filter((label) => !(currentKind() !== 'recipe' && label === 'recipe schema'));
 
-    categoryTarget.textContent = category ? category.name : (strings.companionNoCategory || 'Nicio sugestie clara inca');
-    tagsTarget.textContent = tags.length ? tags.join(', ') : (strings.companionNoTags || 'Fara taguri sugerate inca');
+    categoryTarget.textContent = category ? category.name : (strings.companionNoCategory || 'No clear suggestion yet');
+    tagsTarget.textContent = tags.length ? tags.join(', ') : (strings.companionNoTags || 'No suggested tags yet');
 
     checksTarget.innerHTML = '';
     if (missing.length) {
@@ -1230,29 +1619,29 @@
       });
     } else {
       const li = document.createElement('li');
-      li.textContent = 'doar lectura finala';
+      li.textContent = 'final read only';
       checksTarget.appendChild(li);
     }
 
     if (!missing.length) {
-      statusTarget.textContent = strings.companionStatusReady || 'Gata pentru o ultima lectura.';
+      statusTarget.textContent = strings.companionStatusReady || 'Ready for a final read.';
     } else if (missing.length === 1) {
-      statusTarget.textContent = strings.companionStatusSingle || 'Mai lipseste 1 lucru important.';
+      statusTarget.textContent = strings.companionStatusSingle || '1 important item is still missing.';
     } else {
-      const template = strings.companionStatusMultiple || 'Mai lipsesc %d lucruri importante.';
+      const template = strings.companionStatusMultiple || '%d important items are still missing.';
       statusTarget.textContent = template.replace('%d', String(missing.length));
     }
 
     summaryTarget.textContent = missing.length
-      ? (strings.companionReview || 'Mai sunt cateva lucruri de verificat inainte sa publici.')
-      : (strings.companionReady || 'Postarea arata bine pentru urmatorul pas.');
+      ? (strings.companionReview || 'A few things still need review before publishing.')
+      : (strings.companionReady || 'The post looks ready for the next step.');
     summaryTarget.classList.toggle('is-ready', !missing.length);
     summaryTarget.classList.toggle('is-missing', missing.length > 0);
   }
 
   function bindChecklist() {
     const fields = document.querySelectorAll(
-      '#title, #content, input[name="kepoli_post_kind"], textarea[name="kepoli_post_excerpt"], textarea[name="kepoli_meta_description"], textarea[name="kepoli_related_recipe_slugs"], textarea[name="kepoli_related_article_slugs"], input[name="kepoli_image_alt"], input[name="kepoli_recipe_servings"], textarea[name="kepoli_recipe_ingredients"], textarea[name="kepoli_recipe_steps"], #_thumbnail_id'
+      '#title, #content, input[name="kepoli_post_kind"], textarea[name="kepoli_post_excerpt"], textarea[name="kepoli_meta_description"], textarea[name="kepoli_related_recipe_slugs"], textarea[name="kepoli_related_article_slugs"], input[name="kepoli_image_alt"], input[name="kepoli_recipe_servings"], input[name="kepoli_recipe_prep_minutes"], input[name="kepoli_recipe_cook_minutes"], textarea[name="kepoli_recipe_ingredients"], textarea[name="kepoli_recipe_steps"], #_thumbnail_id'
     );
 
     if (!fields.length) {
@@ -1290,13 +1679,13 @@
 
     publishButton.addEventListener('click', (event) => {
       const state = checklistState();
-      const missing = missingChecklistLabels(state).filter((label) => !(currentKind() !== 'recipe' && label === 'schema reteta'));
+      const missing = missingChecklistLabels(state).filter((label) => !(currentKind() !== 'recipe' && label === 'recipe schema'));
       if (!missing.length) {
         return;
       }
 
       const strings = (window.kepoliAuthorTools && window.kepoliAuthorTools.strings) || {};
-      const message = `${strings.publishConfirmPrefix || 'Postarea mai are campuri lipsa:'} ${missing.join(', ')}.\n\n${strings.publishConfirmSuffix || 'Continui publicarea?'}`;
+      const message = `${strings.publishConfirmPrefix || 'The post still has missing fields:'} ${missing.join(', ')}.\n\n${strings.publishConfirmSuffix || 'Publish anyway?'}`;
       if (!window.confirm(message)) {
         event.preventDefault();
       }
@@ -1305,7 +1694,7 @@
 
   function bindCompanionRefresh() {
     const fields = document.querySelectorAll(
-      '#title, #content, input[name="kepoli_post_kind"], textarea[name="kepoli_post_excerpt"], textarea[name="kepoli_meta_description"], textarea[name="kepoli_related_recipe_slugs"], textarea[name="kepoli_related_article_slugs"], input[name="kepoli_image_alt"], input[name="kepoli_recipe_servings"], textarea[name="kepoli_recipe_ingredients"], textarea[name="kepoli_recipe_steps"], #_thumbnail_id'
+      '#title, #content, input[name="kepoli_post_kind"], textarea[name="kepoli_post_excerpt"], textarea[name="kepoli_meta_description"], textarea[name="kepoli_related_recipe_slugs"], textarea[name="kepoli_related_article_slugs"], input[name="kepoli_image_alt"], input[name="kepoli_recipe_servings"], input[name="kepoli_recipe_prep_minutes"], input[name="kepoli_recipe_cook_minutes"], textarea[name="kepoli_recipe_ingredients"], textarea[name="kepoli_recipe_steps"], #_thumbnail_id'
     );
 
     fields.forEach((field) => {
@@ -1331,7 +1720,7 @@
 
     button.addEventListener('click', () => {
       completeSetup();
-      setStatus('Kepoli a facut completarea finala a campurilor goale. Verifica rezultatul inainte de publicare.');
+      setStatus('Final empty fields were filled automatically. Review the result before publishing.');
       renderChecklist();
       renderPublishCompanion();
     });
@@ -1341,6 +1730,7 @@
     addQuicktagsButtons();
     bindAutomationButtons();
     bindTemplateButtons();
+    bindPromptHelper();
     bindKindToggle();
     bindPassiveAutofill();
     bindChecklist();
