@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.19
+ * Version: 1.8.20
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.15';
+    private const VERSION = '1.8.20';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -46,22 +46,32 @@ final class Kepoli_Author_Tools
     ];
     private const TEMPLATE_OUTLINE_LABELS = [
         'Pe scurt',
+        'Detalii despre reteta',
         'Ingrediente',
         'Mod de preparare',
+        'Cum se serveste',
+        'Sfaturi pentru o reteta reusita',
         'Sfaturi pentru reusita',
+        'Variatii ale retetei',
+        'Cum se pastreaza',
         'Cum pastrezi',
         'Intrebari frecvente',
+        'Concluzie',
         'Pot pregati reteta in avans?',
         'Ideea principala',
         'Ce merita retinut',
         'Cum aplici in bucatarie',
         'Legaturi utile',
         'What to know first',
+        'Recipe details',
         'Ingredients',
         'Method',
+        'How to serve it',
         'Success notes',
+        'Variations',
         'Storage',
         'Frequently asked questions',
+        'Conclusion',
         'Can I prepare this recipe ahead?',
         'Main idea',
         'What to remember',
@@ -466,7 +476,7 @@ final class Kepoli_Author_Tools
         $auto_split_parts = in_array($auto_split_parts, [2, 3], true) ? $auto_split_parts : 0;
         update_post_meta($post_id, '_kepoli_auto_split_parts', $auto_split_parts);
         self::maybe_clean_post_slug($post_id, $post);
-        self::maybe_normalize_content_structure($post_id, $post);
+        self::maybe_normalize_content_structure($post_id, $post, $kind);
 
         self::save_post_excerpt($post_id, $post);
         self::save_seo_title($post_id, $post);
@@ -1065,11 +1075,547 @@ final class Kepoli_Author_Tools
         return ['mod de preparare', 'preparare', 'pasi', 'pasii', 'method', 'instructions', 'directions', 'preparation', 'steps'];
     }
 
+    private static function outline_heading_targets(): array
+    {
+        return [
+            'Pe scurt',
+            'Detalii despre reteta',
+            'Ingrediente',
+            'Mod de preparare',
+            'Cum se serveste',
+            'Sfaturi pentru o reteta reusita',
+            'Sfaturi pentru reusita',
+            'Variatii ale retetei',
+            'Cum se pastreaza',
+            'Cum pastrezi',
+            'Intrebari frecvente',
+            'Concluzie',
+            'Ideea principala',
+            'Ce merita retinut',
+            'Cum aplici in bucatarie',
+            'Legaturi utile',
+            'What to know first',
+            'Recipe details',
+            'Ingredients',
+            'Method',
+            'How to serve it',
+            'Success notes',
+            'Variations',
+            'Storage',
+            'Frequently asked questions',
+            'Conclusion',
+            'Main idea',
+            'What to remember',
+            'How to use it in the kitchen',
+            'Useful links',
+        ];
+    }
+
+    private static function summary_heading_targets(): array
+    {
+        return [
+            'Pe scurt',
+            'Ideea principala',
+            'What to know first',
+            'Main idea',
+        ];
+    }
+
+    private static function faq_heading_targets(): array
+    {
+        return [
+            'Intrebari frecvente',
+            'Frequently asked questions',
+            'FAQs',
+            'FAQ',
+        ];
+    }
+
+    private static function is_outline_heading(string $text): bool
+    {
+        $normalized = self::normalized_heading($text);
+        if ($normalized === '') {
+            return false;
+        }
+
+        foreach (self::outline_heading_targets() as $candidate) {
+            if ($normalized === self::normalized_heading($candidate)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function is_summary_heading(string $text): bool
+    {
+        $normalized = self::normalized_heading($text);
+        if ($normalized === '') {
+            return false;
+        }
+
+        foreach (self::summary_heading_targets() as $candidate) {
+            if ($normalized === self::normalized_heading($candidate)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function is_faq_heading(string $text): bool
+    {
+        $normalized = self::normalized_heading($text);
+        if ($normalized === '') {
+            return false;
+        }
+
+        foreach (self::faq_heading_targets() as $candidate) {
+            if ($normalized === self::normalized_heading($candidate)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function looks_like_faq_question(string $text): bool
+    {
+        $plain = trim(self::plain_text($text));
+        if ($plain === '') {
+            return false;
+        }
+
+        if (!preg_match('/\?\s*$/u', $plain)) {
+            return false;
+        }
+
+        return self::word_count($plain) <= 18;
+    }
+
+    private static function recipe_html_lines(string $html): array
+    {
+        if ($html === '') {
+            return [];
+        }
+
+        $html = (string) preg_replace('/<br\s*\/?>/i', "\n", $html);
+        $html = (string) preg_replace('/<\/(?:p|div|li)>/i', "\n", $html);
+        $text = strip_shortcodes($html);
+        $text = wp_strip_all_tags($text);
+        $text = html_entity_decode($text, ENT_QUOTES, get_bloginfo('charset'));
+        $lines = preg_split('/\r\n|\r|\n/', $text) ?: [];
+        $clean = [];
+
+        foreach ($lines as $line) {
+            $value = trim((string) preg_replace('/\s+/', ' ', (string) $line));
+            if ($value !== '') {
+                $clean[] = $value;
+            }
+        }
+
+        return $clean;
+    }
+
+    private static function clean_recipe_item_line(string $text, string $section): string
+    {
+        $value = trim((string) preg_replace('/\s+/', ' ', html_entity_decode($text, ENT_QUOTES, get_bloginfo('charset'))));
+        if ($value === '') {
+            return '';
+        }
+
+        $value = (string) preg_replace('/^(?:[-*\x{2022}]+)\s*/u', '', $value);
+        $value = (string) preg_replace('/^\d+\s*[.)-]\s*/u', '', $value);
+
+        if ($section === 'steps') {
+            $value = (string) preg_replace('/^(?:pasul|step)\s*\d+\s*[:.)-]?\s*/iu', '', $value);
+        }
+
+        return trim($value);
+    }
+
+    private static function content_has_markup(string $content): bool
+    {
+        return (bool) preg_match('/<[^>]+>/', $content);
+    }
+
+    private static function recipe_source_lines(string $content, bool $keep_empty = false): array
+    {
+        if (self::content_has_markup($content)) {
+            $content = (string) preg_replace('/<br\s*\/?>/i', "\n", $content);
+            $content = (string) preg_replace('/<\/(?:p|div|li|h[1-6]|ul|ol)>/i', "\n", $content);
+            $content = strip_shortcodes($content);
+            $content = wp_strip_all_tags($content);
+        }
+
+        $content = html_entity_decode($content, ENT_QUOTES, get_bloginfo('charset'));
+        $lines = preg_split('/\r\n|\r|\n/', $content) ?: [];
+        $clean = [];
+
+        foreach ($lines as $line) {
+            $value = trim((string) preg_replace('/\s+/', ' ', (string) $line));
+            if ($value === '') {
+                if ($keep_empty) {
+                    $clean[] = '';
+                }
+                continue;
+            }
+
+            $clean[] = $value;
+        }
+
+        return $clean;
+    }
+
+    private static function parse_recipe_outline_sections(string $content): array
+    {
+        $lines = self::recipe_source_lines($content, true);
+        $sections = [];
+        $current_key = '';
+
+        foreach ($lines as $line) {
+            $value = trim((string) $line);
+            if ($value === '') {
+                if ($current_key !== '' && isset($sections[$current_key])) {
+                    $sections[$current_key]['lines'][] = '';
+                }
+                continue;
+            }
+
+            if (self::is_outline_heading($value)) {
+                $current_key = self::normalized_heading($value);
+                if (!isset($sections[$current_key])) {
+                    $sections[$current_key] = [
+                        'heading' => $value,
+                        'lines' => [],
+                    ];
+                }
+                continue;
+            }
+
+            if ($current_key === '') {
+                $current_key = '_intro';
+                if (!isset($sections[$current_key])) {
+                    $sections[$current_key] = [
+                        'heading' => '',
+                        'lines' => [],
+                    ];
+                }
+            }
+
+            $sections[$current_key]['lines'][] = $value;
+        }
+
+        return $sections;
+    }
+
+    private static function recipe_section_items_from_lines(string $content, string $section): array
+    {
+        $sections = self::parse_recipe_outline_sections($content);
+        $targets = array_map([self::class, 'normalized_heading'], self::recipe_section_targets($section));
+        $items = [];
+
+        foreach ($sections as $key => $section_data) {
+            if ($key === '_intro' || !in_array((string) $key, $targets, true)) {
+                continue;
+            }
+
+            foreach ((array) ($section_data['lines'] ?? []) as $line) {
+                $value = self::clean_recipe_item_line((string) $line, $section);
+                if ($value !== '') {
+                    $items[] = $value;
+                }
+            }
+        }
+
+        return array_values(array_unique(array_filter(array_map('trim', $items))));
+    }
+
+    private static function html_paragraphs_from_lines(array $lines): string
+    {
+        $paragraphs = [];
+        $buffer = [];
+
+        foreach ($lines as $line) {
+            $value = trim((string) $line);
+            if ($value === '') {
+                if ($buffer !== []) {
+                    $paragraphs[] = '<p>' . esc_html(implode(' ', $buffer)) . '</p>';
+                    $buffer = [];
+                }
+                continue;
+            }
+
+            $buffer[] = $value;
+        }
+
+        if ($buffer !== []) {
+            $paragraphs[] = '<p>' . esc_html(implode(' ', $buffer)) . '</p>';
+        }
+
+        return implode("\n", $paragraphs);
+    }
+
+    private static function render_recipe_section_html(string $heading, array $lines): string
+    {
+        $normalized = self::normalized_heading($heading);
+        $html = ['<h2>' . esc_html($heading) . '</h2>'];
+        $ingredient_headings = [
+            self::normalized_heading('Ingrediente'),
+            self::normalized_heading('Ingredients'),
+        ];
+        $step_headings = [
+            self::normalized_heading('Mod de preparare'),
+            self::normalized_heading('Method'),
+        ];
+        $faq_headings = [
+            self::normalized_heading('Intrebari frecvente'),
+            self::normalized_heading('Frequently asked questions'),
+        ];
+
+        if (in_array($normalized, $ingredient_headings, true)) {
+            $items = [];
+            foreach ($lines as $line) {
+                $value = self::clean_recipe_item_line((string) $line, 'ingredients');
+                if ($value !== '') {
+                    $items[] = '<li>' . esc_html($value) . '</li>';
+                }
+            }
+
+            if ($items !== []) {
+                $html[] = "<ul>\n" . implode("\n", $items) . "\n</ul>";
+            }
+
+            return implode("\n", $html);
+        }
+
+        if (in_array($normalized, $step_headings, true)) {
+            $items = [];
+            foreach ($lines as $line) {
+                $value = self::clean_recipe_item_line((string) $line, 'steps');
+                if ($value !== '') {
+                    $items[] = '<li>' . esc_html($value) . '</li>';
+                }
+            }
+
+            if ($items !== []) {
+                $html[] = "<ol>\n" . implode("\n", $items) . "\n</ol>";
+            }
+
+            return implode("\n", $html);
+        }
+
+        if (in_array($normalized, $faq_headings, true)) {
+            $faq_lines = [];
+            $answer_buffer = [];
+            $current_question = '';
+
+            $flush_answer = static function () use (&$faq_lines, &$answer_buffer, &$current_question): void {
+                if ($current_question === '') {
+                    $answer_buffer = [];
+                    return;
+                }
+
+                if ($answer_buffer !== []) {
+                    $faq_lines[] = '<p>' . esc_html(implode(' ', $answer_buffer)) . '</p>';
+                    $answer_buffer = [];
+                }
+            };
+
+            foreach ($lines as $line) {
+                $value = trim((string) $line);
+                if ($value === '') {
+                    $flush_answer();
+                    continue;
+                }
+
+                if (self::looks_like_faq_question($value)) {
+                    $flush_answer();
+                    $current_question = $value;
+                    $faq_lines[] = '<h3>' . esc_html($value) . '</h3>';
+                    continue;
+                }
+
+                $answer_buffer[] = $value;
+            }
+
+            $flush_answer();
+
+            if ($faq_lines !== []) {
+                $html[] = implode("\n", $faq_lines);
+            }
+
+            return implode("\n", $html);
+        }
+
+        $paragraphs = self::html_paragraphs_from_lines($lines);
+        if ($paragraphs !== '') {
+            $html[] = $paragraphs;
+        }
+
+        return implode("\n", $html);
+    }
+
+    private static function should_rebuild_simple_recipe_markup(string $content): bool
+    {
+        $plain = self::plain_text($content);
+        if ($plain === '') {
+            return false;
+        }
+
+        if (!self::content_has_markup($content)) {
+            return true;
+        }
+
+        if (preg_match('/<(?:a|img|figure|table|blockquote|pre|code|iframe)\b/i', $content)) {
+            return false;
+        }
+
+        if (str_contains($content, '<!--')) {
+            return false;
+        }
+
+        $has_semantic_structure = (bool) preg_match('/<(?:h[1-6]|ul|ol|li)\b/i', $content);
+        $has_simple_lines = (bool) preg_match('/<br\s*\/?>/i', $content) || (bool) preg_match('/<p[^>]*>\s*(?:Pe scurt|Detalii despre reteta|Ingrediente|Mod de preparare|Cum se serveste|Intrebari frecvente|Concluzie|What to know first|Recipe details|Ingredients|Method|How to serve it|Frequently asked questions|Conclusion)\s*<\/p>/iu', $content);
+
+        return !$has_semantic_structure || $has_simple_lines;
+    }
+
+    private static function rebuild_simple_recipe_markup(string $content): string
+    {
+        $sections = self::parse_recipe_outline_sections($content);
+        if ($sections === []) {
+            return trim($content);
+        }
+
+        $output = [];
+
+        foreach ($sections as $key => $section_data) {
+            if ($key === '_intro') {
+                $intro = self::html_paragraphs_from_lines((array) ($section_data['lines'] ?? []));
+                if ($intro !== '') {
+                    $output[] = $intro;
+                }
+                continue;
+            }
+
+            $heading = trim((string) ($section_data['heading'] ?? ''));
+            if ($heading === '') {
+                continue;
+            }
+
+            $output[] = self::render_recipe_section_html($heading, (array) ($section_data['lines'] ?? []));
+        }
+
+        return trim(implode("\n\n", array_filter($output)));
+    }
+
+    private static function extract_summary_source_from_content(string $content): string
+    {
+        if ($content === '') {
+            return '';
+        }
+
+        if (!class_exists('DOMDocument')) {
+            return self::plain_text($content);
+        }
+
+        $document = new DOMDocument('1.0', 'UTF-8');
+        $wrapped = '<div id="kepoli-summary-root">' . $content . '</div>';
+
+        libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="utf-8" ?>' . $wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+
+        $root = $document->getElementById('kepoli-summary-root');
+        if (!$root) {
+            return self::plain_text($content);
+        }
+
+        $paragraphs = [];
+        $capture_summary = false;
+        $before_first_heading = true;
+
+        foreach ($root->childNodes as $node) {
+            if ($node->nodeType === XML_COMMENT_NODE) {
+                continue;
+            }
+
+            if ($node->nodeType !== XML_ELEMENT_NODE) {
+                continue;
+            }
+
+            $tag = strtolower((string) $node->nodeName);
+            $plain = self::plain_text($document->saveHTML($node));
+            if ($plain === '') {
+                continue;
+            }
+
+            $heading_like = preg_match('/^h[1-6]$/', $tag) || ($tag === 'p' && self::is_outline_heading($plain));
+            if ($heading_like) {
+                if (self::is_summary_heading($plain)) {
+                    $capture_summary = true;
+                    $before_first_heading = false;
+                    continue;
+                }
+
+                if ($capture_summary) {
+                    break;
+                }
+
+                $before_first_heading = false;
+                continue;
+            }
+
+            if ($capture_summary || $before_first_heading) {
+                $paragraphs[] = $plain;
+                if (count($paragraphs) >= 2) {
+                    break;
+                }
+            }
+        }
+
+        if ($paragraphs === []) {
+            return self::plain_text($content);
+        }
+
+        return trim(implode(' ', $paragraphs));
+    }
+
+    private static function replace_dom_tag(DOMDocument $document, DOMElement $element, string $tag_name): DOMElement
+    {
+        if (strtolower($element->tagName) === strtolower($tag_name)) {
+            return $element;
+        }
+
+        $replacement = $document->createElement($tag_name);
+        if ($element->hasAttributes()) {
+            foreach ($element->attributes as $attribute) {
+                $replacement->setAttribute($attribute->nodeName, $attribute->nodeValue ?? '');
+            }
+        }
+
+        while ($element->firstChild) {
+            $replacement->appendChild($element->firstChild);
+        }
+
+        if ($element->parentNode) {
+            $element->parentNode->replaceChild($replacement, $element);
+        }
+
+        return $replacement;
+    }
+
     private static function recipe_section_items_from_content(string $content, string $section): array
     {
         $targets = array_map([self::class, 'normalized_heading'], self::recipe_section_targets($section));
         if (!$targets) {
             return [];
+        }
+
+        $line_items = self::recipe_section_items_from_lines($content, $section);
+        if ($line_items !== []) {
+            return $line_items;
         }
 
         if (!class_exists('DOMDocument')) {
@@ -1105,7 +1651,9 @@ final class Kepoli_Author_Tools
             }
 
             $tag = strtolower((string) $node->nodeName);
-            if (preg_match('/^h[1-6]$/', $tag)) {
+            $text = self::plain_text($document->saveHTML($node));
+            $heading_like = preg_match('/^h[1-6]$/', $tag) || ($tag === 'p' && (self::is_outline_heading($text) || in_array(self::normalized_heading($text), $targets, true)));
+            if ($heading_like) {
                 $heading = self::normalized_heading((string) $node->textContent);
                 $active = in_array($heading, $targets, true);
                 continue;
@@ -1121,7 +1669,7 @@ final class Kepoli_Author_Tools
                         continue;
                     }
 
-                    $text = self::plain_text($document->saveHTML($child));
+                    $text = self::clean_recipe_item_line(self::plain_text($document->saveHTML($child)), $section);
                     if ($text !== '') {
                         $items[] = $text;
                     }
@@ -1130,23 +1678,12 @@ final class Kepoli_Author_Tools
                 continue;
             }
 
-            $text = self::plain_text($document->saveHTML($node));
-            if ($text === '') {
-                continue;
-            }
-
-            if ($section === 'ingredients') {
-                $parts = preg_split('/\s*[,;\r\n]+\s*/', $text) ?: [];
-                foreach ($parts as $part) {
-                    $part = trim((string) $part);
-                    if ($part !== '') {
-                        $items[] = $part;
-                    }
+            foreach (self::recipe_html_lines($document->saveHTML($node)) as $line) {
+                $line = self::clean_recipe_item_line($line, $section);
+                if ($line !== '') {
+                    $items[] = $line;
                 }
-                continue;
             }
-
-            $items[] = $text;
         }
 
         return array_values(array_unique(array_filter(array_map('trim', $items))));
@@ -1323,14 +1860,14 @@ final class Kepoli_Author_Tools
         $post->post_name = $clean_slug;
     }
 
-    private static function maybe_normalize_content_structure(int $post_id, WP_Post $post): void
+    private static function maybe_normalize_content_structure(int $post_id, WP_Post $post, string $kind): void
     {
         $content = (string) $post->post_content;
         if ($content === '') {
             return;
         }
 
-        $normalized = self::normalize_content_structure($content);
+        $normalized = self::normalize_content_structure($content, $kind);
         if ($normalized === '' || $normalized === $content) {
             return;
         }
@@ -1434,7 +1971,7 @@ final class Kepoli_Author_Tools
         $source = self::remove_template_prompt_text(trim((string) $post->post_excerpt));
 
         if ($source === '') {
-            $source = self::remove_template_prompt_text(trim((string) $post->post_content));
+            $source = self::remove_template_prompt_text(self::extract_summary_source_from_content((string) $post->post_content));
         }
 
         if ($source === '') {
@@ -1449,7 +1986,7 @@ final class Kepoli_Author_Tools
         $source = self::remove_template_prompt_text(trim((string) $post->post_excerpt));
 
         if ($source === '') {
-            $source = self::remove_template_prompt_text(trim((string) $post->post_content));
+            $source = self::remove_template_prompt_text(self::extract_summary_source_from_content((string) $post->post_content));
         }
 
         if ($source === '') {
@@ -1905,8 +2442,15 @@ final class Kepoli_Author_Tools
             'soup' => ['soup'],
             'stew' => ['stew', 'comfort food'],
             'chicken' => ['chicken', 'dinner'],
+            'paste' => ['paste', 'cina rapida'],
             'pasta' => ['pasta', 'dinner'],
             'rice' => ['rice', 'side dish'],
+            'rosii' => ['rosii'],
+            'tomate' => ['rosii'],
+            'tomato' => ['tomato'],
+            'mozzarella' => ['mozzarella'],
+            'busuioc' => ['busuioc'],
+            'basil' => ['basil'],
             'papanasi' => ['papanasi', 'desert'],
             'placinta' => ['placinta', 'desert'],
             'pie' => ['pie', 'dessert'],
@@ -1978,6 +2522,7 @@ final class Kepoli_Author_Tools
         $seed_tags = $kind === 'article'
             ? ['ingrediente', 'organizare', 'tehnici']
             : ['retete romanesti'];
+        $locked_tags = array_fill_keys($seed_tags, true);
 
         foreach ($seed_tags as $tag) {
             $tag_scores[$tag] = (int) ($tag_scores[$tag] ?? 0) + 1;
@@ -2011,6 +2556,18 @@ final class Kepoli_Author_Tools
 
             foreach ($tags as $tag) {
                 $tag_scores[$tag] = (int) ($tag_scores[$tag] ?? 0) + 5;
+                $locked_tags[$tag] = true;
+            }
+        }
+
+        foreach (array_keys($tag_scores) as $tag) {
+            if (isset($locked_tags[$tag])) {
+                continue;
+            }
+
+            $tag_words = self::keywords_from_text($tag);
+            if ($tag_words === [] || array_intersect($tag_words, $source_words) === []) {
+                unset($tag_scores[$tag]);
             }
         }
 
@@ -2057,32 +2614,125 @@ final class Kepoli_Author_Tools
         return $slug;
     }
 
-    private static function normalize_content_structure(string $content): string
+    private static function normalize_content_structure(string $content, string $kind = 'article'): string
     {
+        $content = trim($content);
+        if ($content === '') {
+            return '';
+        }
+
+        if ($kind === 'recipe' && self::should_rebuild_simple_recipe_markup($content)) {
+            $rebuilt = self::rebuild_simple_recipe_markup($content);
+            if ($rebuilt !== '') {
+                return $rebuilt;
+            }
+        }
+
+        if (!class_exists('DOMDocument')) {
+            $heading_index = 0;
+
+            $content = (string) preg_replace_callback(
+                '/<h([1-6])([^>]*)>(.*?)<\/h\1>/is',
+                static function (array $matches) use (&$heading_index): string {
+                    $attributes = isset($matches[2]) ? (string) $matches[2] : '';
+                    $inner_html = isset($matches[3]) ? trim((string) $matches[3]) : '';
+                    $plain = trim(wp_strip_all_tags($inner_html));
+
+                    if ($plain === '') {
+                        return '';
+                    }
+
+                    $target_level = $heading_index === 0 ? 2 : (((int) ($matches[1] ?? 2)) <= 2 ? 2 : 3);
+                    $heading_index++;
+
+                    return sprintf('<h%1$d%2$s>%3$s</h%1$d>', $target_level, $attributes, $inner_html);
+                },
+                $content
+            );
+
+            $content = (string) preg_replace('/<p>\s*<\/p>/i', '', $content);
+            return trim($content);
+        }
+
+        $document = new DOMDocument('1.0', 'UTF-8');
+        $wrapped = '<div id="kepoli-normalize-root">' . $content . '</div>';
+
+        libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="utf-8" ?>' . $wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+
+        $root = $document->getElementById('kepoli-normalize-root');
+        if (!$root) {
+            return $content;
+        }
+
+        $nodes = [];
+        foreach ($root->childNodes as $child) {
+            $nodes[] = $child;
+        }
+
         $heading_index = 0;
+        $in_faq = false;
 
-        $content = (string) preg_replace_callback(
-            '/<h([1-6])([^>]*)>(.*?)<\/h\1>/is',
-            static function (array $matches) use (&$heading_index): string {
-                $attributes = isset($matches[2]) ? (string) $matches[2] : '';
-                $inner_html = isset($matches[3]) ? trim((string) $matches[3]) : '';
-                $plain = trim(wp_strip_all_tags($inner_html));
-
-                if ($plain === '') {
-                    return '';
+        foreach ($nodes as $node) {
+            if ($node->nodeType === XML_TEXT_NODE && trim((string) $node->textContent) === '') {
+                if ($node->parentNode) {
+                    $node->parentNode->removeChild($node);
                 }
+                continue;
+            }
 
-                $target_level = $heading_index === 0 ? 2 : (((int) ($matches[1] ?? 2)) <= 2 ? 2 : 3);
+            if ($node->nodeType !== XML_ELEMENT_NODE) {
+                continue;
+            }
+
+            /** @var DOMElement $node */
+            $tag = strtolower((string) $node->nodeName);
+            $has_comment_child = false;
+            foreach ($node->childNodes as $child) {
+                if ($child->nodeType === XML_COMMENT_NODE) {
+                    $has_comment_child = true;
+                    break;
+                }
+            }
+
+            $plain = trim(wp_strip_all_tags($document->saveHTML($node)));
+            if ($plain === '' && !$has_comment_child) {
+                if ($node->parentNode) {
+                    $node->parentNode->removeChild($node);
+                }
+                continue;
+            }
+
+            if (preg_match('/^h[1-6]$/', $tag)) {
+                $target_tag = $heading_index === 0 ? 'h2' : (((int) substr($tag, 1)) <= 2 ? 'h2' : 'h3');
+                $node = self::replace_dom_tag($document, $node, $target_tag);
                 $heading_index++;
+                $in_faq = self::is_faq_heading($plain);
+                continue;
+            }
 
-                return sprintf('<h%1$d%2$s>%3$s</h%1$d>', $target_level, $attributes, $inner_html);
-            },
-            $content
-        );
+            if ($tag === 'p' && self::is_outline_heading($plain)) {
+                $node = self::replace_dom_tag($document, $node, 'h2');
+                $heading_index++;
+                $in_faq = self::is_faq_heading($plain);
+                continue;
+            }
 
-        $content = (string) preg_replace('/<p>\s*<\/p>/i', '', $content);
+            if ($tag === 'p' && $in_faq && self::looks_like_faq_question($plain)) {
+                self::replace_dom_tag($document, $node, 'h3');
+            }
+        }
 
-        return trim($content);
+        $output = [];
+        foreach ($root->childNodes as $child) {
+            $html = trim((string) $document->saveHTML($child));
+            if ($html !== '') {
+                $output[] = $html;
+            }
+        }
+
+        return trim(implode("\n", $output));
     }
 
     private static function split_content_into_parts(string $content, int $parts): string

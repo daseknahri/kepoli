@@ -81,6 +81,10 @@
     return textarea ? String(textarea.value || '') : '';
   }
 
+  function contentHasMarkup(value) {
+    return /<[^>]+>/.test(String(value || ''));
+  }
+
   function currentFieldValue(selector) {
     const field = document.querySelector(selector);
     return field ? String(field.value || '').trim() : '';
@@ -425,14 +429,230 @@
     return title ? shortSentence(title, 65).replace(/\.\.\.$/, '') : '';
   }
 
+  function outlineHeadingTargets() {
+    return [
+      'Pe scurt',
+      'Detalii despre reteta',
+      'Ingrediente',
+      'Mod de preparare',
+      'Cum se serveste',
+      'Sfaturi pentru o reteta reusita',
+      'Sfaturi pentru reusita',
+      'Variatii ale retetei',
+      'Cum se pastreaza',
+      'Cum pastrezi',
+      'Intrebari frecvente',
+      'Concluzie',
+      'Ideea principala',
+      'Ce merita retinut',
+      'Cum aplici in bucatarie',
+      'Legaturi utile',
+      'What to know first',
+      'Recipe details',
+      'Ingredients',
+      'Method',
+      'How to serve it',
+      'Success notes',
+      'Variations',
+      'Storage',
+      'Frequently asked questions',
+      'Conclusion',
+      'Main idea',
+      'What to remember',
+      'How to use it in the kitchen',
+      'Useful links'
+    ];
+  }
+
+  function isOutlineHeading(text) {
+    const heading = normalizedHeading(text);
+    return heading !== '' && outlineHeadingTargets().some((candidate) => heading === normalizedHeading(candidate));
+  }
+
+  function isSummaryHeading(text) {
+    const heading = normalizedHeading(text);
+    return [
+      'Pe scurt',
+      'Ideea principala',
+      'What to know first',
+      'Main idea'
+    ].some((candidate) => heading === normalizedHeading(candidate));
+  }
+
+  function recipeHtmlLines(html) {
+    if (!html) {
+      return [];
+    }
+
+    const prepared = String(html)
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(?:p|div|li)>/gi, '\n');
+    const container = document.createElement('div');
+    container.innerHTML = prepared;
+
+    return String(container.textContent || container.innerText || '')
+      .replace(/\r/g, '')
+      .split('\n')
+      .map((line) => line.replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
+  }
+
+  function recipeSourceLines(value, preserveEmpty = false) {
+    let source = String(value || '');
+
+    if (contentHasMarkup(source)) {
+      source = source
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/(?:p|div|li|h[1-6]|ul|ol)>/gi, '\n');
+      const container = document.createElement('div');
+      container.innerHTML = source;
+      source = String(container.textContent || container.innerText || '');
+    }
+
+    const lines = source
+      .replace(/\r/g, '')
+      .split('\n')
+      .map((line) => line.replace(/\s+/g, ' ').trim());
+
+    return preserveEmpty ? lines : lines.filter(Boolean);
+  }
+
+  function cleanRecipeItemLine(text, sectionName) {
+    let value = String(text || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!value) {
+      return '';
+    }
+
+    value = value
+      .replace(/^(?:[-*\u2022]+)\s*/u, '')
+      .replace(/^\d+\s*[.)-]\s*/u, '');
+
+    if (sectionName === 'steps') {
+      value = value.replace(/^(?:pasul|step)\s*\d+\s*[:.)-]?\s*/iu, '');
+    }
+
+    return value.trim();
+  }
+
+  function parsedRecipeSections() {
+    const lines = recipeSourceLines(currentContentHtml(), true);
+    const sections = [];
+    let current = null;
+
+    lines.forEach((line) => {
+      const value = String(line || '').trim();
+      if (!value) {
+        if (current) {
+          current.lines.push('');
+        }
+        return;
+      }
+
+      if (isOutlineHeading(value)) {
+        current = { heading: value, key: normalizedHeading(value), lines: [] };
+        sections.push(current);
+        return;
+      }
+
+      if (!current) {
+        current = { heading: '', key: '_intro', lines: [] };
+        sections.push(current);
+      }
+
+      current.lines.push(value);
+    });
+
+    return sections;
+  }
+
+  function extractRecipeSectionFromLines(sectionName) {
+    const sectionHeadings = {
+      ingredients: ['ingrediente', 'ingredients', 'ingredient list'],
+      steps: ['mod de preparare', 'preparare', 'pasi', 'pasii', 'pași', 'method', 'instructions', 'directions', 'preparation', 'steps']
+    };
+
+    const targets = (sectionHeadings[sectionName] || []).map((heading) => normalizedHeading(heading));
+    const items = [];
+
+    parsedRecipeSections().forEach((section) => {
+      if (!targets.includes(section.key)) {
+        return;
+      }
+
+      section.lines.forEach((line) => {
+        const itemText = cleanRecipeItemLine(line, sectionName);
+        if (itemText) {
+          items.push(itemText);
+        }
+      });
+    });
+
+    return Array.from(new Set(items));
+  }
+
+  function summarySourceText() {
+    const html = currentContentHtml();
+    if (!html) {
+      return currentContentText() || currentTitle();
+    }
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    const paragraphs = [];
+    let captureSummary = false;
+    let beforeFirstHeading = true;
+
+    for (const node of Array.from(container.childNodes)) {
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        continue;
+      }
+
+      const element = node;
+      const tag = element.tagName.toLowerCase();
+      const text = cleanText(element.textContent || '');
+      if (!text) {
+        continue;
+      }
+
+      const headingLike = /^h[1-6]$/.test(tag) || (tag === 'p' && isOutlineHeading(text));
+      if (headingLike) {
+        if (isSummaryHeading(text)) {
+          captureSummary = true;
+          beforeFirstHeading = false;
+          continue;
+        }
+
+        if (captureSummary) {
+          break;
+        }
+
+        beforeFirstHeading = false;
+        continue;
+      }
+
+      if (captureSummary || beforeFirstHeading) {
+        paragraphs.push(text);
+        if (paragraphs.length >= 2) {
+          break;
+        }
+      }
+    }
+
+    return paragraphs.join(' ') || currentContentText() || currentTitle();
+  }
+
   function generatedExcerpt() {
-    const text = currentContentText();
+    const text = summarySourceText();
     const title = currentTitle();
     return shortSentence(text || title, 220);
   }
 
   function generatedMetaDescription() {
-    const text = currentContentText();
+    const text = summarySourceText();
     const title = currentTitle();
     return shortSentence(text || title, 155);
   }
@@ -499,6 +719,7 @@
     const seedTags = kind === 'article'
       ? (SITE_IS_ENGLISH ? ['ingredients', 'kitchen tips', 'cooking techniques'] : ['ingrediente', 'organizare', 'tehnici'])
       : (SITE_IS_ENGLISH ? ['recipes', 'home cooking'] : ['retete romanesti']);
+    const lockedTags = new Set(seedTags.map((tag) => tag.toLowerCase()));
 
     seedTags.forEach((tag) => tagScores.set(tag, (tagScores.get(tag) || 0) + 1));
 
@@ -526,8 +747,15 @@
       soup: ['soup'],
       stew: ['stew', 'comfort food'],
       chicken: ['chicken', 'dinner'],
+      paste: ['paste', 'cina rapida'],
       pasta: ['pasta', 'dinner'],
       rice: ['rice', 'side dish'],
+      rosii: ['rosii'],
+      tomate: ['rosii'],
+      tomato: ['tomato'],
+      mozzarella: ['mozzarella'],
+      busuioc: ['busuioc'],
+      basil: ['basil'],
       papanasi: ['papanasi', 'desert'],
       placinta: ['placinta', 'desert'],
       pie: ['pie', 'dessert'],
@@ -554,7 +782,19 @@
       if (titleText.includes(keyword)) {
         quickTagMap[keyword].forEach((tag) => {
           tagScores.set(tag, (tagScores.get(tag) || 0) + 5);
+          lockedTags.add(tag.toLowerCase());
         });
+      }
+    });
+
+    Array.from(tagScores.keys()).forEach((tag) => {
+      if (lockedTags.has(tag.toLowerCase())) {
+        return;
+      }
+
+      const normalizedTag = normalizeWords(tag);
+      if (!normalizedTag.length || !normalizedTag.some((word) => sourceWords.includes(word))) {
+        tagScores.delete(tag);
       }
     });
 
@@ -722,6 +962,11 @@
   }
 
   function extractRecipeSection(sectionName) {
+    const lineItems = extractRecipeSectionFromLines(sectionName);
+    if (lineItems.length) {
+      return lineItems;
+    }
+
     const html = currentContentHtml();
     if (!html) {
       return [];
@@ -732,7 +977,7 @@
 
     const sectionHeadings = {
       ingredients: ['ingrediente', 'ingredients', 'ingredient list'],
-      steps: ['mod de preparare', 'preparare', 'pasi', 'pași']
+      steps: ['mod de preparare', 'preparare', 'pasi', 'pasii', 'pași']
     };
 
     const targetHeadings = [...(sectionHeadings[sectionName] || [])];
@@ -741,6 +986,7 @@
     }
     const sectionItems = [];
     let active = false;
+    const outlineTargets = outlineHeadingTargets().map((candidate) => normalizedHeading(candidate));
 
     Array.from(container.childNodes).forEach((node) => {
       if (node.nodeType !== Node.ELEMENT_NODE) {
@@ -749,9 +995,11 @@
 
       const element = node;
       const tag = element.tagName.toLowerCase();
+      const text = cleanText(element.textContent || '');
+      const headingLike = /^h[1-6]$/.test(tag) || (tag === 'p' && (outlineTargets.includes(normalizedHeading(text)) || targetHeadings.some((candidate) => normalizedHeading(text) === normalizedHeading(candidate))));
 
-      if (/^h[1-6]$/.test(tag)) {
-        const heading = normalizedHeading(element.textContent || '');
+      if (headingLike) {
+        const heading = normalizedHeading(text);
         active = targetHeadings.some((candidate) => heading === normalizedHeading(candidate));
         return;
       }
@@ -760,34 +1008,22 @@
         return;
       }
 
-      if (/^h[1-6]$/.test(tag)) {
-        active = false;
-        return;
-      }
-
       if (tag === 'ul' || tag === 'ol') {
         Array.from(element.querySelectorAll('li')).forEach((item) => {
-          const text = cleanText(item.textContent || '');
-          if (text) {
-            sectionItems.push(text);
+          const itemText = cleanRecipeItemLine(cleanText(item.textContent || ''), sectionName);
+          if (itemText) {
+            sectionItems.push(itemText);
           }
         });
         return;
       }
 
-      const text = cleanText(element.textContent || '');
-      if (!text) {
-        return;
-      }
-
-      if (sectionName === 'ingredients') {
-        text.split(/\s*[,;\n]\s*/).map((part) => part.trim()).filter(Boolean).forEach((part) => sectionItems.push(part));
-        return;
-      }
-
-      if (sectionName === 'steps') {
-        sectionItems.push(text);
-      }
+      recipeHtmlLines(element.innerHTML || element.outerHTML).forEach((line) => {
+        const itemText = cleanRecipeItemLine(line, sectionName);
+        if (itemText) {
+          sectionItems.push(itemText);
+        }
+      });
     });
 
     return Array.from(new Set(sectionItems));
