@@ -272,7 +272,7 @@
       return 'unknown';
     }
 
-    let romanianScore = /[ăâîșşțţ]/.test(clean) ? 4 : 0;
+    let romanianScore = /[Ã„Æ’ÃƒÂ¢ÃƒÂ®Ãˆâ„¢Ã…Å¸Ãˆâ€ºÃ…Â£]/.test(clean) ? 4 : 0;
     let englishScore = 0;
     const romanianMarkers = [' si ', ' din ', ' pentru ', ' cu ', ' este ', ' sunt ', ' reteta ', ' articol ', ' gatit ', ' ciocolata ', ' desert '];
     const englishMarkers = [' the ', ' and ', ' with ', ' from ', ' history ', ' guide ', ' recipe ', ' article ', ' chocolate ', ' sweet '];
@@ -571,7 +571,7 @@
   function extractRecipeSectionFromLines(sectionName) {
     const sectionHeadings = {
       ingredients: ['ingrediente', 'ingredients', 'ingredient list'],
-      steps: ['mod de preparare', 'preparare', 'pasi', 'pasii', 'pași', 'method', 'instructions', 'directions', 'preparation', 'steps']
+      steps: ['mod de preparare', 'preparare', 'pasi', 'pasii', 'method', 'instructions', 'directions', 'preparation', 'steps']
     };
 
     const targets = (sectionHeadings[sectionName] || []).map((heading) => normalizedHeading(heading));
@@ -977,7 +977,7 @@
 
     const sectionHeadings = {
       ingredients: ['ingrediente', 'ingredients', 'ingredient list'],
-      steps: ['mod de preparare', 'preparare', 'pasi', 'pasii', 'pași']
+      steps: ['mod de preparare', 'preparare', 'pasi', 'pasii']
     };
 
     const targetHeadings = [...(sectionHeadings[sectionName] || [])];

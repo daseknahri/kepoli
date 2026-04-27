@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.20
+ * Version: 1.8.21
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.20';
+    private const VERSION = '1.8.21';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -1239,6 +1239,18 @@ final class Kepoli_Author_Tools
         return (bool) preg_match('/<[^>]+>/', $content);
     }
 
+    private static function strip_auto_generated_blocks(string $content): string
+    {
+        if ($content === '') {
+            return '';
+        }
+
+        $content = self::strip_auto_internal_links_block($content);
+        $content = self::strip_auto_faq_block($content);
+
+        return trim($content);
+    }
+
     private static function recipe_source_lines(string $content, bool $keep_empty = false): array
     {
         if (self::content_has_markup($content)) {
@@ -1458,6 +1470,7 @@ final class Kepoli_Author_Tools
 
     private static function should_rebuild_simple_recipe_markup(string $content): bool
     {
+        $content = self::strip_auto_generated_blocks($content);
         $plain = self::plain_text($content);
         if ($plain === '') {
             return false;
@@ -1483,6 +1496,7 @@ final class Kepoli_Author_Tools
 
     private static function rebuild_simple_recipe_markup(string $content): string
     {
+        $content = self::strip_auto_generated_blocks($content);
         $sections = self::parse_recipe_outline_sections($content);
         if ($sections === []) {
             return trim($content);
