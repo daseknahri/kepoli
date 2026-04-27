@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.17
+ * Version: 1.8.19
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -248,18 +248,6 @@ final class Kepoli_Author_Tools
                 <button type="button" class="button" data-kepoli-template="article"><?php echo esc_html(self::ui_text('Structura articol', 'Article structure')); ?></button>
             </div>
             <p class="kepoli-author-guide__note"><?php echo esc_html(self::ui_text('Pentru articole lungi, foloseste `Pauza`, `2 parti` sau `3 parti` din toolbar.', 'For long posts, use `Break`, `2 parts`, or `3 parts` in the toolbar.')); ?></p>
-            <details class="kepoli-author-guide__prompt-helper">
-                <summary><?php echo esc_html(self::ui_text('Prompt AI', 'AI prompt')); ?></summary>
-                <p class="kepoli-author-guide__note"><?php echo esc_html(self::ui_text('Promptul de mai jos cere exact structura pe care Kepoli o completeaza si o poate citi cel mai bine.', 'The prompt below asks for the exact structure that Kepoli can fill and read most reliably.')); ?></p>
-                <div class="kepoli-template-actions">
-                    <button type="button" class="button" data-kepoli-prompt-kind="recipe"><?php echo esc_html(self::ui_text('Prompt reteta', 'Recipe prompt')); ?></button>
-                    <button type="button" class="button" data-kepoli-prompt-kind="article"><?php echo esc_html(self::ui_text('Prompt articol', 'Article prompt')); ?></button>
-                    <button type="button" class="button button-primary" data-kepoli-copy-prompt><?php echo esc_html(self::ui_text('Copiaza promptul', 'Copy prompt')); ?></button>
-                </div>
-                <label class="kepoli-post-setup__prompt">
-                    <textarea rows="12" readonly data-kepoli-prompt-output></textarea>
-                </label>
-            </details>
         </div>
         <?php
     }
@@ -1042,7 +1030,7 @@ final class Kepoli_Author_Tools
         }
 
         if (!preg_match('/\d+/', $servings, $matches)) {
-            return true;
+            return false;
         }
 
         return isset($matches[0]) && (int) $matches[0] > 0;
@@ -1171,11 +1159,36 @@ final class Kepoli_Author_Tools
         }
 
         $quoted = implode('|', array_map(static fn (string $label): string => preg_quote($label, '/'), $labels));
-        if (!preg_match('/(?:' . $quoted . ')[^0-9]{0,24}(\d{1,3})\s*(?:min(?:ute)?|mins?)?/i', $text, $matches)) {
+        if (!preg_match('/(?:' . $quoted . ')[^0-9]{0,32}((?:\d{1,2}\s*(?:h|hr|hrs|ora|ore|hour|hours)(?:\s*\d{1,3}\s*(?:m|min|mins|minute|minutes))?)|(?:\d{1,3}\s*(?:m|min|mins|minute|minutes))|(?:\d{1,3}))/i', $text, $matches)) {
             return 0;
         }
 
-        return isset($matches[1]) ? max(0, (int) $matches[1]) : 0;
+        return isset($matches[1]) ? self::recipe_duration_value_to_minutes((string) $matches[1]) : 0;
+    }
+
+    private static function recipe_duration_value_to_minutes(string $value): int
+    {
+        if ($value === '') {
+            return 0;
+        }
+
+        $value = self::normalized_recipe_text($value);
+        $hours = 0;
+        $minutes = 0;
+
+        if (preg_match('/(\d{1,2})\s*(?:h|hr|hrs|ora|ore|hour|hours)\b/i', $value, $matches)) {
+            $hours = max(0, (int) ($matches[1] ?? 0));
+        }
+
+        if (preg_match('/(\d{1,3})\s*(?:m|min|mins|minute|minutes)\b/i', $value, $matches)) {
+            $minutes = max(0, (int) ($matches[1] ?? 0));
+        }
+
+        if ($hours === 0 && $minutes === 0 && preg_match('/(\d{1,3})/', $value, $matches)) {
+            return max(0, (int) ($matches[1] ?? 0));
+        }
+
+        return ($hours * 60) + $minutes;
     }
 
     private static function recipe_servings_from_text(string $text): string
@@ -1194,11 +1207,20 @@ final class Kepoli_Author_Tools
     private static function extract_recipe_data_from_content(string $content): array
     {
         $normalized = self::normalized_recipe_text($content);
+        $prep_minutes = self::recipe_minutes_from_text($normalized, ['timp de pregatire', 'timp pregatire', 'pregatire', 'preparare', 'prep time', 'preparation time', 'prep']);
+        $cook_minutes = self::recipe_minutes_from_text($normalized, ['timp de gatire', 'timp gatire', 'gatire', 'coacere', 'fierbere', 'cook time', 'cooking time', 'bake time', 'cook', 'cooking', 'bake', 'baking', 'boil', 'simmer']);
+        $total_minutes = self::recipe_minutes_from_text($normalized, ['timp total', 'total time', 'total']);
+
+        if ($prep_minutes > 0 && $cook_minutes === 0 && $total_minutes > $prep_minutes) {
+            $cook_minutes = max(0, $total_minutes - $prep_minutes);
+        } elseif ($cook_minutes > 0 && $prep_minutes === 0 && $total_minutes > $cook_minutes) {
+            $prep_minutes = max(0, $total_minutes - $cook_minutes);
+        }
 
         return [
             'servings' => self::recipe_servings_from_text($normalized),
-            'prep_minutes' => self::recipe_minutes_from_text($normalized, ['pregatire', 'preparare', 'prep']),
-            'cook_minutes' => self::recipe_minutes_from_text($normalized, ['gatire', 'coacere', 'fierbere', 'cook', 'cooking', 'bake', 'baking', 'boil', 'simmer']),
+            'prep_minutes' => $prep_minutes,
+            'cook_minutes' => $cook_minutes,
             'ingredients' => self::recipe_section_items_from_content($content, 'ingredients'),
             'steps' => self::recipe_section_items_from_content($content, 'steps'),
         ];

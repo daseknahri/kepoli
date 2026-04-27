@@ -32,38 +32,6 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
   color: #6b654f;
 }
 
-.kepoli-author-guide__prompt-helper {
-  margin-top: 14px;
-  border: 1px solid #e7d9c4;
-  background: #fffdf8;
-}
-
-.kepoli-author-guide__prompt-helper summary {
-  cursor: pointer;
-  padding: 10px 12px;
-  color: #252416;
-  font-weight: 700;
-}
-
-.kepoli-author-guide__prompt-helper[open] summary {
-  border-bottom: 1px solid #e7d9c4;
-}
-
-.kepoli-author-guide__prompt-helper .kepoli-template-actions,
-.kepoli-author-guide__prompt-helper .kepoli-author-guide__note,
-.kepoli-author-guide__prompt-helper .kepoli-post-setup__prompt {
-  margin-left: 12px;
-  margin-right: 12px;
-}
-
-.kepoli-author-guide__prompt-helper .kepoli-template-actions {
-  margin-bottom: 12px;
-}
-
-.kepoli-author-guide__prompt-helper .kepoli-post-setup__prompt {
-  margin-bottom: 12px;
-}
-
 .kepoli-publish-companion {
   color: #252416;
 }
@@ -347,16 +315,6 @@ body.post-type-post .mce-btn[aria-label*="trei"] {
 .kepoli-seo-fields p {
   margin-top: 0;
   color: #6b654f;
-}
-
-.kepoli-post-setup__prompt {
-  display: block;
-  margin: 0 0 14px;
-}
-
-.kepoli-post-setup__prompt textarea[readonly] {
-  min-height: 96px;
-  background: #f6f1e7;
 }
 
 .kepoli-editor-checklist {

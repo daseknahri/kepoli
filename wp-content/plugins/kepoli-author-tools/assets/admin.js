@@ -795,7 +795,7 @@
 
   function extractRecipeMetaFromText() {
     const text = currentContentText();
-    const servingsMatch = text.match(/(?:serves|servings|makes|yield|pentru|aproximativ|cam)?\s*(\d{1,2}\s*(?:servings?|people|persons|portii|porții|persoane))/i);
+    const servingsMatch = text.match(/(?:serves|servings|makes|yield|pentru|aproximativ|cam)?\s*(\d{1,2}\s*(?:servings?|people|persons|portii|persoane))/i);
     const prepMatch = text.match(/(?:prep|preparation|pregatire|preparare)\s*:?\s*(\d{1,3})\s*(?:min|mins|minutes|minute)/i);
     const cookMatch = text.match(/(?:cook|cooking|bake|baking|boil|simmer|gatire|coacere|fierbere)\s*:?\s*(\d{1,3})\s*(?:min|mins|minutes|minute)/i);
 
@@ -808,8 +808,54 @@
     };
   }
 
+  function extractRecipeMetaFromTextRobust() {
+    const text = currentContentText();
+    const durationToMinutes = (value) => {
+      if (!value) {
+        return 0;
+      }
+
+      const hoursMatch = value.match(/(\d{1,2})\s*(?:h|hr|hrs|ora|ore|hour|hours)\b/i);
+      const minutesMatch = value.match(/(\d{1,3})\s*(?:m|min|mins|minute|minutes)\b/i);
+      const hours = hoursMatch ? Number.parseInt(hoursMatch[1], 10) || 0 : 0;
+      const minutes = minutesMatch ? Number.parseInt(minutesMatch[1], 10) || 0 : 0;
+
+      if (!hours && !minutes) {
+        const plainNumber = value.match(/(\d{1,3})/);
+        return plainNumber ? Number.parseInt(plainNumber[1], 10) || 0 : 0;
+      }
+
+      return (hours * 60) + minutes;
+    };
+    const matchDuration = (labels) => {
+      const quoted = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+      const pattern = new RegExp(`(?:${quoted})[^0-9]{0,32}((?:\\d{1,2}\\s*(?:h|hr|hrs|ora|ore|hour|hours)(?:\\s*\\d{1,3}\\s*(?:m|min|mins|minute|minutes))?)|(?:\\d{1,3}\\s*(?:m|min|mins|minute|minutes))|(?:\\d{1,3}))`, 'i');
+      const match = text.match(pattern);
+      return match ? durationToMinutes(match[1]) : 0;
+    };
+    const basic = extractRecipeMetaFromText();
+    const servingsMatch = text.match(/(?:serves|servings|makes|yield|portii|portie|persoane|pentru|aproximativ|cam)[^0-9]{0,24}(\d{1,2}(?:\s*(?:servings?|people|persons|portii|persoane))?)/i);
+    let prepMinutes = matchDuration(['timp de pregatire', 'timp pregatire', 'pregatire', 'preparare', 'prep time', 'preparation time', 'prep']);
+    let cookMinutes = matchDuration(['timp de gatire', 'timp gatire', 'gatire', 'coacere', 'fierbere', 'cook time', 'cooking time', 'bake time', 'cook', 'cooking', 'bake', 'baking', 'boil', 'simmer']);
+    const totalMinutes = matchDuration(['timp total', 'total time', 'total']);
+
+    if (prepMinutes > 0 && cookMinutes === 0 && totalMinutes > prepMinutes) {
+      cookMinutes = totalMinutes - prepMinutes;
+    } else if (cookMinutes > 0 && prepMinutes === 0 && totalMinutes > cookMinutes) {
+      prepMinutes = totalMinutes - cookMinutes;
+    }
+
+    return {
+      servings: servingsMatch ? servingsMatch[1] : basic.servings,
+      prepMinutes: prepMinutes ? String(prepMinutes) : basic.prepMinutes,
+      cookMinutes: cookMinutes ? String(cookMinutes) : basic.cookMinutes,
+      ingredients: basic.ingredients,
+      steps: basic.steps
+    };
+  }
+
   function fillRecipeSchema(extractOnlyIfEmpty) {
-    const data = extractRecipeMetaFromText();
+    const data = extractRecipeMetaFromTextRobust();
     const setter = extractOnlyIfEmpty ? setFieldIfEmpty : setField;
 
     setter('input[name="kepoli_recipe_servings"]', data.servings);
@@ -1059,10 +1105,10 @@
       '<h2>Pe scurt</h2>',
       '<!-- Scrie 2-3 fraze despre rezultat, ocazie si textura. -->',
       '<h2>Detalii despre reteta</h2>',
-      '<p>Timp de pregatire: 0 minute</p>',
-      '<p>Timp de gatire: 0 minute</p>',
-      '<p>Portii: 0</p>',
-      '<p>Nivel: usor</p>',
+      '<p>Timp de pregatire: X minute</p>',
+      '<p>Timp de gatire: Y minute</p>',
+      '<p>Portii: Z</p>',
+      '<p>Nivel: usor/mediu</p>',
       '<h2>Ingrediente</h2>',
       '<!-- Adauga ingredientele intr-o lista, cate unul pe rand. -->',
       '<h2>Mod de preparare</h2>',
@@ -1084,10 +1130,10 @@
       '<h2>What to know first</h2>',
       '<!-- Write 2-3 sentences about the result, occasion, and texture. -->',
       '<h2>Recipe details</h2>',
-      '<p>Prep time: 0 minutes</p>',
-      '<p>Cook time: 0 minutes</p>',
-      '<p>Servings: 0</p>',
-      '<p>Difficulty: easy</p>',
+      '<p>Prep time: X minutes</p>',
+      '<p>Cook time: Y minutes</p>',
+      '<p>Servings: Z</p>',
+      '<p>Difficulty: easy/medium</p>',
       '<h2>Ingredients</h2>',
       '<!-- Add ingredients in a list, one per line. -->',
       '<h2>Method</h2>',
@@ -1134,199 +1180,11 @@
     return contentText(ro, en);
   }
 
-  function promptTopic() {
-    return currentTitle() || contentText('reteta de completat', 'recipe topic to fill in');
-  }
-
-  function recipePrompt() {
-    const ro = [
-      `Scrie o postare WordPress originala in limba romana pentru blogul ${SITE_NAME}.`,
-      `Tema: "${promptTopic()}".`,
-      '',
-      'Cerinte obligatorii:',
-      '- Ton clar, natural, util pentru gatit acasa.',
-      '- Foloseste diacritice.',
-      '- Nu inventa istorie, beneficii medicale sau afirmatii neverificabile.',
-      '- Nu repeta inutil ideile.',
-      '- Gandeste reteta ca articol culinar practic, nu ca reclama.',
-      '',
-      'Returneaza in aceasta ordine:',
-      '1. Titlu SEO scurt.',
-      '2. Excerpt in 1-2 fraze.',
-      '3. Meta description de maximum 155 caractere.',
-      '4. Categoria recomandata: alege exact una dintre Ciorbe si supe, Feluri principale, Patiserie si deserturi, Conserve si garnituri.',
-      '5. 3-5 taguri relevante.',
-      '6. Portii.',
-      '7. Timp de pregatire in minute.',
-      '8. Timp de gatire in minute.',
-      '9. Continutul final in HTML simplu pentru WordPress.',
-      '',
-      'Structura HTML trebuie sa respecte exact aceste sectiuni H2:',
-      '- <h2>Pe scurt</h2>',
-      '- <h2>Detalii despre reteta</h2>',
-      '- <h2>Ingrediente</h2>',
-      '- <h2>Mod de preparare</h2>',
-      '- <h2>Cum se serveste</h2>',
-      '- <h2>Sfaturi pentru o reteta reusita</h2>',
-      '- <h2>Variatii ale retetei</h2>',
-      '- <h2>Cum se pastreaza</h2>',
-      '- <h2>Intrebari frecvente</h2>',
-      '- <h2>Concluzie</h2>',
-      '',
-      'Reguli de format:',
-      '- In sectiunea "Detalii despre reteta", foloseste exact aceste linii: "Timp de pregatire: X minute", "Timp de gatire: Y minute", "Portii: Z", "Nivel: usor/mediu".',
-      '- In sectiunea "Ingrediente", foloseste un singur <ul> cu <li> pentru fiecare ingredient.',
-      '- In sectiunea "Mod de preparare", foloseste un singur <ol> cu pasi clari, numerotati.',
-      '- In FAQ, foloseste intrebari ca subtitluri <h3> urmate de raspunsuri scurte.',
-      '- Daca nu stii timpii exacti, estimeaza-i realist si scrie doar numere intregi.',
-      '- Nu adauga markdown. Doar text normal pentru punctele 1-8 si apoi HTML pentru punctul 9.',
-    ];
-
-    const en = [
-      `Write an original WordPress recipe post in English for ${SITE_NAME}.`,
-      `Topic: "${promptTopic()}".`,
-      '',
-      'Requirements:',
-      '- Clear, practical, natural tone for home cooking.',
-      '- No invented history, medical claims, or unverifiable statements.',
-      '- Avoid filler and repetition.',
-      '',
-      'Return in this order:',
-      '1. Short SEO title.',
-      '2. Excerpt in 1-2 sentences.',
-      '3. Meta description under 155 characters.',
-      '4. Recommended category: choose exactly one recipe category.',
-      '5. 3-5 relevant tags.',
-      '6. Servings.',
-      '7. Prep time in minutes.',
-      '8. Cook time in minutes.',
-      '9. Final HTML content for WordPress.',
-      '',
-      'Use these exact H2 sections:',
-      '- <h2>What to know first</h2>',
-      '- <h2>Recipe details</h2>',
-      '- <h2>Ingredients</h2>',
-      '- <h2>Method</h2>',
-      '- <h2>How to serve it</h2>',
-      '- <h2>Success notes</h2>',
-      '- <h2>Variations</h2>',
-      '- <h2>Storage</h2>',
-      '- <h2>Frequently asked questions</h2>',
-      '- <h2>Conclusion</h2>',
-      '',
-      'Formatting rules:',
-      '- In "Recipe details", use these exact lines: "Prep time: X minutes", "Cook time: Y minutes", "Servings: Z", "Difficulty: easy/medium".',
-      '- In "Ingredients", use one <ul> with one <li> per ingredient.',
-      '- In "Method", use one <ol> with numbered steps.',
-      '- In FAQ, use <h3> question headings followed by short answers.',
-      '- If exact timings are unknown, estimate realistic whole numbers.',
-      '- Do not use markdown.',
-    ];
-
-    return contentText(ro.join('\n'), en.join('\n'));
-  }
-
-  function articlePrompt() {
-    const ro = [
-      `Scrie un articol WordPress original in limba romana pentru blogul ${SITE_NAME}.`,
-      `Tema: "${promptTopic()}".`,
-      '',
-      'Cerinte obligatorii:',
-      '- Ton clar, util, bine organizat.',
-      '- Foloseste diacritice.',
-      '- Nu inventa istorie sau afirmatii neverificabile.',
-      '- Leaga ideile de gatit acasa, ingrediente, organizare sau servire.',
-      '',
-      'Returneaza in aceasta ordine:',
-      '1. Titlu SEO scurt.',
-      '2. Excerpt in 1-2 fraze.',
-      '3. Meta description de maximum 155 caractere.',
-      '4. Categoria recomandata: Articole.',
-      '5. 3-5 taguri relevante.',
-      '6. Continutul final in HTML simplu pentru WordPress.',
-      '',
-      'Structura HTML trebuie sa respecte exact aceste sectiuni H2:',
-      '- <h2>Ideea principala</h2>',
-      '- <h2>Ce merita retinut</h2>',
-      '- <h2>Cum aplici in bucatarie</h2>',
-      '- <h2>Intrebari frecvente</h2>',
-      '- <h2>Concluzie</h2>',
-      '',
-      'Reguli de format:',
-      '- Foloseste paragrafe scurte si clare.',
-      '- In FAQ, foloseste intrebari ca subtitluri <h3> urmate de raspunsuri scurte.',
-      '- Nu adauga markdown. Doar text normal pentru punctele 1-5 si apoi HTML pentru punctul 6.',
-    ];
-
-    const en = [
-      `Write an original WordPress article in English for ${SITE_NAME}.`,
-      `Topic: "${promptTopic()}".`,
-      '',
-      'Requirements:',
-      '- Clear, useful, well-structured tone.',
-      '- No invented history or unverifiable claims.',
-      '- Connect the ideas to home cooking, ingredients, planning, or serving.',
-      '',
-      'Return in this order:',
-      '1. Short SEO title.',
-      '2. Excerpt in 1-2 sentences.',
-      '3. Meta description under 155 characters.',
-      '4. Recommended category: Articles.',
-      '5. 3-5 relevant tags.',
-      '6. Final HTML content for WordPress.',
-      '',
-      'Use these exact H2 sections:',
-      '- <h2>Main idea</h2>',
-      '- <h2>What to remember</h2>',
-      '- <h2>How to use it in the kitchen</h2>',
-      '- <h2>Frequently asked questions</h2>',
-      '- <h2>Conclusion</h2>',
-      '',
-      'Formatting rules:',
-      '- Use short, clear paragraphs.',
-      '- In FAQ, use <h3> question headings followed by short answers.',
-      '- Do not use markdown.',
-    ];
-
-    return contentText(ro.join('\n'), en.join('\n'));
-  }
-
-  function promptForKind(kind) {
-    return kind === 'article' ? articlePrompt() : recipePrompt();
-  }
-
-  function updatePromptOutput(kind) {
-    const output = document.querySelector('[data-kepoli-prompt-output]');
-    if (!output) {
-      return '';
-    }
-
-    const value = promptForKind(kind || currentKind());
-    output.value = value;
-    return value;
-  }
-
-  async function copyPromptText(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-
-    const output = document.querySelector('[data-kepoli-prompt-output]');
-    if (!output) {
-      return false;
-    }
-
-    output.focus();
-    output.select();
-    return document.execCommand('copy');
-  }
-
   function setKind(kind) {
     const input = document.querySelector(`input[name="kepoli_post_kind"][value="${kind}"]`);
     if (input) {
-      input.checked = true;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
+        input.checked = true;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
     }
   }
 
@@ -1348,49 +1206,6 @@
         }
       });
     });
-  }
-
-  function bindPromptHelper() {
-    const output = document.querySelector('[data-kepoli-prompt-output]');
-    const copyButton = document.querySelector('[data-kepoli-copy-prompt]');
-    const titleField = document.getElementById('title');
-    const kindInputs = Array.from(document.querySelectorAll('input[name="kepoli_post_kind"]'));
-
-    if (!output) {
-      return;
-    }
-
-    const refresh = (kind) => updatePromptOutput(kind || currentKind());
-
-    document.querySelectorAll('[data-kepoli-prompt-kind]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const kind = button.getAttribute('data-kepoli-prompt-kind') || currentKind();
-        refresh(kind);
-      });
-    });
-
-    if (copyButton) {
-      copyButton.addEventListener('click', async () => {
-        const text = output.value || refresh(currentKind());
-        try {
-          const copied = await copyPromptText(text);
-          setStatus(copied ? 'Prompt copied. Paste it into your AI tool and bring the result back here.' : 'Copy failed. Select the prompt manually and copy it.');
-        } catch (error) {
-          setStatus('Copy failed. Select the prompt manually and copy it.');
-        }
-      });
-    }
-
-    if (titleField) {
-      titleField.addEventListener('input', () => refresh(currentKind()));
-      titleField.addEventListener('change', () => refresh(currentKind()));
-    }
-
-    kindInputs.forEach((input) => {
-      input.addEventListener('change', () => refresh(input.value));
-    });
-
-    refresh(currentKind());
   }
 
   function bindKindToggle() {
@@ -1730,7 +1545,6 @@
     addQuicktagsButtons();
     bindAutomationButtons();
     bindTemplateButtons();
-    bindPromptHelper();
     bindKindToggle();
     bindPassiveAutofill();
     bindChecklist();
