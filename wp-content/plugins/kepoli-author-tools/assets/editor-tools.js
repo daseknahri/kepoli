@@ -146,24 +146,24 @@
 
   tinymce.PluginManager.add('kepoli_author_tools', function (editor) {
     addToolbarButton(editor, 'kepoli_page_break', {
-      text: 'Pauza',
-      tooltip: 'Adauga pauza de pagina la cursor',
+      text: 'Break',
+      tooltip: 'Add a page break at the cursor',
       action: function () {
         insertPageBreak(editor);
       }
     });
 
     addToolbarButton(editor, 'kepoli_split_two', {
-      text: '2 parti',
-      tooltip: 'Imparte continutul in doua pagini',
+      text: '2 parts',
+      tooltip: 'Split content into two pages',
       action: function () {
         splitEditorContent(editor, 2);
       }
     });
 
     addToolbarButton(editor, 'kepoli_split_three', {
-      text: '3 parti',
-      tooltip: 'Imparte continutul in trei pagini',
+      text: '3 parts',
+      tooltip: 'Split content into three pages',
       action: function () {
         splitEditorContent(editor, 3);
       }
@@ -172,8 +172,8 @@
     return {
       getMetadata: function () {
         return {
-          name: 'Kepoli Author Tools',
-          url: 'https://kepoli.com'
+          name: 'Author Tools',
+          url: ''
         };
       }
     };
