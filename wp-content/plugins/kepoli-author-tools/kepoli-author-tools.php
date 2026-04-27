@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.21
+ * Version: 1.8.22
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.21';
+    private const VERSION = '1.8.22';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -1793,6 +1793,11 @@ final class Kepoli_Author_Tools
             $is_auto = self::plain_text($value) !== '' && self::plain_text($value) === self::plain_text($generated);
         }
 
+        if (self::summary_starts_with_outline_heading($value)) {
+            $value = $generated;
+            $is_auto = true;
+        }
+
         $value = self::limit_text(self::plain_text($value), 180);
         if (self::word_count($value) < 8) {
             $value = $generated;
@@ -1823,6 +1828,11 @@ final class Kepoli_Author_Tools
         } else {
             $value = $posted !== '' ? $posted : $existing;
             $is_auto = self::plain_text($value) !== '' && self::plain_text($value) === self::plain_text($generated);
+        }
+
+        if (self::summary_starts_with_outline_heading($value)) {
+            $value = $generated;
+            $is_auto = true;
         }
 
         $value = self::limit_text(self::plain_text($value), 260);
@@ -2049,6 +2059,23 @@ final class Kepoli_Author_Tools
         return self::plain_text($posted_value) === self::plain_text($existing_value);
     }
 
+    private static function summary_starts_with_outline_heading(string $text): bool
+    {
+        $normalized_text = self::normalized_heading($text);
+        if ($normalized_text === '') {
+            return false;
+        }
+
+        foreach (self::outline_heading_targets() as $heading) {
+            $normalized_heading = self::normalized_heading($heading);
+            if ($normalized_heading !== '' && str_starts_with($normalized_text, $normalized_heading) && $normalized_text !== $normalized_heading) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static function field_was_posted(string $field): bool
     {
         return is_array($_POST) && array_key_exists($field, $_POST);
@@ -2211,6 +2238,31 @@ final class Kepoli_Author_Tools
         return $normalized;
     }
 
+    private static function tags_look_stale_for_post(array $tags, WP_Post $post): bool
+    {
+        $tags = self::normalized_tags($tags);
+        if ($tags === [] || count($tags) > 5) {
+            return false;
+        }
+
+        $source_words = self::keywords_from_text(implode(' ', [
+            $post->post_title,
+            $post->post_excerpt,
+            $post->post_content,
+        ]));
+        if ($source_words === []) {
+            return false;
+        }
+
+        foreach ($tags as $tag) {
+            if (array_intersect(self::keywords_from_text($tag), $source_words) !== []) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static function is_article_category_term(WP_Term $category): bool
     {
         $label = self::normalized_recipe_text(implode(' ', [
@@ -2357,8 +2409,9 @@ final class Kepoli_Author_Tools
         $auto_tags = get_post_meta($post_id, '_kepoli_auto_tags', true);
         $auto_tags = is_array($auto_tags) ? $auto_tags : [];
         $has_manual_tags = $current_tags !== [] && self::normalized_tags($current_tags) !== self::normalized_tags($auto_tags);
+        $has_stale_tags = $has_manual_tags && self::tags_look_stale_for_post($current_tags, $post);
 
-        if ($has_manual_tags) {
+        if ($has_manual_tags && !$has_stale_tags) {
             return;
         }
 
@@ -2372,10 +2425,20 @@ final class Kepoli_Author_Tools
     {
         return [
             'ciorbe-si-supe' => ['ciorba', 'bors', 'supa', 'supa crema', 'zeama', 'galuste', 'radauteana', 'soup', 'soups', 'stew', 'broth', 'cream soup'],
-            'feluri-principale' => ['sarmale', 'tochitura', 'tocanita', 'friptura', 'mamaliga', 'ostropel', 'snitel', 'varza', 'pilaf', 'chiftele', 'dinner', 'lunch', 'main dish', 'family meal'],
+            'feluri-principale' => ['sarmale', 'tochitura', 'tocanita', 'friptura', 'mamaliga', 'ostropel', 'snitel', 'varza', 'pilaf', 'chiftele', 'paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'tagliatelle', 'lasagna', 'risotto', 'dinner', 'lunch', 'main dish', 'family meal'],
             'patiserie-si-deserturi' => ['desert', 'prajitura', 'cozonac', 'placinta', 'clatite', 'papanasi', 'chec', 'cornulete', 'aluat', 'foi', 'dessert', 'cake', 'chocolate', 'sweet', 'cookies', 'pie', 'pastry', 'baking'],
             'conserve-si-garnituri' => ['zacusca', 'muraturi', 'salata', 'garnitura', 'borcan', 'compot', 'bulion', 'gem', 'dulceata', 'piure', 'side dish', 'salad', 'preserves', 'pickle', 'jam', 'sauce', 'vegetables'],
             'articole' => ['ghid', 'cum', 'calendar', 'meniuri', 'tehnici', 'organizare', 'ingrediente', 'bucatarie', 'pastrare', 'explica', 'guide', 'how', 'tips', 'history', 'explained', 'storage', 'pantry', 'ingredients', 'technique'],
+        ];
+    }
+
+    private static function title_category_keyword_map(): array
+    {
+        return [
+            'ciorbe-si-supe' => ['ciorba', 'bors', 'supa', 'supa crema', 'zeama'],
+            'feluri-principale' => ['paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'lasagna', 'risotto', 'pilaf', 'tocanita', 'friptura', 'snitel'],
+            'patiserie-si-deserturi' => ['desert', 'prajitura', 'cozonac', 'placinta', 'clatite', 'papanasi', 'chec', 'tort', 'cookies', 'cake', 'pie'],
+            'conserve-si-garnituri' => ['zacusca', 'muraturi', 'garnitura', 'salata', 'compot', 'gem', 'dulceata', 'bulion', 'piure'],
         ];
     }
 
@@ -2405,8 +2468,10 @@ final class Kepoli_Author_Tools
             $post->post_excerpt,
             $post->post_content,
         ]));
+        $title_text = self::normalized_recipe_text((string) $post->post_title);
         $source_words = self::keywords_from_text($source_text);
         $keyword_map = self::category_keyword_map();
+        $title_keyword_map = self::title_category_keyword_map();
         $best_id = 0;
         $best_score = PHP_INT_MIN;
 
@@ -2436,6 +2501,12 @@ final class Kepoli_Author_Tools
             foreach ($keyword_map[(string) $category->slug] ?? [] as $keyword) {
                 if (self::text_contains_keyword($source_text, $keyword)) {
                     $score += 6;
+                }
+            }
+
+            foreach ($title_keyword_map[(string) $category->slug] ?? [] as $keyword) {
+                if (self::text_contains_keyword($title_text, $keyword)) {
+                    $score += 12;
                 }
             }
 

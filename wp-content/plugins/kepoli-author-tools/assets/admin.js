@@ -703,6 +703,18 @@
     });
   }
 
+  function tagsLookStale(tags, sourceWords) {
+    const current = dedupeTags(tags);
+    if (!current.length || current.length > 5 || !sourceWords.length) {
+      return false;
+    }
+
+    return current.every((tag) => {
+      const words = normalizeWords(tag);
+      return words.length > 0 && !words.some((word) => sourceWords.includes(word));
+    });
+  }
+
   function suggestedTags() {
     const posts = (window.kepoliAuthorTools && window.kepoliAuthorTools.relatedPosts) || [];
     const title = currentTitle();
@@ -809,12 +821,13 @@
   function applySuggestedTags(force) {
     const tags = suggestedTags();
     const field = tagField();
+    const sourceWords = normalizeWords(`${currentTitle()} ${currentContentText()}`);
 
     if (!field || !tags.length) {
       return tags;
     }
 
-    if (!force && currentTags().length > 0) {
+    if (!force && currentTags().length > 0 && !tagsLookStale(currentTags(), sourceWords)) {
       return tags;
     }
 
@@ -852,10 +865,16 @@
     const categoryScores = new Map();
     const slugKeywords = {
       'ciorbe-si-supe': ['ciorba', 'bors', 'supa', 'supa crema', 'zeama', 'galuste', 'galuste', 'radauteana'],
-      'feluri-principale': ['sarmale', 'tochitura', 'tocanita', 'friptura', 'mamaliga', 'ostropel', 'snitel', 'varza', 'pilaf', 'chiftele'],
+      'feluri-principale': ['sarmale', 'tochitura', 'tocanita', 'friptura', 'mamaliga', 'ostropel', 'snitel', 'varza', 'pilaf', 'chiftele', 'paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'lasagna', 'risotto'],
       'patiserie-si-deserturi': ['desert', 'prajitura', 'cozonac', 'placinta', 'clatite', 'papanasi', 'chec', 'cornulete', 'aluat', 'foi'],
       'conserve-si-garnituri': ['zacusca', 'muraturi', 'salata', 'garnitura', 'borcan', 'compot', 'bulion', 'gem', 'dulceata', 'piure'],
       'articole': ['ghid', 'cum', 'calendar', 'meniuri', 'tehnici', 'organizare', 'ingrediente', 'bucatarie', 'pastrare', 'explica']
+    };
+    const titleKeywordMap = {
+      'ciorbe-si-supe': ['ciorba', 'bors', 'supa', 'supa crema', 'zeama'],
+      'feluri-principale': ['paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'lasagna', 'risotto', 'pilaf', 'tocanita', 'friptura', 'snitel'],
+      'patiserie-si-deserturi': ['desert', 'prajitura', 'cozonac', 'placinta', 'clatite', 'papanasi', 'chec', 'tort', 'cookies', 'cake', 'pie'],
+      'conserve-si-garnituri': ['zacusca', 'muraturi', 'garnitura', 'salata', 'compot', 'gem', 'dulceata', 'bulion', 'piure']
     };
     const keywordGroups = [
       {
@@ -906,6 +925,13 @@
 
         if (normalizeWords(text).join(' ').includes(normalizedKeyword)) {
           score += 6;
+        }
+      });
+
+      (titleKeywordMap[category.slug] || []).forEach((keyword) => {
+        const normalizedKeyword = normalizeWords(keyword).join(' ');
+        if (normalizedKeyword && normalizeWords(currentTitle()).join(' ').includes(normalizedKeyword)) {
+          score += 12;
         }
       });
 
