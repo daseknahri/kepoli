@@ -592,8 +592,8 @@ function kepoli_current_seo_title(): string
         $title = $seo_title !== '' ? $seo_title : single_post_title('', false);
     } elseif (is_front_page()) {
         $title = kepoli_is_english()
-            ? $site_name . ' - Recipes and practical food guides'
-            : $site_name . ' - Retete pentru acasa si articole culinare';
+            ? 'Recipes and practical food guides | ' . $site_name
+            : 'Retete romanesti pentru acasa | ' . $site_name;
     } elseif (($recipes_page = kepoli_recipes_page()) && is_page($recipes_page->ID)) {
         $title = kepoli_is_english()
             ? 'Recipes for home cooks | ' . $site_name
@@ -1543,7 +1543,17 @@ function kepoli_post_featured_image_alt(int $post_id = 0): string
         }
     }
 
-    return trim((string) get_post_meta($post_id, '_kepoli_image_plan_alt', true));
+    $planned_alt = trim((string) get_post_meta($post_id, '_kepoli_image_plan_alt', true));
+    if ($planned_alt !== '') {
+        return $planned_alt;
+    }
+
+    $post_title = trim(wp_strip_all_tags(get_the_title($post_id)));
+    if ($post_title !== '') {
+        return sprintf(kepoli_ui_text('Imagine pentru %s', 'Image for %s'), $post_title);
+    }
+
+    return kepoli_site_name();
 }
 
 function kepoli_post_featured_image_caption(int $post_id = 0): string
@@ -1568,6 +1578,11 @@ function kepoli_post_featured_image_markup(int $post_id = 0, string $size = 'lar
         return '';
     }
 
+    $fallback_alt = kepoli_post_featured_image_alt($post_id);
+    if ($fallback_alt !== '' && (!array_key_exists('alt', $attr) || trim((string) $attr['alt']) === '')) {
+        $attr['alt'] = $fallback_alt;
+    }
+
     $markup = wp_get_attachment_image($image_id, $size, false, $attr);
     if (is_string($markup) && $markup !== '') {
         return $markup;
@@ -1578,7 +1593,7 @@ function kepoli_post_featured_image_markup(int $post_id = 0, string $size = 'lar
         return '';
     }
 
-    $fallback_alt = isset($attr['alt']) ? (string) $attr['alt'] : kepoli_post_featured_image_alt($post_id);
+    $fallback_alt = isset($attr['alt']) ? (string) $attr['alt'] : $fallback_alt;
     unset($attr['alt'], $attr['src']);
     $attributes = '';
     foreach ($attr as $name => $value) {

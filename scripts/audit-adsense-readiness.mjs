@@ -487,6 +487,8 @@ if (themeAssetStats.articleMinJs >= themeAssetStats.articleJs) {
 
 requireThemeIncludes('functions', 'responsive lazy post media images', [
   /function kepoli_post_media_image_attrs/,
+  /function kepoli_post_featured_image_alt\(int \$post_id = 0\): string[\s\S]*_kepoli_image_plan_alt[\s\S]*get_the_title\(\$post_id\)/,
+  /\$fallback_alt !== '' && \(!array_key_exists\('alt', \$attr\) \|\| trim\(\(string\) \$attr\['alt'\]\) === ''\)/,
   /wp_get_attachment_image\(\$image_id,\s*\$size,\s*false,\s*\$attr\)/,
   /'loading'\s*=>\s*\$priority\s*\?\s*'eager'\s*:\s*'lazy'|'loading'\s*=>\s*'lazy'/,
   /'decoding'\s*=>\s*'async'/,
@@ -495,6 +497,7 @@ requireThemeIncludes('functions', 'responsive lazy post media images', [
 
 requireThemeIncludes('front-page', 'priority homepage hero image', [
   /class="home-hero__image"/,
+  /alt="<\?php echo esc_attr\(\$hero_alt\); \?>"/,
   /fetchpriority="high"/,
   /loading="eager"/,
 ]);

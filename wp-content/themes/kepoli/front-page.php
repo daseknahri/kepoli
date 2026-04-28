@@ -17,6 +17,7 @@ $featured_article = kepoli_latest_post_by_kind('article');
 $recently_touched_articles = kepoli_recently_touched_posts_by_kind('article', 3, $featured_article ? [$featured_article->ID] : []);
 $writer_name = kepoli_writer_name();
 $site_name = kepoli_site_name();
+$hero_alt = sprintf(kepoli_ui_text('Masa de acasa cu retete si ghiduri culinare de la %s', 'Home cooking table with recipes and kitchen guides from %s'), $site_name);
 $front_page_content = '';
 $front_page_id = get_queried_object_id();
 if ($front_page_id) {
@@ -40,7 +41,7 @@ $article_list = new WP_Query([
 ]);
 ?>
 <section class="home-hero">
-    <img class="home-hero__image" src="<?php echo esc_url($hero_image); ?>" alt=""<?php echo kepoli_asset_dimension_attributes('hero-homepage'); ?><?php echo $hero_srcset !== '' ? ' srcset="' . esc_attr($hero_srcset) . '" sizes="' . esc_attr($hero_sizes) . '"' : ''; ?> fetchpriority="high" loading="eager" decoding="async">
+    <img class="home-hero__image" src="<?php echo esc_url($hero_image); ?>" alt="<?php echo esc_attr($hero_alt); ?>"<?php echo kepoli_asset_dimension_attributes('hero-homepage'); ?><?php echo $hero_srcset !== '' ? ' srcset="' . esc_attr($hero_srcset) . '" sizes="' . esc_attr($hero_sizes) . '"' : ''; ?> fetchpriority="high" loading="eager" decoding="async">
     <div class="home-hero__inner">
         <p class="eyebrow"><?php echo esc_html($site_name); ?></p>
         <h1><?php echo esc_html((string) kepoli_profile_value(['brand', 'tagline'], kepoli_ui_text('Retete pentru acasa si ghiduri practice.', 'Recipes and guides for better home cooking.'))); ?></h1>
