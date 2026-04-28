@@ -288,6 +288,7 @@ requireThemeIncludes('functions', 'frontend output cleanup', [
   /function kepoli_trim_wordpress_frontend_output\(\): void/,
   /remove_action\('wp_head',\s*'print_emoji_detection_script'/,
   /remove_action\('wp_head',\s*'wp_generator'/,
+  /remove_action\('wp_head',\s*'rel_canonical'\)/,
   /remove_action\('wp_head',\s*'wp_oembed_add_discovery_links'/,
   /function kepoli_dequeue_unused_frontend_assets\(\): void/,
   /wp_dequeue_style\('wp-block-library'\)/,
