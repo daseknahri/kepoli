@@ -1,14 +1,18 @@
+<?php
+$writer_name = kepoli_writer_name();
+$site_name = kepoli_site_name();
+?>
 <section class="author-box">
-    <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'jpg')); ?>" alt="<?php esc_attr_e('Isalune Merovik', 'kepoli'); ?>"<?php echo kepoli_asset_dimension_attributes('writer-photo'); ?> loading="lazy" decoding="async">
+    <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'jpg')); ?>" alt="<?php echo esc_attr($writer_name); ?>"<?php echo kepoli_asset_dimension_attributes('writer-photo'); ?> loading="lazy" decoding="async">
     <div>
-        <h2><?php esc_html_e('Isalune Merovik', 'kepoli'); ?></h2>
-        <p><?php esc_html_e('Retete romanesti scrise pentru gatit acasa, cu pasi clari si ingrediente accesibile.', 'kepoli'); ?></p>
-        <p><a href="<?php echo esc_url(kepoli_author_page_url()); ?>"><?php esc_html_e('Despre autoare', 'kepoli'); ?></a></p>
+        <h2><?php echo esc_html($writer_name); ?></h2>
+        <p><?php echo esc_html(kepoli_writer_description()); ?></p>
+        <p><a href="<?php echo esc_url(kepoli_author_page_url()); ?>"><?php echo esc_html(kepoli_ui_text('Despre autoare', 'About the author')); ?></a></p>
     </div>
 </section>
 
 <section class="sidebar-section">
-    <h3><?php esc_html_e('Recente', 'kepoli'); ?></h3>
+    <h3><?php echo esc_html(kepoli_ui_text('Recente', 'Recent')); ?></h3>
     <ul class="more-list more-list--posts">
         <?php
         $latest = new WP_Query([
@@ -19,7 +23,7 @@
         while ($latest->have_posts()) :
             $latest->the_post();
             $category = kepoli_primary_category();
-            $show_category = $category && $category->slug !== 'articole';
+            $show_category = $category && !kepoli_is_editorial_category_slug($category->slug);
             ?>
             <li>
                 <a class="more-list__post-link" href="<?php the_permalink(); ?>">
@@ -41,7 +45,7 @@
 </section>
 
 <section class="sidebar-section">
-    <h3><?php esc_html_e('Categorii', 'kepoli'); ?></h3>
+    <h3><?php echo esc_html(kepoli_ui_text('Categorii', 'Categories')); ?></h3>
     <ul class="more-list more-list--stacked">
         <?php foreach (array_slice(get_categories(['hide_empty' => true, 'exclude' => [1], 'orderby' => 'count', 'order' => 'DESC']), 0, 6) as $category) : ?>
             <li>
@@ -55,13 +59,13 @@
 </section>
 
 <section class="sidebar-section">
-    <h3><?php esc_html_e('Kepoli', 'kepoli'); ?></h3>
+    <h3><?php echo esc_html($site_name); ?></h3>
     <ul class="more-list more-list--stacked">
-        <li><a href="<?php echo esc_url(home_url('/despre-kepoli/')); ?>"><?php esc_html_e('Despre Kepoli', 'kepoli'); ?></a></li>
-        <li><a href="<?php echo esc_url(home_url('/despre-autor/')); ?>"><?php esc_html_e('Despre autor', 'kepoli'); ?></a></li>
-        <li><a href="<?php echo esc_url(home_url('/contact/')); ?>"><?php esc_html_e('Contact', 'kepoli'); ?></a></li>
-        <li><a href="<?php echo esc_url(home_url('/politica-de-confidentialitate/')); ?>"><?php esc_html_e('Confidentialitate', 'kepoli'); ?></a></li>
-        <li><a href="<?php echo esc_url(home_url('/publicitate-si-consimtamant/')); ?>"><?php esc_html_e('Publicitate si consimtamant', 'kepoli'); ?></a></li>
+        <li><a href="<?php echo esc_url(kepoli_about_page_url()); ?>"><?php echo esc_html(sprintf(kepoli_ui_text('Despre %s', 'About %s'), $site_name)); ?></a></li>
+        <li><a href="<?php echo esc_url(kepoli_author_page_url()); ?>"><?php echo esc_html(kepoli_ui_text('Despre autor', 'About the author')); ?></a></li>
+        <li><a href="<?php echo esc_url(kepoli_contact_page_url()); ?>"><?php echo esc_html(kepoli_ui_text('Contact', 'Contact')); ?></a></li>
+        <li><a href="<?php echo esc_url(kepoli_privacy_policy_url()); ?>"><?php echo esc_html(kepoli_ui_text('Confidentialitate', 'Privacy')); ?></a></li>
+        <li><a href="<?php echo esc_url(kepoli_advertising_page_url()); ?>"><?php echo esc_html(kepoli_ui_text('Publicitate si consimtamant', 'Advertising and consent')); ?></a></li>
     </ul>
 </section>
 

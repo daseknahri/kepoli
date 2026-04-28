@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Kepoli Newsletter Signups
+ * Plugin Name: Food Blog Newsletter Signups
  * Description: Stores lightweight newsletter signups inside WordPress admin.
  */
 
@@ -11,6 +11,29 @@ if (!defined('ABSPATH')) {
 function kepoli_newsletter_post_type(): string
 {
     return 'kepoli_newsletter';
+}
+
+function kepoli_newsletter_is_english(): bool
+{
+    $profile = get_option('kepoli_site_profile');
+    $locale = is_array($profile) ? (string) ($profile['locales']['public'] ?? '') : '';
+    if ($locale === '') {
+        $locale = (string) get_option('WPLANG');
+    }
+
+    return str_starts_with(strtolower($locale), 'en');
+}
+
+function kepoli_newsletter_text(string $ro, string $en): string
+{
+    return kepoli_newsletter_is_english() ? $en : $ro;
+}
+
+function kepoli_newsletter_site_name(): string
+{
+    $profile = get_option('kepoli_site_profile');
+    $name = is_array($profile) ? trim((string) ($profile['brand']['name'] ?? '')) : '';
+    return $name !== '' ? $name : (get_bloginfo('name') ?: 'Food Blog');
 }
 
 function kepoli_newsletter_normalize_email(string $email): string
@@ -42,7 +65,7 @@ function kepoli_newsletter_redirect(string $redirect_to, string $status): void
 {
     $redirect_to = wp_validate_redirect($redirect_to, home_url('/'));
     $redirect_to = remove_query_arg('newsletter', $redirect_to);
-    wp_safe_redirect(add_query_arg('newsletter', $status, $redirect_to), 303, 'Kepoli');
+    wp_safe_redirect(add_query_arg('newsletter', $status, $redirect_to), 303, kepoli_newsletter_site_name());
     exit;
 }
 
@@ -94,13 +117,13 @@ function kepoli_newsletter_clear_attempts(): void
 add_action('init', static function (): void {
     register_post_type(kepoli_newsletter_post_type(), [
         'labels' => [
-            'name' => __('Abonari newsletter', 'kepoli'),
-            'singular_name' => __('Abonare newsletter', 'kepoli'),
+            'name' => kepoli_newsletter_text('Abonari newsletter', 'Newsletter signups'),
+            'singular_name' => kepoli_newsletter_text('Abonare newsletter', 'Newsletter signup'),
             'menu_name' => __('Newsletter', 'kepoli'),
-            'name_admin_bar' => __('Abonare newsletter', 'kepoli'),
-            'all_items' => __('Toate abonarile', 'kepoli'),
-            'search_items' => __('Cauta emailuri', 'kepoli'),
-            'not_found' => __('Nu exista abonari inca.', 'kepoli'),
+            'name_admin_bar' => kepoli_newsletter_text('Abonare newsletter', 'Newsletter signup'),
+            'all_items' => kepoli_newsletter_text('Toate abonarile', 'All signups'),
+            'search_items' => kepoli_newsletter_text('Cauta emailuri', 'Search emails'),
+            'not_found' => kepoli_newsletter_text('Nu exista abonari inca.', 'No signups yet.'),
         ],
         'public' => false,
         'show_ui' => true,
@@ -132,7 +155,7 @@ add_filter('use_block_editor_for_post_type', static function (bool $use_block_ed
 
 add_filter('enter_title_here', static function (string $title, WP_Post $post): string {
     if ($post->post_type === kepoli_newsletter_post_type()) {
-        return __('Adresa de email', 'kepoli');
+        return kepoli_newsletter_text('Adresa de email', 'Email address');
     }
 
     return $title;
@@ -146,8 +169,8 @@ add_filter('manage_edit_kepoli_newsletter_columns', static function (array $colu
     return [
         'cb' => $columns['cb'] ?? '',
         'title' => __('Email', 'kepoli'),
-        'newsletter_source' => __('Sursa', 'kepoli'),
-        'date' => __('Data', 'kepoli'),
+        'newsletter_source' => kepoli_newsletter_text('Sursa', 'Source'),
+        'date' => kepoli_newsletter_text('Data', 'Date'),
     ];
 });
 
@@ -160,7 +183,7 @@ add_action('manage_kepoli_newsletter_posts_custom_column', static function (stri
     $source_url = trim((string) get_post_meta($post_id, '_kepoli_newsletter_source_url', true));
 
     if ($source_label === '') {
-        $source_label = __('Site Kepoli', 'kepoli');
+        $source_label = sprintf(kepoli_newsletter_text('Site %s', '%s site'), kepoli_newsletter_site_name());
     }
 
     if ($source_url !== '') {
@@ -221,7 +244,7 @@ add_action('add_meta_boxes', static function (): void {
 
     add_meta_box(
         'kepoli-newsletter-details',
-        __('Detalii abonare', 'kepoli'),
+        kepoli_newsletter_text('Detalii abonare', 'Signup details'),
         static function (WP_Post $post): void {
             $email = trim((string) get_post_meta($post->ID, '_kepoli_newsletter_email', true));
             $source_label = trim((string) get_post_meta($post->ID, '_kepoli_newsletter_source_label', true));
@@ -229,7 +252,7 @@ add_action('add_meta_boxes', static function (): void {
             $subscribed_at = get_post_time('d.m.Y H:i', true, $post);
 
             if ($source_label === '') {
-                $source_label = __('Site Kepoli', 'kepoli');
+                $source_label = sprintf(kepoli_newsletter_text('Site %s', '%s site'), kepoli_newsletter_site_name());
             }
             ?>
             <table class="form-table" role="presentation">
@@ -244,7 +267,7 @@ add_action('add_meta_boxes', static function (): void {
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><?php esc_html_e('Sursa', 'kepoli'); ?></th>
+                    <th scope="row"><?php echo esc_html(kepoli_newsletter_text('Sursa', 'Source')); ?></th>
                     <td>
                         <?php if ($source_url !== '') : ?>
                             <a href="<?php echo esc_url($source_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($source_label); ?></a>
@@ -254,13 +277,13 @@ add_action('add_meta_boxes', static function (): void {
                     </td>
                 </tr>
                 <tr>
-                    <th scope="row"><?php esc_html_e('Data inscrierii', 'kepoli'); ?></th>
+                    <th scope="row"><?php echo esc_html(kepoli_newsletter_text('Data inscrierii', 'Signup date')); ?></th>
                     <td><?php echo esc_html($subscribed_at); ?></td>
                 </tr>
             </table>
             <p>
                 <a class="button button-secondary" href="<?php echo esc_url(admin_url('edit.php?post_type=' . kepoli_newsletter_post_type())); ?>">
-                    <?php esc_html_e('Inapoi la lista', 'kepoli'); ?>
+                    <?php echo esc_html(kepoli_newsletter_text('Inapoi la lista', 'Back to list')); ?>
                 </a>
             </p>
             <?php
@@ -314,7 +337,7 @@ add_action('restrict_manage_posts', static function (): void {
 function kepoli_export_newsletter_csv(): void
 {
     if (!kepoli_newsletter_can_manage()) {
-        wp_die(esc_html__('Nu ai permisiunea pentru acest export.', 'kepoli'));
+        wp_die(esc_html(kepoli_newsletter_text('Nu ai permisiunea pentru acest export.', 'You do not have permission to export this file.')));
     }
 
     check_admin_referer('kepoli_export_newsletter');
@@ -329,7 +352,7 @@ function kepoli_export_newsletter_csv(): void
 
     nocache_headers();
     header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename="kepoli-newsletter-' . gmdate('Y-m-d') . '.csv"');
+    header('Content-Disposition: attachment; filename="' . sanitize_title(kepoli_newsletter_site_name()) . '-newsletter-' . gmdate('Y-m-d') . '.csv"');
 
     $output = fopen('php://output', 'w');
     if ($output === false) {

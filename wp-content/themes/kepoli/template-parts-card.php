@@ -6,7 +6,7 @@
 $category = kepoli_primary_category();
 $tone_class = kepoli_post_tone_class();
 $kind_label = kepoli_post_kind_label();
-$show_category = $category && $category->slug !== 'articole';
+$show_category = $category && !kepoli_is_editorial_category_slug($category->slug);
 ?>
 <article <?php post_class('post-card ' . $tone_class); ?>>
     <a class="post-card__visual" href="<?php the_permalink(); ?>" aria-label="<?php the_title_attribute(); ?>">

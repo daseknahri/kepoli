@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Kepoli Auto Seed
+ * Plugin Name: Food Blog Auto Seed
  * Description: Self-heals a fresh WordPress install when the one-shot WP-CLI seed did not run in the host platform.
  */
 

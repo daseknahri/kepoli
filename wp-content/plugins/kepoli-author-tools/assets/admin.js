@@ -2,10 +2,12 @@
   const PAGE_BREAK = '<!--nextpage-->';
   const CONFIG = window.kepoliAuthorTools || {};
   const SITE_NAME = CONFIG.siteName || 'Food Blog';
-  const SITE_IS_ENGLISH = !!CONFIG.isEnglish;
+  const ADMIN_IS_ENGLISH = CONFIG.adminIsEnglish !== undefined ? !!CONFIG.adminIsEnglish : true;
+  const PUBLIC_IS_ENGLISH = CONFIG.publicIsEnglish !== undefined ? !!CONFIG.publicIsEnglish : !!CONFIG.isEnglish;
+  const GUIDES_SLUG = String(CONFIG.guidesSlug || '').trim().toLowerCase();
 
   function contentText(ro, en) {
-    return SITE_IS_ENGLISH ? en : ro;
+    return PUBLIC_IS_ENGLISH ? en : ro;
   }
 
   function getTextarea() {
@@ -376,6 +378,14 @@
     return suggestion ? [suggestion.name] : [];
   }
 
+  function isEditorialCategoryLabel(value) {
+    const normalized = cleanText(value).toLowerCase();
+    return normalized === 'articole'
+      || normalized === GUIDES_SLUG
+      || normalized.includes('article')
+      || normalized.includes('guide');
+  }
+
   function scorePost(post, sourceWords, preferredCategories = []) {
     const haystack = normalizeWords([
       post.title,
@@ -400,7 +410,7 @@
     normalizedPreferredCategories.forEach((category) => {
       if (normalizedPostCategories.includes(category)) {
         score += 12;
-      } else if (category !== 'articole' && normalizedPostCategories.length) {
+      } else if (!isEditorialCategoryLabel(category) && normalizedPostCategories.length) {
         score -= 2;
       }
     });
@@ -729,8 +739,8 @@
 
     const tagScores = new Map();
     const seedTags = kind === 'article'
-      ? (SITE_IS_ENGLISH ? ['ingredients', 'kitchen tips', 'cooking techniques'] : ['ingrediente', 'organizare', 'tehnici'])
-      : (SITE_IS_ENGLISH ? ['recipes', 'home cooking'] : ['retete romanesti']);
+      ? (PUBLIC_IS_ENGLISH ? ['ingredients', 'kitchen tips', 'cooking techniques'] : ['ingrediente', 'organizare', 'tehnici'])
+      : (PUBLIC_IS_ENGLISH ? ['recipes', 'home cooking'] : ['retete romanesti']);
     const lockedTags = new Set(seedTags.map((tag) => tag.toLowerCase()));
 
     seedTags.forEach((tag) => tagScores.set(tag, (tagScores.get(tag) || 0) + 1));
@@ -759,6 +769,10 @@
       soup: ['soup'],
       stew: ['stew', 'comfort food'],
       chicken: ['chicken', 'dinner'],
+      burger: ['burger', 'cina rapida'],
+      burgeri: ['burger', 'cina rapida'],
+      sandvis: ['sandvis', 'pranz'],
+      sandwich: ['sandwich', 'lunch'],
       paste: ['paste', 'cina rapida'],
       pasta: ['pasta', 'dinner'],
       rice: ['rice', 'side dish'],
@@ -845,7 +859,8 @@
       }
 
       const label = normalizeWords([category.slug, category.name, category.description].join(' ')).join(' ');
-      return category.slug === 'articole' || label.includes('article') || label.includes('guide');
+      const categorySlug = String(category.slug || '').trim().toLowerCase();
+      return categorySlug === GUIDES_SLUG || categorySlug === 'articole' || label.includes('article') || label.includes('guide');
     };
     const articleCategory = categories.find((category) => isArticleCategory(category)) || null;
 
@@ -865,14 +880,17 @@
     const categoryScores = new Map();
     const slugKeywords = {
       'ciorbe-si-supe': ['ciorba', 'bors', 'supa', 'supa crema', 'zeama', 'galuste', 'galuste', 'radauteana'],
-      'feluri-principale': ['sarmale', 'tochitura', 'tocanita', 'friptura', 'mamaliga', 'ostropel', 'snitel', 'varza', 'pilaf', 'chiftele', 'paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'lasagna', 'risotto'],
+      'feluri-principale': ['sarmale', 'tochitura', 'tocanita', 'friptura', 'mamaliga', 'ostropel', 'snitel', 'varza', 'pilaf', 'chiftele', 'paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'lasagna', 'risotto', 'burger', 'burgeri', 'sandvis', 'sandwich', 'wrap', 'pui', 'chicken'],
       'patiserie-si-deserturi': ['desert', 'prajitura', 'cozonac', 'placinta', 'clatite', 'papanasi', 'chec', 'cornulete', 'aluat', 'foi'],
       'conserve-si-garnituri': ['zacusca', 'muraturi', 'salata', 'garnitura', 'borcan', 'compot', 'bulion', 'gem', 'dulceata', 'piure'],
       'articole': ['ghid', 'cum', 'calendar', 'meniuri', 'tehnici', 'organizare', 'ingrediente', 'bucatarie', 'pastrare', 'explica']
     };
+    if (GUIDES_SLUG && !slugKeywords[GUIDES_SLUG]) {
+      slugKeywords[GUIDES_SLUG] = [...slugKeywords.articole];
+    }
     const titleKeywordMap = {
       'ciorbe-si-supe': ['ciorba', 'bors', 'supa', 'supa crema', 'zeama'],
-      'feluri-principale': ['paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'lasagna', 'risotto', 'pilaf', 'tocanita', 'friptura', 'snitel'],
+      'feluri-principale': ['paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'lasagna', 'risotto', 'pilaf', 'tocanita', 'friptura', 'snitel', 'burger', 'burgeri', 'sandvis', 'sandwich', 'wrap'],
       'patiserie-si-deserturi': ['desert', 'prajitura', 'cozonac', 'placinta', 'clatite', 'papanasi', 'chec', 'tort', 'cookies', 'cake', 'pie'],
       'conserve-si-garnituri': ['zacusca', 'muraturi', 'garnitura', 'salata', 'compot', 'gem', 'dulceata', 'bulion', 'piure']
     };
@@ -894,7 +912,7 @@
         terms: ['side dish', 'salad', 'preserves', 'pickle', 'jam', 'sauce', 'vegetables']
       },
       {
-        match: ['article', 'articles', 'guide', 'guides', 'tips', 'how-to', 'howto', 'articole'],
+        match: ['article', 'articles', 'guide', 'guides', 'tips', 'how-to', 'howto', 'articole', GUIDES_SLUG].filter(Boolean),
         terms: ['guide', 'how', 'tips', 'history', 'explained', 'storage', 'pantry', 'ingredients', 'technique']
       }
     ];

@@ -15,6 +15,27 @@ get_header();
     $recipe_snapshot = $is_recipe ? kepoli_recipe_snapshot_items() : [];
     $post_next_steps = kepoli_post_next_steps();
     $share_icons = ['facebook' => 'facebook', 'whatsapp' => 'whatsapp', 'email' => 'email', 'copy' => 'link', 'print' => 'print'];
+    $recipe_jump_ids = kepoli_is_english()
+        ? [
+            'highlights' => 'what-to-know-first',
+            'ingredients' => 'ingredients',
+            'method' => 'method',
+            'before' => 'before-you-start',
+            'tips' => 'success-notes',
+            'storage' => 'storage',
+            'faq' => 'frequently-asked-questions',
+            'next' => 'useful-next-links',
+        ]
+        : [
+            'highlights' => 'ce-merita-sa-stii',
+            'ingredients' => 'ingrediente',
+            'method' => 'mod-de-preparare',
+            'before' => 'inainte-sa-incepi',
+            'tips' => 'sfaturi-pentru-reusita',
+            'storage' => 'cum-pastrezi',
+            'faq' => 'intrebari-frecvente',
+            'next' => 'legaturi-utile',
+        ];
     $featured_image = kepoli_post_featured_image_markup(get_the_ID(), 'large', [
         'class' => 'entry-featured-media__image',
         'loading' => 'eager',
@@ -47,7 +68,7 @@ get_header();
                     </figure>
                 <?php endif; ?>
                 <div class="entry-summary">
-                    <div class="entry-meta-row" aria-label="<?php esc_attr_e('Informatii articol', 'kepoli'); ?>">
+                    <div class="entry-meta-row" aria-label="<?php echo esc_attr(kepoli_ui_text('Informatii articol', 'Article information')); ?>">
                         <span class="entry-meta-row__item"><?php echo kepoli_icon('calendar'); ?><strong><?php echo esc_html(get_the_date()); ?></strong></span>
                         <span class="entry-meta-row__item"><?php echo kepoli_icon('clock'); ?><strong><?php echo esc_html(kepoli_read_time()); ?></strong></span>
                         <span class="entry-meta-row__item entry-meta-row__item--author"><?php echo kepoli_icon('user'); ?><strong><a href="<?php echo esc_url(kepoli_author_page_url()); ?>" rel="author"><?php echo esc_html(get_the_author()); ?></a></strong></span>
@@ -55,11 +76,11 @@ get_header();
                             <span class="entry-meta-row__item entry-meta-row__item--updated"><?php echo kepoli_icon('refresh'); ?><strong><?php echo esc_html($updated_label); ?></strong></span>
                         <?php endif; ?>
                     </div>
-                    <div class="share-tools share-tools--minimal" aria-label="<?php esc_attr_e('Actiuni articol', 'kepoli'); ?>">
+                    <div class="share-tools share-tools--minimal" aria-label="<?php echo esc_attr(kepoli_ui_text('Actiuni articol', 'Article actions')); ?>">
                         <?php foreach ($share_links as $share) : ?>
                             <?php $icon = $share_icons[$share['type']] ?? 'link'; ?>
                             <?php if ($share['type'] === 'copy') : ?>
-                                <button class="share-tools__button share-tools__button--icon" type="button" title="<?php echo esc_attr($share['label']); ?>" aria-label="<?php echo esc_attr($share['label']); ?>" data-copy-url="<?php echo esc_attr($share['url']); ?>" data-copy-default="<?php echo esc_attr($share['label']); ?>" data-copy-success="<?php esc_attr_e('Link copiat', 'kepoli'); ?>">
+                                <button class="share-tools__button share-tools__button--icon" type="button" title="<?php echo esc_attr($share['label']); ?>" aria-label="<?php echo esc_attr($share['label']); ?>" data-copy-url="<?php echo esc_attr($share['url']); ?>" data-copy-default="<?php echo esc_attr($share['label']); ?>" data-copy-success="<?php echo esc_attr(kepoli_ui_text('Link copiat', 'Link copied')); ?>">
                                     <span class="share-tools__icon"><?php echo kepoli_icon($icon); ?></span>
                                     <span class="screen-reader-text"><?php echo esc_html($share['label']); ?></span>
                                 </button>
@@ -78,7 +99,7 @@ get_header();
                     </div>
                 </div>
                 <?php if ($recipe_snapshot) : ?>
-                    <div class="entry-recipe-snapshot" aria-label="<?php esc_attr_e('Detalii rapide reteta', 'kepoli'); ?>">
+                    <div class="entry-recipe-snapshot" aria-label="<?php echo esc_attr(kepoli_ui_text('Detalii rapide reteta', 'Quick recipe details')); ?>">
                         <?php foreach ($recipe_snapshot as $item) : ?>
                             <div class="entry-recipe-snapshot__item">
                                 <span class="entry-recipe-snapshot__label">
@@ -90,7 +111,7 @@ get_header();
                         <?php endforeach; ?>
                     </div>
                 <?php elseif ($article_snapshot) : ?>
-                    <div class="entry-article-snapshot" aria-label="<?php esc_attr_e('Repere rapide ghid', 'kepoli'); ?>">
+                    <div class="entry-article-snapshot" aria-label="<?php echo esc_attr(kepoli_ui_text('Repere rapide ghid', 'Quick guide highlights')); ?>">
                         <?php foreach ($article_snapshot as $item) : ?>
                             <div class="entry-article-snapshot__item">
                                 <span class="entry-article-snapshot__label">
@@ -104,20 +125,20 @@ get_header();
                 <?php endif; ?>
                 <?php kepoli_render_reader_trust_links(); ?>
                 <?php if ($is_recipe) : ?>
-                    <nav class="entry-jumpnav" aria-label="<?php esc_attr_e('Navigatie reteta', 'kepoli'); ?>">
-                        <a href="#ce-merita-sa-stii"><?php echo kepoli_icon('tips'); ?><span><?php esc_html_e('Repere', 'kepoli'); ?></span></a>
-                        <a href="#ingrediente"><?php echo kepoli_icon('ingredients'); ?><span><?php esc_html_e('Ingrediente', 'kepoli'); ?></span></a>
-                        <a href="#mod-de-preparare"><?php echo kepoli_icon('steps'); ?><span><?php esc_html_e('Preparare', 'kepoli'); ?></span></a>
-                        <a href="#inainte-sa-incepi"><?php echo kepoli_icon('prep'); ?><span><?php esc_html_e('Inainte', 'kepoli'); ?></span></a>
-                        <a href="#sfaturi-pentru-reusita"><?php echo kepoli_icon('tips'); ?><span><?php esc_html_e('Sfaturi', 'kepoli'); ?></span></a>
-                        <a href="#cum-pastrezi"><?php echo kepoli_icon('storage'); ?><span><?php esc_html_e('Pastrare', 'kepoli'); ?></span></a>
-                        <a href="#intrebari-frecvente"><?php echo kepoli_icon('question'); ?><span><?php esc_html_e('FAQ', 'kepoli'); ?></span></a>
-                        <a href="#legaturi-utile"><?php echo kepoli_icon('arrow-right'); ?><span><?php esc_html_e('Mai departe', 'kepoli'); ?></span></a>
+                    <nav class="entry-jumpnav" aria-label="<?php echo esc_attr(kepoli_ui_text('Navigatie reteta', 'Recipe navigation')); ?>">
+                        <a href="#<?php echo esc_attr($recipe_jump_ids['highlights']); ?>"><?php echo kepoli_icon('tips'); ?><span><?php echo esc_html(kepoli_ui_text('Repere', 'Highlights')); ?></span></a>
+                        <a href="#<?php echo esc_attr($recipe_jump_ids['ingredients']); ?>"><?php echo kepoli_icon('ingredients'); ?><span><?php echo esc_html(kepoli_ui_text('Ingrediente', 'Ingredients')); ?></span></a>
+                        <a href="#<?php echo esc_attr($recipe_jump_ids['method']); ?>"><?php echo kepoli_icon('steps'); ?><span><?php echo esc_html(kepoli_ui_text('Preparare', 'Method')); ?></span></a>
+                        <a href="#<?php echo esc_attr($recipe_jump_ids['before']); ?>"><?php echo kepoli_icon('prep'); ?><span><?php echo esc_html(kepoli_ui_text('Inainte', 'Before')); ?></span></a>
+                        <a href="#<?php echo esc_attr($recipe_jump_ids['tips']); ?>"><?php echo kepoli_icon('tips'); ?><span><?php echo esc_html(kepoli_ui_text('Sfaturi', 'Tips')); ?></span></a>
+                        <a href="#<?php echo esc_attr($recipe_jump_ids['storage']); ?>"><?php echo kepoli_icon('storage'); ?><span><?php echo esc_html(kepoli_ui_text('Pastrare', 'Storage')); ?></span></a>
+                        <a href="#<?php echo esc_attr($recipe_jump_ids['faq']); ?>"><?php echo kepoli_icon('question'); ?><span><?php esc_html_e('FAQ', 'kepoli'); ?></span></a>
+                        <a href="#<?php echo esc_attr($recipe_jump_ids['next']); ?>"><?php echo kepoli_icon('arrow-right'); ?><span><?php echo esc_html(kepoli_ui_text('Mai departe', 'Next')); ?></span></a>
                     </nav>
                 <?php elseif (count($article_headings) > 1) : ?>
-                    <nav class="entry-outline" aria-label="<?php esc_attr_e('In acest articol', 'kepoli'); ?>">
+                    <nav class="entry-outline" aria-label="<?php echo esc_attr(kepoli_ui_text('In acest articol', 'In this article')); ?>">
                         <div class="entry-outline__header">
-                            <p class="eyebrow"><?php esc_html_e('In articol', 'kepoli'); ?></p>
+                            <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('In articol', 'In this article')); ?></p>
                         </div>
                         <ol class="entry-outline__list">
                             <?php foreach ($article_headings as $index => $heading) : ?>
@@ -137,7 +158,7 @@ get_header();
             </div>
             <?php
             wp_link_pages([
-                'before' => '<nav class="post-page-links" aria-label="' . esc_attr__('Navigatie pagini articol', 'kepoli') . '"><span class="post-page-links__label">' . esc_html__('Partile articolului', 'kepoli') . '</span><div class="post-page-links__items">',
+                'before' => '<nav class="post-page-links" aria-label="' . esc_attr(kepoli_ui_text('Navigatie pagini articol', 'Article page navigation')) . '"><span class="post-page-links__label">' . esc_html(kepoli_ui_text('Partile articolului', 'Article parts')) . '</span><div class="post-page-links__items">',
                 'after' => '</div></nav>',
                 'link_before' => '<span>',
                 'link_after' => '</span>',
@@ -168,15 +189,15 @@ get_header();
                 ?>
                 <section class="related-posts related-posts--cards">
                     <div class="related-posts__heading">
-                        <p class="eyebrow"><?php echo $is_recipe ? esc_html__('Articole recomandate', 'kepoli') : esc_html__('Retete recomandate', 'kepoli'); ?></p>
-                        <h2><?php echo $is_recipe ? esc_html__('Mai departe', 'kepoli') : esc_html__('Continua lectura', 'kepoli'); ?></h2>
-                        <p><?php echo $is_recipe ? esc_html__('Ghiduri utile care completeaza reteta de mai sus.', 'kepoli') : esc_html__('Retete potrivite pentru a transforma articolul in ceva concret de pus pe masa.', 'kepoli'); ?></p>
+                        <p class="eyebrow"><?php echo esc_html($is_recipe ? kepoli_ui_text('Articole recomandate', 'Recommended guides') : kepoli_ui_text('Retete recomandate', 'Recommended recipes')); ?></p>
+                        <h2><?php echo esc_html($is_recipe ? kepoli_ui_text('Mai departe', 'Next reads') : kepoli_ui_text('Continua lectura', 'Keep reading')); ?></h2>
+                        <p><?php echo esc_html($is_recipe ? kepoli_ui_text('Ghiduri utile care completeaza reteta de mai sus.', 'Useful guides that support the recipe above.') : kepoli_ui_text('Retete potrivite pentru a transforma articolul in ceva concret de pus pe masa.', 'Recipes that turn the article into something concrete for the table.')); ?></p>
                     </div>
                     <div class="related-grid">
                         <?php foreach ($related_posts as $related) : ?>
                             <?php
                             $related_category = kepoli_primary_category($related->ID);
-                            $show_related_category = $related_category && $related_category->slug !== 'articole';
+                            $show_related_category = $related_category && !kepoli_is_editorial_category_slug($related_category->slug);
                             ?>
                             <article <?php post_class('related-card ' . kepoli_post_tone_class($related->ID), $related->ID); ?>>
                                 <a class="related-card__media" href="<?php echo esc_url(get_permalink($related)); ?>">
@@ -207,10 +228,10 @@ get_header();
             $next_post = get_next_post();
             if ($previous_post || $next_post) :
                 ?>
-                <nav class="post-navigation-simple" aria-label="<?php esc_attr_e('Navigatie intre articole', 'kepoli'); ?>">
+                <nav class="post-navigation-simple" aria-label="<?php echo esc_attr(kepoli_ui_text('Navigatie intre articole', 'Post navigation')); ?>">
                     <?php if ($previous_post) : ?>
                         <a class="post-navigation-simple__item post-navigation-simple__item--prev" href="<?php echo esc_url(get_permalink($previous_post)); ?>">
-                            <span class="post-navigation-simple__eyebrow"><?php esc_html_e('Anterior', 'kepoli'); ?></span>
+                            <span class="post-navigation-simple__eyebrow"><?php echo esc_html(kepoli_ui_text('Anterior', 'Previous')); ?></span>
                             <div class="post-navigation-simple__body">
                                 <strong><?php echo esc_html(get_the_title($previous_post)); ?></strong>
                                 <span><?php echo esc_html(wp_trim_words(get_the_excerpt($previous_post), 14, '...')); ?></span>
@@ -219,7 +240,7 @@ get_header();
                     <?php endif; ?>
                     <?php if ($next_post) : ?>
                         <a class="post-navigation-simple__item post-navigation-simple__item--next" href="<?php echo esc_url(get_permalink($next_post)); ?>">
-                            <span class="post-navigation-simple__eyebrow"><?php esc_html_e('Urmator', 'kepoli'); ?></span>
+                            <span class="post-navigation-simple__eyebrow"><?php echo esc_html(kepoli_ui_text('Urmator', 'Next')); ?></span>
                             <div class="post-navigation-simple__body">
                                 <strong><?php echo esc_html(get_the_title($next_post)); ?></strong>
                                 <span><?php echo esc_html(wp_trim_words(get_the_excerpt($next_post), 14, '...')); ?></span>
@@ -229,7 +250,7 @@ get_header();
                 </nav>
             <?php endif; ?>
         </div>
-        <aside class="sidebar" aria-label="<?php esc_attr_e('Context articol', 'kepoli'); ?>">
+        <aside class="sidebar" aria-label="<?php echo esc_attr(kepoli_ui_text('Context articol', 'Article context')); ?>">
             <?php get_template_part('template-parts-sidebar'); ?>
         </aside>
     </article>

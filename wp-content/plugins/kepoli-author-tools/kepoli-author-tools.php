@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.23
+ * Version: 1.8.24
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.23';
+    private const VERSION = '1.8.24';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -80,71 +80,139 @@ final class Kepoli_Author_Tools
     ];
     private static $is_updating_post = false;
 
+    private static function site_profile(): array
+    {
+        static $profile = null;
+
+        if ($profile !== null) {
+            return $profile;
+        }
+
+        $public_locale = (string) get_option('WPLANG');
+        if ($public_locale === '') {
+            $public_locale = 'ro_RO';
+        }
+
+        $default = [
+            'brand' => [
+                'name' => get_bloginfo('name') ?: 'Food Blog',
+                'site_email' => get_option('admin_email') ?: 'contact@example.com',
+            ],
+            'locales' => [
+                'public' => $public_locale,
+                'admin' => 'en_US',
+                'force_admin' => true,
+            ],
+            'writer' => [
+                'name' => '',
+                'email' => '',
+                'bio' => '',
+            ],
+            'slugs' => [],
+        ];
+
+        $stored = get_option('kepoli_site_profile');
+        $profile = array_replace_recursive($default, is_array($stored) ? $stored : []);
+        $profile['locales']['admin'] = 'en_US';
+        $profile['locales']['force_admin'] = true;
+
+        return $profile;
+    }
+
+    private static function profile_value(array $path, $default = '')
+    {
+        $value = self::site_profile();
+        foreach ($path as $key) {
+            if (!is_array($value) || !array_key_exists($key, $value)) {
+                return $default;
+            }
+
+            $value = $value[$key];
+        }
+
+        return $value;
+    }
+
+    private static function public_locale(): string
+    {
+        $locale = trim((string) self::profile_value(['locales', 'public'], get_option('WPLANG') ?: 'ro_RO'));
+        return $locale !== '' ? $locale : 'ro_RO';
+    }
+
+    private static function admin_locale(): string
+    {
+        $locale = trim((string) self::profile_value(['locales', 'admin'], 'en_US'));
+        return $locale !== '' ? $locale : 'en_US';
+    }
+
+    private static function locale_is_english(string $locale): bool
+    {
+        return str_starts_with(strtolower($locale), 'en');
+    }
+
+    private static function public_is_english(): bool
+    {
+        return self::locale_is_english(self::public_locale());
+    }
+
+    private static function admin_is_english(): bool
+    {
+        return self::locale_is_english(self::admin_locale());
+    }
+
     private static function is_english(): bool
     {
-        return str_starts_with(strtolower((string) get_bloginfo('language')), 'en');
+        return self::public_is_english();
+    }
+
+    private static function admin_ui_text(string $ro, string $en): string
+    {
+        return self::admin_is_english() ? $en : $ro;
+    }
+
+    private static function public_content_text(string $ro, string $en): string
+    {
+        return self::public_is_english() ? $en : $ro;
     }
 
     private static function ui_text(string $ro, string $en): string
     {
-        unset($ro);
-        return $en;
+        return self::admin_ui_text($ro, $en);
     }
 
     private static function content_text(string $ro, string $en): string
     {
-        return self::is_english() ? $en : $ro;
+        return self::public_content_text($ro, $en);
     }
 
     private static function site_name(): string
     {
-        return get_bloginfo('name') ?: 'Food Blog';
+        $name = trim((string) self::profile_value(['brand', 'name'], ''));
+        return $name !== '' ? $name : (get_bloginfo('name') ?: 'Food Blog');
     }
 
-    private static function fallback_public_language(): string
+    private static function guides_slug(): string
     {
-        $language = strtolower((string) get_option('WPLANG'));
-        if ($language === '') {
-            $language = strtolower((string) get_locale());
+        $slug = sanitize_title((string) self::profile_value(['slugs', 'guides'], ''));
+        if ($slug !== '') {
+            return $slug;
         }
 
-        return str_starts_with($language, 'en') ? 'en-US' : 'ro-RO';
+        return self::public_is_english() ? 'guides' : 'articole';
     }
 
-    private static function detected_public_language(): string
+    private static function article_category_slugs(): array
     {
-        $parts = [];
-        if (is_singular()) {
-            $post = get_post();
-            if ($post instanceof WP_Post) {
-                $parts[] = (string) $post->post_title;
-                $parts[] = (string) $post->post_excerpt;
-                $parts[] = (string) $post->post_content;
-            }
-        } elseif (is_category()) {
-            $parts[] = single_cat_title('', false);
-            $parts[] = category_description();
-        } elseif (is_front_page()) {
-            $parts[] = (string) get_bloginfo('name');
-            $parts[] = (string) get_bloginfo('description');
-        }
-
-        $text = trim(implode(' ', array_filter(array_map('trim', $parts))));
-        $detected = $text !== '' ? self::detect_language($text) : 'unknown';
-        if ($detected === 'ro') {
-            return 'ro-RO';
-        }
-
-        if ($detected === 'en') {
-            return 'en-US';
-        }
-
-        return self::fallback_public_language();
+        return array_values(array_unique(array_filter([
+            self::guides_slug(),
+            'articole',
+            'guides',
+            'articles',
+        ])));
     }
 
     public static function init(): void
     {
-        add_filter('bloginfo', [self::class, 'filter_public_language'], 10, 2);
         add_filter('use_block_editor_for_post_type', [self::class, 'use_classic_editor_for_posts'], 10, 2);
         add_filter('mce_external_plugins', [self::class, 'register_tinymce_plugin']);
         add_filter('mce_buttons', [self::class, 'register_tinymce_buttons']);
@@ -159,15 +227,6 @@ final class Kepoli_Author_Tools
         add_action('pre_get_posts', [self::class, 'filter_posts_by_kind']);
         add_filter('the_content', [self::class, 'remove_template_prompts_from_content'], 4);
         add_filter('get_the_excerpt', [self::class, 'remove_template_prompts_from_excerpt'], 12, 2);
-    }
-
-    public static function filter_public_language($output, string $show)
-    {
-        if ($show !== 'language' || is_admin()) {
-            return $output;
-        }
-
-        return self::detected_public_language();
     }
 
     public static function use_classic_editor_for_posts(bool $use_block_editor, string $post_type): bool
@@ -225,7 +284,10 @@ final class Kepoli_Author_Tools
             wp_localize_script('kepoli-author-tools-admin', 'kepoliAuthorTools', [
                 'currentPostId' => self::current_post_id(),
                 'siteName' => self::site_name(),
-                'isEnglish' => self::is_english(),
+                'isEnglish' => self::public_is_english(),
+                'adminIsEnglish' => self::admin_is_english(),
+                'publicIsEnglish' => self::public_is_english(),
+                'guidesSlug' => self::guides_slug(),
                 'relatedPosts' => self::related_posts_payload(self::current_post_id()),
                 'categories' => self::category_payload(),
                 'strings' => [
@@ -2362,7 +2424,7 @@ final class Kepoli_Author_Tools
             (string) $category->description,
         ]));
 
-        return (string) $category->slug === 'articole'
+        return in_array((string) $category->slug, self::article_category_slugs(), true)
             || str_contains($label, 'article')
             || str_contains($label, 'guide');
     }
@@ -2516,10 +2578,10 @@ final class Kepoli_Author_Tools
     {
         return [
             'ciorbe-si-supe' => ['ciorba', 'bors', 'supa', 'supa crema', 'zeama', 'galuste', 'radauteana', 'soup', 'soups', 'stew', 'broth', 'cream soup'],
-            'feluri-principale' => ['sarmale', 'tochitura', 'tocanita', 'friptura', 'mamaliga', 'ostropel', 'snitel', 'varza', 'pilaf', 'chiftele', 'paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'tagliatelle', 'lasagna', 'risotto', 'dinner', 'lunch', 'main dish', 'family meal'],
+            'feluri-principale' => ['sarmale', 'tochitura', 'tocanita', 'friptura', 'mamaliga', 'ostropel', 'snitel', 'varza', 'pilaf', 'chiftele', 'paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'tagliatelle', 'lasagna', 'risotto', 'burger', 'burgeri', 'sandvis', 'sandwich', 'wrap', 'pui', 'chicken', 'dinner', 'lunch', 'main dish', 'family meal'],
             'patiserie-si-deserturi' => ['desert', 'prajitura', 'cozonac', 'placinta', 'clatite', 'papanasi', 'chec', 'cornulete', 'aluat', 'foi', 'dessert', 'cake', 'chocolate', 'sweet', 'cookies', 'pie', 'pastry', 'baking'],
             'conserve-si-garnituri' => ['zacusca', 'muraturi', 'salata', 'garnitura', 'borcan', 'compot', 'bulion', 'gem', 'dulceata', 'piure', 'side dish', 'salad', 'preserves', 'pickle', 'jam', 'sauce', 'vegetables'],
-            'articole' => ['ghid', 'cum', 'calendar', 'meniuri', 'tehnici', 'organizare', 'ingrediente', 'bucatarie', 'pastrare', 'explica', 'guide', 'how', 'tips', 'history', 'explained', 'storage', 'pantry', 'ingredients', 'technique'],
+            self::guides_slug() => ['ghid', 'cum', 'calendar', 'meniuri', 'tehnici', 'organizare', 'ingrediente', 'bucatarie', 'pastrare', 'explica', 'guide', 'how', 'tips', 'history', 'explained', 'storage', 'pantry', 'ingredients', 'technique'],
         ];
     }
 
@@ -2527,7 +2589,7 @@ final class Kepoli_Author_Tools
     {
         return [
             'ciorbe-si-supe' => ['ciorba', 'bors', 'supa', 'supa crema', 'zeama'],
-            'feluri-principale' => ['paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'lasagna', 'risotto', 'pilaf', 'tocanita', 'friptura', 'snitel'],
+            'feluri-principale' => ['paste', 'pasta', 'spaghetti', 'penne', 'fusilli', 'rigatoni', 'lasagna', 'risotto', 'pilaf', 'tocanita', 'friptura', 'snitel', 'burger', 'burgeri', 'sandvis', 'sandwich', 'wrap'],
             'patiserie-si-deserturi' => ['desert', 'prajitura', 'cozonac', 'placinta', 'clatite', 'papanasi', 'chec', 'tort', 'cookies', 'cake', 'pie'],
             'conserve-si-garnituri' => ['zacusca', 'muraturi', 'garnitura', 'salata', 'compot', 'gem', 'dulceata', 'bulion', 'piure'],
         ];
@@ -2618,6 +2680,10 @@ final class Kepoli_Author_Tools
             'soup' => ['soup'],
             'stew' => ['stew', 'comfort food'],
             'chicken' => ['chicken', 'dinner'],
+            'burger' => ['burger', 'cina rapida'],
+            'burgeri' => ['burger', 'cina rapida'],
+            'sandvis' => ['sandvis', 'pranz'],
+            'sandwich' => ['sandwich', 'lunch'],
             'paste' => ['paste', 'cina rapida'],
             'pasta' => ['pasta', 'dinner'],
             'rice' => ['rice', 'side dish'],
@@ -3201,6 +3267,7 @@ final class Kepoli_Author_Tools
             return 0;
         }
 
+        $article_category_slugs = self::article_category_slugs();
         $candidate_words = self::keywords_from_text(self::related_candidate_text($post_id));
         $candidate_lookup = array_flip($candidate_words);
         $candidate_category_slug = self::primary_category_slug($post_id);
@@ -3223,7 +3290,11 @@ final class Kepoli_Author_Tools
         if ($source_category_slug !== '') {
             if ($candidate_category_slug === $source_category_slug) {
                 $score += 12;
-            } elseif ($source_category_slug !== 'articole' && $candidate_category_slug !== '' && $candidate_category_slug !== 'articole') {
+            } elseif (
+                !in_array($source_category_slug, $article_category_slugs, true)
+                && $candidate_category_slug !== ''
+                && !in_array($candidate_category_slug, $article_category_slugs, true)
+            ) {
                 $score -= 2;
             }
         }

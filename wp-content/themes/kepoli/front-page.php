@@ -15,6 +15,13 @@ $categories = get_categories([
 $featured_recipe = kepoli_latest_post_by_kind('recipe');
 $featured_article = kepoli_latest_post_by_kind('article');
 $recently_touched_articles = kepoli_recently_touched_posts_by_kind('article', 3, $featured_article ? [$featured_article->ID] : []);
+$writer_name = kepoli_writer_name();
+$site_name = kepoli_site_name();
+$front_page_content = '';
+$front_page_id = get_queried_object_id();
+if ($front_page_id) {
+    $front_page_content = trim((string) apply_filters('the_content', (string) get_post_field('post_content', $front_page_id)));
+}
 
 $recipe_list = new WP_Query([
     'post_type' => 'post',
@@ -35,22 +42,30 @@ $article_list = new WP_Query([
 <section class="home-hero">
     <img class="home-hero__image" src="<?php echo esc_url($hero_image); ?>" alt=""<?php echo kepoli_asset_dimension_attributes('hero-homepage'); ?><?php echo $hero_srcset !== '' ? ' srcset="' . esc_attr($hero_srcset) . '" sizes="' . esc_attr($hero_sizes) . '"' : ''; ?> fetchpriority="high" loading="eager" decoding="async">
     <div class="home-hero__inner">
-        <p class="eyebrow"><?php esc_html_e('Kepoli', 'kepoli'); ?></p>
-        <h1><?php esc_html_e('Retete romanesti si ghiduri pentru gatit acasa.', 'kepoli'); ?></h1>
-        <p><?php esc_html_e('Pagini clare, imagini utile si explicatii practice pentru cititorii care ajung direct din cautare, recomandari sau social.', 'kepoli'); ?></p>
+        <p class="eyebrow"><?php echo esc_html($site_name); ?></p>
+        <h1><?php echo esc_html((string) kepoli_profile_value(['brand', 'tagline'], kepoli_ui_text('Retete pentru acasa si ghiduri practice.', 'Recipes and guides for better home cooking.'))); ?></h1>
+        <p><?php echo esc_html(kepoli_brand_description()); ?></p>
         <div class="button-row">
-            <a class="button" href="<?php echo esc_url(home_url('/retete/')); ?>"><?php esc_html_e('Vezi retetele', 'kepoli'); ?></a>
+            <a class="button" href="<?php echo esc_url(kepoli_recipes_page_url()); ?>"><?php echo esc_html(kepoli_ui_text('Vezi retetele', 'View recipes')); ?></a>
         </div>
     </div>
 </section>
 
+<?php if ($front_page_content !== '') : ?>
+    <section class="section section--tight home-copy defer-section">
+        <div class="entry-content entry-content--page">
+            <?php echo $front_page_content; ?>
+        </div>
+    </section>
+<?php endif; ?>
+
 <section class="section section--tight home-proof defer-section">
     <div class="section__header section__header--compact">
         <div>
-            <p class="eyebrow"><?php esc_html_e('Transparenta', 'kepoli'); ?></p>
-            <h2><?php esc_html_e('Cine scrie, cum lucram, unde ne poti verifica', 'kepoli'); ?></h2>
+            <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Transparenta', 'Transparency')); ?></p>
+            <h2><?php echo esc_html(kepoli_ui_text('Cine scrie, cum lucram, unde ne poti verifica', 'Who writes, how we work, and how to check us')); ?></h2>
         </div>
-        <p><?php esc_html_e('Kepoli este construit pentru cititorii care intra direct intr-o pagina si vor sa vada repede autorul, regulile editoriale si cum pot cere clarificari.', 'kepoli'); ?></p>
+        <p><?php echo esc_html(sprintf(kepoli_ui_text('%s este construit pentru cititorii care intra direct intr-o pagina si vor sa vada repede autorul, regulile editoriale si cum pot cere clarificari.', '%s is built for readers who land directly on a page and want to quickly see the author, editorial rules, and how to ask for clarification.'), $site_name)); ?></p>
     </div>
     <?php kepoli_render_reader_trust_links('browse-links browse-links--trust home-proof__links'); ?>
 </section>
@@ -58,10 +73,10 @@ $article_list = new WP_Query([
 <section class="section defer-section">
     <div class="section__header">
         <div>
-            <p class="eyebrow"><?php esc_html_e('Retete publicate', 'kepoli'); ?></p>
-            <h2><?php esc_html_e('De gatit saptamana aceasta', 'kepoli'); ?></h2>
+            <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Retete publicate', 'Published recipes')); ?></p>
+            <h2><?php echo esc_html(kepoli_ui_text('De gatit saptamana aceasta', 'Cook this week')); ?></h2>
         </div>
-        <p><?php esc_html_e('Retete clare, usor de scanat si simple de pus in practica.', 'kepoli'); ?></p>
+        <p><?php echo esc_html(kepoli_ui_text('Retete clare, usor de scanat si simple de pus in practica.', 'Clear recipes that are easy to scan and simple to put into practice.')); ?></p>
     </div>
     <div class="home-cluster">
         <?php if ($featured_recipe) : ?>
@@ -70,7 +85,7 @@ $article_list = new WP_Query([
                     <?php echo kepoli_post_media_markup($featured_recipe->ID, 'related', true); ?>
                 </a>
                 <div class="lead-story__body">
-                    <p class="eyebrow"><?php esc_html_e('Reteta recomandata', 'kepoli'); ?></p>
+                    <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Reteta recomandata', 'Recommended recipe')); ?></p>
                     <h3><a href="<?php echo esc_url(get_permalink($featured_recipe)); ?>"><?php echo esc_html(get_the_title($featured_recipe)); ?></a></h3>
                     <p><?php echo esc_html(get_the_excerpt($featured_recipe)); ?></p>
                     <?php echo kepoli_render_post_card_meta($featured_recipe->ID, 'meta-strip meta-strip--inline', 'meta-strip__item'); ?>
@@ -79,7 +94,7 @@ $article_list = new WP_Query([
         <?php endif; ?>
         <div class="compact-post-list">
             <div class="compact-post-list__heading">
-                <p class="eyebrow"><?php esc_html_e('Mai multe retete', 'kepoli'); ?></p>
+                <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Mai multe retete', 'More recipes')); ?></p>
             </div>
             <?php while ($recipe_list->have_posts()) : $recipe_list->the_post(); ?>
                 <article <?php post_class('compact-post ' . kepoli_post_tone_class()); ?>>
@@ -101,8 +116,8 @@ $article_list = new WP_Query([
     <div class="section">
         <div class="section__header section__header--simple">
             <div>
-                <p class="eyebrow"><?php esc_html_e('Categorii', 'kepoli'); ?></p>
-                <h2><?php esc_html_e('Alege dupa pofta', 'kepoli'); ?></h2>
+                <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Categorii', 'Categories')); ?></p>
+                <h2><?php echo esc_html(kepoli_ui_text('Alege dupa pofta', 'Choose by appetite')); ?></h2>
             </div>
         </div>
         <div class="category-list category-list--showcase">
@@ -128,9 +143,9 @@ $article_list = new WP_Query([
                         <span class="category-card__count">
                             <?php
                             echo esc_html(
-                                $category->slug === 'articole'
-                                    ? sprintf(_n('%d articol', '%d articole', $category->count, 'kepoli'), $category->count)
-                                    : sprintf(_n('%d reteta', '%d retete', $category->count, 'kepoli'), $category->count)
+                                kepoli_is_editorial_category_slug($category->slug)
+                                    ? sprintf(kepoli_is_english() ? _n('%d guide', '%d guides', $category->count, 'kepoli') : _n('%d articol', '%d articole', $category->count, 'kepoli'), $category->count)
+                                    : sprintf(kepoli_is_english() ? _n('%d recipe', '%d recipes', $category->count, 'kepoli') : _n('%d reteta', '%d retete', $category->count, 'kepoli'), $category->count)
                             );
                             ?>
                         </span>
@@ -147,7 +162,7 @@ $article_list = new WP_Query([
                         </span>
                     <?php endif; ?>
                     <?php if (!empty($category_image['sample'])) : ?>
-                        <span class="category-card__sample"><?php echo esc_html(sprintf(__('De inceput: %s', 'kepoli'), $category_image['sample'])); ?></span>
+                        <span class="category-card__sample"><?php echo esc_html(sprintf(kepoli_ui_text('De inceput: %s', 'Start with: %s'), $category_image['sample'])); ?></span>
                     <?php endif; ?>
                 </a>
             <?php endforeach; ?>
@@ -159,10 +174,10 @@ $article_list = new WP_Query([
     <?php $editorial_paths = kepoli_editorial_paths(); ?>
     <div class="section__header">
         <div>
-            <p class="eyebrow"><?php esc_html_e('Articole', 'kepoli'); ?></p>
-            <h2><?php esc_html_e('Ghiduri pentru bucatarie', 'kepoli'); ?></h2>
+            <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Articole', 'Guides')); ?></p>
+            <h2><?php echo esc_html(kepoli_ui_text('Ghiduri pentru bucatarie', 'Kitchen guides')); ?></h2>
         </div>
-        <p><?php esc_html_e('Context scurt si util pentru ingrediente, tehnici si planificare, cu ghidurile importante revizuite periodic.', 'kepoli'); ?></p>
+        <p><?php echo esc_html(kepoli_ui_text('Context scurt si util pentru ingrediente, tehnici si planificare, cu ghidurile importante revizuite periodic.', 'Short, useful context for ingredients, techniques, and planning, with important guides reviewed over time.')); ?></p>
     </div>
     <div class="home-cluster home-cluster--reverse">
         <?php if ($featured_article) : ?>
@@ -171,7 +186,7 @@ $article_list = new WP_Query([
                     <?php echo kepoli_post_media_markup($featured_article->ID, 'related'); ?>
                 </a>
                 <div class="lead-story__body">
-                    <p class="eyebrow"><?php esc_html_e('Articol recomandat', 'kepoli'); ?></p>
+                    <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Articol recomandat', 'Recommended guide')); ?></p>
                     <h3><a href="<?php echo esc_url(get_permalink($featured_article)); ?>"><?php echo esc_html(get_the_title($featured_article)); ?></a></h3>
                     <p><?php echo esc_html(get_the_excerpt($featured_article)); ?></p>
                     <?php echo kepoli_render_post_card_meta($featured_article->ID, 'meta-strip meta-strip--inline', 'meta-strip__item'); ?>
@@ -180,7 +195,7 @@ $article_list = new WP_Query([
         <?php endif; ?>
         <div class="compact-post-list">
             <div class="compact-post-list__heading">
-                <p class="eyebrow"><?php esc_html_e('Ghiduri recente', 'kepoli'); ?></p>
+                <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Ghiduri recente', 'Recent guides')); ?></p>
             </div>
             <?php while ($article_list->have_posts()) : $article_list->the_post(); ?>
                 <article <?php post_class('compact-post ' . kepoli_post_tone_class()); ?>>
@@ -200,10 +215,10 @@ $article_list = new WP_Query([
         <div class="review-lane">
             <div class="section__header section__header--compact section__header--simple">
                 <div>
-                    <p class="eyebrow"><?php esc_html_e('Urmarite de aproape', 'kepoli'); ?></p>
-                    <h2><?php esc_html_e('Ghiduri publicate sau revizuite recent', 'kepoli'); ?></h2>
+                    <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Urmarite de aproape', 'Recently touched')); ?></p>
+                    <h2><?php echo esc_html(kepoli_ui_text('Ghiduri publicate sau revizuite recent', 'Recently published or reviewed guides')); ?></h2>
                 </div>
-                <p><?php esc_html_e('Un semnal simplu ca partea editoriala nu sta pe loc: unele ghiduri sunt noi, altele sunt revazute cand apar clarificari utile.', 'kepoli'); ?></p>
+                <p><?php echo esc_html(kepoli_ui_text('Un semnal simplu ca partea editoriala nu sta pe loc: unele ghiduri sunt noi, altele sunt revazute cand apar clarificari utile.', 'A simple signal that the editorial side keeps moving: some guides are new, others are reviewed when useful clarifications appear.')); ?></p>
             </div>
             <div class="review-grid">
                 <?php foreach ($recently_touched_articles as $article) : ?>
@@ -221,10 +236,10 @@ $article_list = new WP_Query([
         <div class="guide-paths">
             <div class="section__header section__header--compact section__header--simple">
                 <div>
-                    <p class="eyebrow"><?php esc_html_e('Zone editoriale', 'kepoli'); ?></p>
-                    <h2><?php esc_html_e('Intra direct in tipul de ghid care te ajuta acum', 'kepoli'); ?></h2>
+                    <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Zone editoriale', 'Editorial paths')); ?></p>
+                    <h2><?php echo esc_html(kepoli_ui_text('Intra direct in tipul de ghid care te ajuta acum', 'Go straight to the guide type that helps now')); ?></h2>
                 </div>
-                <p><?php esc_html_e('Ingrediente, tehnici, sezon si planificare, grupate ca sa ajungi mai repede la articolul potrivit.', 'kepoli'); ?></p>
+                <p><?php echo esc_html(kepoli_ui_text('Ingrediente, tehnici, sezon si planificare, grupate ca sa ajungi mai repede la articolul potrivit.', 'Ingredients, techniques, seasonality, and planning grouped so readers can reach the right article faster.')); ?></p>
             </div>
             <div class="guide-path-grid">
                 <?php foreach ($editorial_paths as $path) : ?>
@@ -247,14 +262,14 @@ $article_list = new WP_Query([
 <section class="section section--tight defer-section">
     <div class="author-strip">
         <div class="author-strip__photo">
-            <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'jpg')); ?>" alt="<?php esc_attr_e('Isalune Merovik, autoarea Kepoli', 'kepoli'); ?>"<?php echo kepoli_asset_dimension_attributes('writer-photo'); ?> loading="lazy" decoding="async">
+            <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'jpg')); ?>" alt="<?php echo esc_attr(sprintf(kepoli_ui_text('%1$s, autoarea %2$s', '%1$s, writer for %2$s'), $writer_name, $site_name)); ?>"<?php echo kepoli_asset_dimension_attributes('writer-photo'); ?> loading="lazy" decoding="async">
         </div>
         <div class="author-strip__copy">
-            <p class="eyebrow"><?php esc_html_e('Autoare', 'kepoli'); ?></p>
-            <h2><?php esc_html_e('Isalune Merovik', 'kepoli'); ?></h2>
-            <p><?php esc_html_e('Scriu retete romanesti si ghiduri practice pentru gatit calm, clar si usor de urmat acasa.', 'kepoli'); ?></p>
+            <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Autoare', 'Writer')); ?></p>
+            <h2><?php echo esc_html($writer_name); ?></h2>
+            <p><?php echo esc_html(kepoli_writer_description()); ?></p>
             <?php echo kepoli_newsletter_cta('newsletter-cta--compact newsletter-cta--homepage'); ?>
-            <a class="button" href="<?php echo esc_url(home_url('/despre-autor/')); ?>"><?php esc_html_e('Citeste povestea', 'kepoli'); ?></a>
+            <a class="button" href="<?php echo esc_url(kepoli_author_page_url()); ?>"><?php echo esc_html(kepoli_ui_text('Citeste povestea', 'Read the story')); ?></a>
         </div>
     </div>
 </section>

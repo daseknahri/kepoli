@@ -8,12 +8,16 @@ $featured_article = kepoli_latest_post_by_kind('article');
 $editorial_paths = kepoli_editorial_paths();
 $article_meta_items = kepoli_article_collection_meta_items(kepoli_post_count_by_kind('article'));
 $recently_touched_articles = kepoli_recently_touched_posts_by_kind('article', 3, $featured_article ? [$featured_article->ID] : []);
+$page_id = get_queried_object_id();
+$page_title = $page_id ? get_the_title($page_id) : '';
+$page_content = $page_id ? trim((string) apply_filters('the_content', (string) get_post_field('post_content', $page_id))) : '';
+$page_intro = $page_content !== '' ? wp_trim_words(wp_strip_all_tags($page_content), 28, '') : '';
 ?>
 <header class="archive-header">
     <?php kepoli_breadcrumbs(); ?>
-    <p class="eyebrow"><?php esc_html_e('Articole', 'kepoli'); ?></p>
-    <h1><?php esc_html_e('Ghiduri de bucatarie', 'kepoli'); ?></h1>
-    <p><?php esc_html_e('Organizare, ingrediente, tehnici si idei pentru mese romanesti bine asezate.', 'kepoli'); ?></p>
+    <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Articole', 'Guides')); ?></p>
+    <h1><?php echo esc_html($page_title !== '' ? $page_title : kepoli_ui_text('Ghiduri de bucatarie', 'Kitchen guides')); ?></h1>
+    <p><?php echo esc_html($page_intro !== '' ? $page_intro : kepoli_ui_text('Organizare, ingrediente, tehnici si idei practice pentru gatit mai clar acasa.', 'Organization, ingredients, techniques, and practical ideas for better home cooking.')); ?></p>
     <?php if ($article_meta_items) : ?>
         <div class="meta-strip">
             <?php foreach ($article_meta_items as $item) : ?>
@@ -23,12 +27,19 @@ $recently_touched_articles = kepoli_recently_touched_posts_by_kind('article', 3,
     <?php endif; ?>
     <?php kepoli_render_reader_trust_links(); ?>
 </header>
+<?php if ($page_content !== '') : ?>
+    <section class="section section--tight">
+        <div class="entry-content entry-content--page">
+            <?php echo $page_content; ?>
+        </div>
+    </section>
+<?php endif; ?>
 <?php if ($featured_article) : ?>
     <section class="section section--tight">
         <div class="section__header section__header--compact">
             <div>
-                <p class="eyebrow"><?php esc_html_e('In prim-plan', 'kepoli'); ?></p>
-                <h2><?php esc_html_e('Un bun punct de pornire', 'kepoli'); ?></h2>
+                <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('In prim-plan', 'Featured')); ?></p>
+                <h2><?php echo esc_html(kepoli_ui_text('Un bun punct de pornire', 'A good place to start')); ?></h2>
             </div>
         </div>
         <article class="lead-story <?php echo esc_attr(kepoli_post_tone_class($featured_article->ID)); ?>">
@@ -36,7 +47,7 @@ $recently_touched_articles = kepoli_recently_touched_posts_by_kind('article', 3,
                 <?php echo kepoli_post_media_markup($featured_article->ID, 'related'); ?>
             </a>
             <div class="lead-story__body">
-                <p class="eyebrow"><?php esc_html_e('Articol recomandat', 'kepoli'); ?></p>
+                <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Articol recomandat', 'Recommended guide')); ?></p>
                 <h3><a href="<?php echo esc_url(get_permalink($featured_article)); ?>"><?php echo esc_html(get_the_title($featured_article)); ?></a></h3>
                 <p><?php echo esc_html(get_the_excerpt($featured_article)); ?></p>
                 <?php echo kepoli_render_post_card_meta($featured_article->ID, 'meta-strip meta-strip--inline', 'meta-strip__item'); ?>
@@ -48,10 +59,10 @@ $recently_touched_articles = kepoli_recently_touched_posts_by_kind('article', 3,
     <section class="section section--tight">
         <div class="section__header section__header--compact section__header--simple">
             <div>
-                <p class="eyebrow"><?php esc_html_e('Urmarite de aproape', 'kepoli'); ?></p>
-                <h2><?php esc_html_e('Ghiduri publicate sau revizuite recent', 'kepoli'); ?></h2>
+                <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Urmarite de aproape', 'Recently touched')); ?></p>
+                <h2><?php echo esc_html(kepoli_ui_text('Ghiduri publicate sau revizuite recent', 'Recently published or reviewed guides')); ?></h2>
             </div>
-            <p><?php esc_html_e('Aici apar ghidurile la care ne-am intors recent, fie pentru ca sunt noi, fie pentru ca au primit clarificari utile.', 'kepoli'); ?></p>
+            <p><?php echo esc_html(kepoli_ui_text('Aici apar ghidurile la care ne-am intors recent, fie pentru ca sunt noi, fie pentru ca au primit clarificari utile.', 'These are the guides we have returned to recently, either because they are new or because they received useful clarifications.')); ?></p>
         </div>
         <div class="review-grid">
             <?php foreach ($recently_touched_articles as $article) : ?>
@@ -69,10 +80,10 @@ $recently_touched_articles = kepoli_recently_touched_posts_by_kind('article', 3,
     <section class="section section--tight">
         <div class="section__header section__header--compact section__header--simple">
             <div>
-                <p class="eyebrow"><?php esc_html_e('Zone editoriale', 'kepoli'); ?></p>
-                <h2><?php esc_html_e('Alege dupa tipul de ajutor de care ai nevoie', 'kepoli'); ?></h2>
+                <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Zone editoriale', 'Editorial paths')); ?></p>
+                <h2><?php echo esc_html(kepoli_ui_text('Alege dupa tipul de ajutor de care ai nevoie', 'Choose by the kind of help you need')); ?></h2>
             </div>
-            <p><?php esc_html_e('Ghidurile sunt grupate simplu, ca sa ajungi mai repede la ingredientele, tehnicile sau ideile de planificare care conteaza pentru tine.', 'kepoli'); ?></p>
+            <p><?php echo esc_html(kepoli_ui_text('Ghidurile sunt grupate simplu, ca sa ajungi mai repede la ingredientele, tehnicile sau ideile de planificare care conteaza pentru tine.', 'Guides are grouped simply so readers can reach the ingredients, techniques, or planning ideas they need faster.')); ?></p>
         </div>
         <div class="guide-path-grid">
             <?php foreach ($editorial_paths as $path) : ?>
@@ -93,10 +104,10 @@ $recently_touched_articles = kepoli_recently_touched_posts_by_kind('article', 3,
 <section class="section section--tight">
     <div class="section__header section__header--compact">
         <div>
-            <p class="eyebrow"><?php esc_html_e('Toate ghidurile', 'kepoli'); ?></p>
-            <h2><?php esc_html_e('Citeste dupa nevoie', 'kepoli'); ?></h2>
+            <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Toate ghidurile', 'All guides')); ?></p>
+            <h2><?php echo esc_html(kepoli_ui_text('Citeste dupa nevoie', 'Read by need')); ?></h2>
         </div>
-        <p><?php esc_html_e('Ghiduri practice, aranjate simplu pentru citire rapida.', 'kepoli'); ?></p>
+        <p><?php echo esc_html(kepoli_ui_text('Ghiduri practice, aranjate simplu pentru citire rapida.', 'Practical guides, arranged simply for quick reading.')); ?></p>
     </div>
     <div class="post-grid">
         <?php

@@ -1,10 +1,12 @@
 # Kepoli WordPress Blog
 
-Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and food articles. The repo contains the Docker Compose stack, custom theme, launch content, and WP-CLI bootstrap used by Coolify.
+Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and kitchen articles. This repo contains the live site stack, content seed, custom theme, and the clone tooling used to launch future sibling food blogs from the same engine.
+
+For repeatable cloning and launch steps, use `docs/new-blog-launch-plan.md`. For deeper clone details, use `docs/replicate-food-blog.md`. For a fresh Codex handoff prompt, use `docs/codex-new-site-prompt.md`. The most robust path is: create `site-brief.json` with `node scripts/create-site-brief.mjs ... --write`, run `node scripts/start-new-blog.mjs --brief site-brief.json --write`, then run `node scripts/validate-new-blog.mjs --brief site-brief.json`.
 
 ## What This Repo Builds
 
-- WordPress with MariaDB, deployed by Docker Compose with small Kepoli-specific images built from this repo.
+- WordPress with MariaDB, deployed by Docker Compose with small project-specific images built from this repo.
 - A custom `kepoli` theme focused on reading, recipes, internal links, and ad-safe layouts.
 - Production Apache settings for static asset caching, compression, and small security headers.
 - An optional one-shot `wp-init` seed profile for manual reseeding.
@@ -36,7 +38,7 @@ The seed is idempotent: rerunning `docker compose -f docker-compose.yml -f docke
 5. Enable GitHub auto-deploy on push.
 6. Do not enable the `seed` profile for normal Coolify deploys. WordPress self-seeds automatically from the app image.
 
-The `CANONICAL_REDIRECT_HOSTS` value should include any extra hostnames that may reach the app, such as `www.kepoli.com`, `api.kepoli.com`, or `recipe.kepoli.com`. Kepoli redirects those hosts to `SITE_URL` so Search Console and readers see one canonical site.
+The `CANONICAL_REDIRECT_HOSTS` value should include any extra hostnames that may reach the app, such as `www.kepoli.com`, `api.kepoli.com`, or `recipe.kepoli.com`. The MU plugin redirects those hosts to `SITE_URL` so Search Console and readers see one canonical site.
 
 If you need to manually reseed after launch, run:
 
@@ -64,11 +66,11 @@ Before submitting to AdSense:
 
 ## Author Writing
 
-The `kepoli-author-tools` plugin switches posts to the classic editor for a simpler title/content workflow. It adds `Pauza`, `2 parti`, and `3 parti` toolbar buttons for native WordPress post pagination, plus a Kepoli setup box for post type, excerpt, meta description, related slugs, featured-image metadata, and recipe structured data. The setup box can prefill excerpts, meta descriptions, internal-link slugs, and image metadata from the current post, and empty fields receive sensible defaults on save. The Posts list also shows Kepoli type/readiness columns for quick editorial checks. See `docs/author-workflow.md` for the exact writing flow.
+The `kepoli-author-tools` plugin switches posts to the classic editor for a simpler title/content workflow. It adds `Pauza`, `2 parti`, and `3 parti` toolbar buttons for native WordPress post pagination, plus a post setup box for post type, excerpt, meta description, related slugs, featured-image metadata, and recipe structured data. The setup box can prefill excerpts, meta descriptions, internal-link slugs, and image metadata from the current post, and empty fields receive sensible defaults on save. The Posts list also shows type/readiness columns for quick editorial checks. See `docs/author-workflow.md` for the exact writing flow.
 
 ## Media
 
-The current repo includes SVG logo assets based on the provided Kepoli mark. If you want the exact uploaded bitmap images used instead, place them at:
+The current repo includes the Kepoli SVG logo assets. If you want to use the bitmap images instead, place them at:
 
 - `wp-content/themes/kepoli/assets/img/kepoli-wordmark.png`
 - `wp-content/themes/kepoli/assets/img/kepoli-icon.png`

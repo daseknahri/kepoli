@@ -1,5 +1,16 @@
 import fs from 'node:fs';
 
+const failures = [];
+const args = parseArgs(process.argv.slice(2));
+if (args.help || args.h) {
+  printHelp();
+  process.exit(0);
+}
+
+const expectedPosts = optionalNumberArg('expected-posts');
+const expectedRecipes = optionalNumberArg('expected-recipes');
+const expectedArticles = optionalNumberArg('expected-articles');
+const siteProfile = JSON.parse(fs.readFileSync('content/site-profile.json', 'utf8'));
 const posts = JSON.parse(fs.readFileSync('content/posts.json', 'utf8'));
 const pages = JSON.parse(fs.readFileSync('content/pages.json', 'utf8'));
 const categories = JSON.parse(fs.readFileSync('content/categories.json', 'utf8'));
@@ -7,11 +18,104 @@ const imagePlan = fs.existsSync('content/image-plan.json')
   ? JSON.parse(fs.readFileSync('content/image-plan.json', 'utf8'))
   : [];
 
-const failures = [];
 const slugs = new Set();
 const seoTitles = new Set();
 const categorySlugs = new Set(categories.map((category) => category.slug));
 const imagePlanBySlug = new Map();
+const pageSlugs = new Set(pages.map((page) => page.slug));
+
+function printHelp() {
+  console.log(`Usage:
+node scripts/verify-content.mjs
+node scripts/verify-content.mjs --expected-posts 30 --expected-recipes 24 --expected-articles 6
+
+Validates content JSON structure, relations, policy wording, pages, categories, and image plan entries.
+Expected post counts are optional so a freshly cloned repo can pass structure checks before new posts are written.`);
+}
+
+function parseArgs(argv) {
+  const parsed = {};
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const item = argv[index];
+    if (!item.startsWith('--')) {
+      failures.push(`Unexpected argument: ${item}`);
+      continue;
+    }
+
+    const raw = item.slice(2);
+    const equalIndex = raw.indexOf('=');
+    if (equalIndex !== -1) {
+      parsed[raw.slice(0, equalIndex)] = raw.slice(equalIndex + 1);
+      continue;
+    }
+
+    const next = argv[index + 1];
+    if (!next || next.startsWith('--')) {
+      parsed[raw] = true;
+      continue;
+    }
+
+    parsed[raw] = next;
+    index += 1;
+  }
+
+  return parsed;
+}
+
+function optionalNumberArg(name) {
+  if (!(name in args)) return null;
+
+  const value = Number.parseInt(args[name], 10);
+  if (!Number.isFinite(value) || value < 0) {
+    failures.push(`Invalid --${name}: expected a non-negative number.`);
+    return null;
+  }
+
+  return value;
+}
+
+function hasAnyPage(...candidates) {
+  return candidates.some((slug) => pageSlugs.has(slug));
+}
+
+function countPostsByCategory(...candidates) {
+  return posts.filter((post) => candidates.includes(post.category)).length;
+}
+
+function profileValue(pathParts) {
+  let value = siteProfile;
+  for (const key of pathParts) {
+    if (!value || typeof value !== 'object' || !(key in value)) return '';
+    value = value[key];
+  }
+
+  return value;
+}
+
+function profileSlug(key) {
+  return String(profileValue(['slugs', key]) || '').trim();
+}
+
+for (const path of [
+  ['brand', 'name'],
+  ['brand', 'tagline'],
+  ['brand', 'description'],
+  ['brand', 'site_email'],
+  ['locales', 'public'],
+  ['writer', 'name'],
+  ['writer', 'email'],
+  ['writer', 'bio'],
+]) {
+  if (!String(profileValue(path) || '').trim()) failures.push(`Missing site profile value: ${path.join('.')}`);
+}
+
+if (profileValue(['locales', 'admin']) !== 'en_US') failures.push('Site profile locales.admin must be en_US.');
+if (profileValue(['locales', 'force_admin']) !== true) failures.push('Site profile locales.force_admin must be true.');
+
+for (const key of ['home', 'recipes', 'guides', 'about', 'author', 'privacy', 'cookies', 'advertising', 'editorial', 'terms', 'disclaimer']) {
+  if (!profileSlug(key)) failures.push(`Missing site profile slug: ${key}`);
+}
 
 for (const post of posts) {
   if (slugs.has(post.slug)) failures.push(`Duplicate post slug: ${post.slug}`);
@@ -102,24 +206,30 @@ for (const post of posts) {
   }
 }
 
-const requiredPages = [
-  'acasa',
-  'retete',
-  'articole',
-  'despre-kepoli',
-  'despre-autor',
-  'contact',
-  'politica-de-confidentialitate',
-  'politica-de-cookies',
-  'publicitate-si-consimtamant',
-  'politica-editoriala',
-  'termeni-si-conditii',
-  'disclaimer-culinar',
+const requiredPageGroups = [
+  ['home page', [profileSlug('home'), 'acasa', 'home']],
+  ['recipes page', [profileSlug('recipes'), 'retete', 'recipes']],
+  ['guides page', [profileSlug('guides'), 'articole', 'guides', 'articles']],
+  ['author page', [profileSlug('author'), 'despre-autor', 'about-author']],
+  ['contact page', ['contact']],
+  ['privacy policy page', [profileSlug('privacy'), 'politica-de-confidentialitate', 'privacy-policy']],
+  ['cookie policy page', [profileSlug('cookies'), 'politica-de-cookies', 'cookie-policy']],
+  ['advertising/consent page', [profileSlug('advertising'), 'publicitate-si-consimtamant', 'advertising-and-consent']],
+  ['editorial policy page', [profileSlug('editorial'), 'politica-editoriala', 'editorial-policy']],
+  ['terms page', [profileSlug('terms'), 'termeni-si-conditii', 'terms-and-conditions']],
+  ['culinary disclaimer page', [profileSlug('disclaimer'), 'disclaimer-culinar', 'culinary-disclaimer']],
 ];
-const pageSlugs = new Set(pages.map((page) => page.slug));
-for (const slug of requiredPages) {
-  if (!pageSlugs.has(slug)) failures.push(`Missing required page: ${slug}`);
+
+for (const [label, candidates] of requiredPageGroups) {
+  const filtered = candidates.filter(Boolean);
+  if (!hasAnyPage(...filtered)) failures.push(`Missing required ${label}: expected one of ${filtered.join(', ')}`);
 }
+
+const aboutPage = pages.find((page) => {
+  const slug = String(page.slug || '');
+  return slug === profileSlug('about') || ((/^despre-/.test(slug) || /^about-/.test(slug)) && !['despre-autor', 'about-author'].includes(slug));
+});
+if (!aboutPage) failures.push('Missing required about-site page: expected a slug like despre-{brand} or about-{brand}.');
 
 for (const category of categories) {
   if (!category.description || category.description.length < 70) failures.push(`Category description too short: ${category.slug}`);
@@ -127,9 +237,12 @@ for (const category of categories) {
 
 const recipeCount = posts.filter((post) => post.kind === 'recipe').length;
 const articleCount = posts.filter((post) => post.kind === 'article').length;
-if (posts.length !== 30) failures.push(`Expected 30 posts, found ${posts.length}`);
-if (recipeCount !== 24) failures.push(`Expected 24 recipes, found ${recipeCount}`);
-if (articleCount !== 6) failures.push(`Expected 6 articles, found ${articleCount}`);
+if (expectedPosts !== null && posts.length !== expectedPosts) failures.push(`Expected ${expectedPosts} posts, found ${posts.length}`);
+if (expectedRecipes !== null && recipeCount !== expectedRecipes) failures.push(`Expected ${expectedRecipes} recipes, found ${recipeCount}`);
+if (expectedArticles !== null && articleCount !== expectedArticles) failures.push(`Expected ${expectedArticles} articles, found ${articleCount}`);
+if (countPostsByCategory(profileSlug('guides'), 'articole', 'guides', 'articles') !== articleCount) {
+  failures.push('Article posts should stay inside the editorial/guides category.');
+}
 
 const riskyClaims = [
   /\bdetox\b/i,

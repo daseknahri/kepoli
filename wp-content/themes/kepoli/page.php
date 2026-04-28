@@ -24,7 +24,7 @@ get_header();
                 </div>
             <?php endif; ?>
         </div>
-        <aside class="sidebar" aria-label="<?php esc_attr_e('Informatii Kepoli', 'kepoli'); ?>">
+        <aside class="sidebar" aria-label="<?php echo esc_attr(sprintf(kepoli_ui_text('Informatii %s', '%s information'), kepoli_site_name())); ?>">
             <?php get_template_part('template-parts-sidebar'); ?>
         </aside>
     </article>

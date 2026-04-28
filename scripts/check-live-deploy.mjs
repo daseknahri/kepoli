@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
-const liveUrl = (process.argv[2] || process.env.SITE_URL || 'https://kepoli.com').replace(/\/+$/, '');
+const liveUrl = (process.argv[2] || process.env.SITE_URL || '').replace(/\/+$/, '');
 
 const versionFiles = [
   'seed/bootstrap.php',
@@ -56,7 +56,7 @@ function extractMetaByName(html) {
 async function fetchHtml(url) {
   const response = await fetch(url, {
     headers: {
-      'user-agent': 'KepoliLiveDeployCheck/1.0',
+      'user-agent': 'FoodBlogLiveDeployCheck/1.0',
     },
     redirect: 'follow',
   });
@@ -69,6 +69,10 @@ async function fetchHtml(url) {
 }
 
 async function main() {
+  if (!liveUrl) {
+    throw new Error('Missing live URL. Pass a URL as the first argument or set SITE_URL in the environment.');
+  }
+
   const expectedVersion = localSeedVersion();
   const html = await fetchHtml(liveUrl);
   const meta = extractMetaByName(html);

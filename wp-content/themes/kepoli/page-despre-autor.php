@@ -3,18 +3,23 @@
  * Author page.
  */
 get_header();
+$writer_name = kepoli_writer_name();
+$writer_email = kepoli_writer_email();
+$site_name = kepoli_site_name();
 ?>
 <section class="section">
     <div class="author-strip">
         <div class="author-strip__photo">
-            <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'jpg')); ?>" alt="<?php esc_attr_e('Isalune Merovik, autoarea Kepoli', 'kepoli'); ?>"<?php echo kepoli_asset_dimension_attributes('writer-photo'); ?> loading="eager" fetchpriority="high" decoding="async">
+            <img src="<?php echo esc_url(kepoli_asset_uri('writer-photo', 'jpg')); ?>" alt="<?php echo esc_attr(sprintf(kepoli_ui_text('%1$s, autoarea %2$s', '%1$s, writer for %2$s'), $writer_name, $site_name)); ?>"<?php echo kepoli_asset_dimension_attributes('writer-photo'); ?> loading="eager" fetchpriority="high" decoding="async">
         </div>
         <div class="author-strip__copy">
             <?php kepoli_breadcrumbs(); ?>
-            <p class="eyebrow"><?php esc_html_e('Autoare', 'kepoli'); ?></p>
-            <h1 class="entry-title"><?php esc_html_e('Isalune Merovik', 'kepoli'); ?></h1>
-            <p><?php esc_html_e('Gatesc si scriu pentru oameni care vor retete romanesti clare, cu pasi simpli, gust echilibrat si ingrediente care se gasesc usor. Kepoli este locul unde strang retete de familie, idei de sezon si ghiduri practice pentru bucataria de acasa.', 'kepoli'); ?></p>
-            <p><a href="mailto:isalunemerovik@gmail.com">isalunemerovik@gmail.com</a></p>
+            <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Autoare', 'Writer')); ?></p>
+            <h1 class="entry-title"><?php echo esc_html($writer_name); ?></h1>
+            <p><?php echo esc_html(kepoli_writer_description()); ?></p>
+            <?php if ($writer_email !== '') : ?>
+                <p><a href="mailto:<?php echo esc_attr($writer_email); ?>"><?php echo esc_html($writer_email); ?></a></p>
+            <?php endif; ?>
         </div>
     </div>
 </section>
@@ -31,10 +36,10 @@ get_header();
 <section class="section section--tight">
     <div class="section__header section__header--compact">
         <div>
-            <p class="eyebrow"><?php esc_html_e('Publicat recent', 'kepoli'); ?></p>
-            <h2><?php esc_html_e('Retete si ghiduri de la Isalune', 'kepoli'); ?></h2>
+            <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('Publicat recent', 'Recently published')); ?></p>
+            <h2><?php echo esc_html(sprintf(kepoli_ui_text('Retete si ghiduri de la %s', 'Recipes and guides from %s'), $writer_name)); ?></h2>
         </div>
-        <p><?php esc_html_e('Cele mai noi materiale Kepoli, cu accent pe retete romanesti, organizare si gatit clar pentru acasa.', 'kepoli'); ?></p>
+        <p><?php echo esc_html(sprintf(kepoli_ui_text('Cele mai noi materiale %s, cu accent pe retete, organizare si gatit clar pentru acasa.', 'The newest pieces on %s, focused on recipes, kitchen guidance, and practical home cooking.'), $site_name)); ?></p>
     </div>
     <div class="post-grid">
         <?php

@@ -11,6 +11,7 @@ if (!function_exists('kepoli_seed_target_version')) {
 
         $files = [
             '/seed/bootstrap.php',
+            '/content/site-profile.json',
             '/content/categories.json',
             '/content/pages.json',
             '/content/posts.json',

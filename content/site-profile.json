@@ -1,0 +1,31 @@
+{
+  "brand": {
+    "name": "Kepoli",
+    "tagline": "Retete romanesti si articole de bucatarie pentru acasa",
+    "description": "Kepoli publica retete romanesti, articole culinare si ghiduri practice pentru gatit acasa.",
+    "site_email": "contact@kepoli.com"
+  },
+  "locales": {
+    "public": "ro_RO",
+    "admin": "en_US",
+    "force_admin": true
+  },
+  "writer": {
+    "name": "Isalune Merovik",
+    "email": "isalunemerovik@gmail.com",
+    "bio": "Scrie retete si ghiduri practice pentru Kepoli."
+  },
+  "slugs": {
+    "home": "acasa",
+    "recipes": "retete",
+    "guides": "articole",
+    "about": "despre-kepoli",
+    "author": "despre-autor",
+    "privacy": "politica-de-confidentialitate",
+    "cookies": "politica-de-cookies",
+    "advertising": "publicitate-si-consimtamant",
+    "editorial": "politica-editoriala",
+    "terms": "termeni-si-conditii",
+    "disclaimer": "disclaimer-culinar"
+  }
+}

@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: Kepoli Ad and Verification Helpers
- * Description: Handles ads.txt and lightweight verification output for the Kepoli Docker deployment.
+ * Plugin Name: Food Blog Ad and Verification Helpers
+ * Description: Handles ads.txt and lightweight verification output for the food-blog deployment.
  */
 
 if (!defined('ABSPATH')) {
@@ -12,6 +12,41 @@ function kepoli_mu_env(string $key, string $default = ''): string
 {
     $value = getenv($key);
     return $value === false || $value === '' ? $default : trim((string) $value);
+}
+
+function kepoli_mu_site_profile(): array
+{
+    $profile = get_option('kepoli_site_profile');
+    return is_array($profile) ? $profile : [];
+}
+
+function kepoli_mu_profile_value(array $path, $default = '')
+{
+    $value = kepoli_mu_site_profile();
+    foreach ($path as $key) {
+        if (!is_array($value) || !array_key_exists($key, $value)) {
+            return $default;
+        }
+
+        $value = $value[$key];
+    }
+
+    return $value;
+}
+
+function kepoli_mu_locale_to_language_tag(string $locale): string
+{
+    $locale = str_replace('_', '-', trim($locale));
+    if ($locale === '') {
+        return 'ro-RO';
+    }
+
+    $parts = explode('-', $locale);
+    if (count($parts) >= 2) {
+        return strtolower($parts[0]) . '-' . strtoupper($parts[1]);
+    }
+
+    return strtolower($parts[0]);
 }
 
 function kepoli_mu_redirect_hosts(string $canonical_host): array
@@ -52,7 +87,7 @@ add_action('template_redirect', static function (): void {
     $request_uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
     $request_uri = str_starts_with($request_uri, '/') ? $request_uri : '/';
 
-    wp_redirect($scheme . '://' . $canonical_host . $request_uri, 301, 'Kepoli');
+    wp_redirect($scheme . '://' . $canonical_host . $request_uri, 301, get_bloginfo('name') ?: 'Food Blog');
     exit;
 }, 0);
 
@@ -81,7 +116,7 @@ add_action('template_redirect', static function (): void {
     }
 
     $site_url = trailingslashit(kepoli_mu_env('SITE_URL', home_url('/')));
-    $contact_email = sanitize_email(kepoli_mu_env('SITE_EMAIL', 'contact@kepoli.com'));
+    $contact_email = sanitize_email((string) kepoli_mu_profile_value(['brand', 'site_email'], kepoli_mu_env('SITE_EMAIL', 'contact@example.com')));
     $contact_page = trailingslashit(home_url('/contact/'));
     $expires = gmdate('Y-m-d\T00:00:00\Z', strtotime('+12 months'));
 
@@ -91,7 +126,7 @@ add_action('template_redirect', static function (): void {
     echo 'Contact: mailto:' . esc_html($contact_email) . "\n";
     echo 'Contact: ' . esc_url_raw($contact_page) . "\n";
     echo 'Canonical: ' . esc_url_raw($site_url . '.well-known/security.txt') . "\n";
-    echo "Preferred-Languages: ro, en\n";
+    echo 'Preferred-Languages: ' . esc_html(strtolower(substr(kepoli_mu_locale_to_language_tag((string) kepoli_mu_profile_value(['locales', 'public'], get_option('WPLANG') ?: 'ro_RO')), 0, 2))) . ", en\n";
     echo 'Expires: ' . esc_html($expires) . "\n";
 
     exit;
@@ -106,11 +141,13 @@ add_action('template_redirect', static function (): void {
     status_header(200);
     header('Content-Type: application/manifest+json; charset=utf-8');
 
+    $site_name = trim((string) kepoli_mu_profile_value(['brand', 'name'], get_bloginfo('name') ?: 'Food Blog'));
+    $description = trim((string) kepoli_mu_profile_value(['brand', 'description'], get_bloginfo('description') ?: ''));
     $manifest = [
-        'name' => 'Kepoli',
-        'short_name' => 'Kepoli',
-        'description' => 'Retete romanesti si ghiduri pentru gatit acasa.',
-        'lang' => get_bloginfo('language') ?: 'ro-RO',
+        'name' => $site_name,
+        'short_name' => $site_name,
+        'description' => $description !== '' ? $description : get_bloginfo('description'),
+        'lang' => kepoli_mu_locale_to_language_tag((string) kepoli_mu_profile_value(['locales', 'public'], get_option('WPLANG') ?: 'ro_RO')),
         'start_url' => home_url('/'),
         'scope' => home_url('/'),
         'display' => 'standalone',
