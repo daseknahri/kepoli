@@ -230,7 +230,13 @@
     }
 
     const field = document.querySelector(selector);
-    if (!field || String(field.value || '').trim()) {
+    if (!field) {
+      return;
+    }
+
+    const currentValue = String(field.value || '').trim();
+    const numericZero = field.type === 'number' && Number.parseFloat(currentValue || '0') === 0;
+    if (currentValue && !numericZero) {
       return;
     }
 
@@ -538,7 +544,7 @@
 
     value = value
       .replace(/^(?:[-*\u2022]+)\s*/u, '')
-      .replace(/^\d+\s*[.)-]\s*/u, '');
+      .replace(/^\d+\s*(?:[)-]\s*|\.\s+)/u, '');
 
     if (sectionName === 'steps') {
       value = value.replace(/^(?:pasul|step)\s*\d+\s*[:.)-]?\s*/iu, '');
@@ -1142,6 +1148,7 @@
       servings: servingsMatch ? servingsMatch[1] : '',
       prepMinutes: prepMinutes ? String(prepMinutes) : '',
       cookMinutes: cookMinutes ? String(cookMinutes) : '',
+      totalMinutes: '',
       ingredients: extractRecipeSection('ingredients'),
       steps: extractRecipeSection('steps')
     };
@@ -1177,6 +1184,7 @@
       servings: servingsMatch ? servingsMatch[1] : basic.servings,
       prepMinutes: prepMinutes ? String(prepMinutes) : basic.prepMinutes,
       cookMinutes: cookMinutes ? String(cookMinutes) : basic.cookMinutes,
+      totalMinutes: totalMinutes ? String(totalMinutes) : basic.totalMinutes,
       ingredients: basic.ingredients,
       steps: basic.steps
     };
@@ -1189,6 +1197,7 @@
     setter('input[name="kepoli_recipe_servings"]', data.servings);
     setter('input[name="kepoli_recipe_prep_minutes"]', data.prepMinutes);
     setter('input[name="kepoli_recipe_cook_minutes"]', data.cookMinutes);
+    setter('input[name="kepoli_recipe_total_minutes"]', data.totalMinutes);
     setter('textarea[name="kepoli_recipe_ingredients"]', data.ingredients.join('\n'));
     setter('textarea[name="kepoli_recipe_steps"]', data.steps.join('\n'));
 
@@ -1281,7 +1290,7 @@
     if (recipeButton) {
       recipeButton.addEventListener('click', () => {
         const data = fillRecipeSchema(false);
-        const hasData = data.ingredients.length || data.steps.length || data.servings || data.prepMinutes || data.cookMinutes;
+        const hasData = data.ingredients.length || data.steps.length || data.servings || data.prepMinutes || data.cookMinutes || data.totalMinutes;
         setStatus(
           hasData
             ? 'Recipe schema was extracted from the content. Review ingredients, steps, and times.'

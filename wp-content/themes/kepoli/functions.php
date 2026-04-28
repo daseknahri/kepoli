@@ -1969,22 +1969,22 @@ function kepoli_share_links(int $post_id = 0): array
     $links = [
         [
             'type' => 'facebook',
-            'label' => __('Facebook', 'kepoli'),
+            'label' => 'Facebook',
             'url' => 'https://www.facebook.com/sharer/sharer.php?u=' . rawurlencode($url),
         ],
         [
             'type' => 'whatsapp',
-            'label' => __('WhatsApp', 'kepoli'),
+            'label' => 'WhatsApp',
             'url' => 'https://wa.me/?text=' . $text,
         ],
         [
             'type' => 'email',
-            'label' => __('Email', 'kepoli'),
+            'label' => 'Email',
             'url' => 'mailto:?subject=' . $subject . '&body=' . $body,
         ],
         [
             'type' => 'copy',
-            'label' => __('Copiaza linkul', 'kepoli'),
+            'label' => kepoli_ui_text('Copiaza linkul', 'Copy link'),
             'url' => $url,
         ],
     ];
@@ -1992,7 +1992,7 @@ function kepoli_share_links(int $post_id = 0): array
     if (kepoli_post_kind($post_id) === 'recipe') {
         $links[] = [
             'type' => 'print',
-            'label' => __('Printeaza', 'kepoli'),
+            'label' => kepoli_ui_text('Printeaza', 'Print'),
             'url' => '#print',
         ];
     }
@@ -2668,22 +2668,22 @@ function kepoli_recipe_snapshot_items(int $post_id = 0): array
     $items = [];
     $candidates = [
         [
-            'label' => __('Pregatire', 'kepoli'),
+            'label' => kepoli_ui_text('Pregatire', 'Prep'),
             'value' => trim((string) ($data['prep'] ?? kepoli_format_iso_duration((string) ($data['prep_iso'] ?? '')))),
             'icon' => 'prep',
         ],
         [
-            'label' => __('Gatire', 'kepoli'),
+            'label' => kepoli_ui_text('Gatire', 'Cook'),
             'value' => trim((string) ($data['cook'] ?? kepoli_format_iso_duration((string) ($data['cook_iso'] ?? '')))),
             'icon' => 'clock',
         ],
         [
-            'label' => __('Total', 'kepoli'),
+            'label' => kepoli_ui_text('Total', 'Total'),
             'value' => trim((string) ($data['total_label'] ?? kepoli_format_iso_duration((string) ($data['total_iso'] ?? '')))),
             'icon' => 'refresh',
         ],
         [
-            'label' => __('Portii', 'kepoli'),
+            'label' => kepoli_ui_text('Portii', 'Servings'),
             'value' => trim((string) ($data['servings'] ?? '')),
             'icon' => 'ingredients',
         ],
@@ -2709,11 +2709,11 @@ function kepoli_recipe_step_name(string $step): string
 {
     $text = trim(wp_strip_all_tags($step));
     if ($text === '') {
-        return __('Pas de preparare', 'kepoli');
+        return kepoli_ui_text('Pas de preparare', 'Recipe step');
     }
 
     $name = wp_trim_words($text, 8, '');
-    return rtrim($name, " \t\n\r\0\x0B.,;:") ?: __('Pas de preparare', 'kepoli');
+    return rtrim($name, " \t\n\r\0\x0B.,;:") ?: kepoli_ui_text('Pas de preparare', 'Recipe step');
 }
 
 function kepoli_recipe_keywords(int $post_id = 0): string
@@ -2769,7 +2769,7 @@ function kepoli_article_snapshot_items(int $post_id = 0): array
 
     if (!empty($takeaways[0])) {
         $items[] = [
-            'label' => __('Ideea cheie', 'kepoli'),
+            'label' => kepoli_ui_text('Ideea cheie', 'Key idea'),
             'value' => $takeaways[0],
             'icon' => 'tips',
         ];
@@ -2777,13 +2777,13 @@ function kepoli_article_snapshot_items(int $post_id = 0): array
 
     if (!empty($headings[0])) {
         $items[] = [
-            'label' => __('Pornesti cu', 'kepoli'),
+            'label' => kepoli_ui_text('Pornesti cu', 'Starts with'),
             'value' => $headings[0],
             'icon' => 'steps',
         ];
     } elseif (!empty($takeaways[1])) {
         $items[] = [
-            'label' => __('Urmaresti', 'kepoli'),
+            'label' => kepoli_ui_text('Urmaresti', 'You follow'),
             'value' => $takeaways[1],
             'icon' => 'steps',
         ];
@@ -2791,23 +2791,23 @@ function kepoli_article_snapshot_items(int $post_id = 0): array
 
     $structure = [];
     if ($section_count > 0) {
-        $structure[] = sprintf(_n('%d sectiune practica', '%d sectiuni practice', $section_count, 'kepoli'), $section_count);
+        $structure[] = sprintf(kepoli_is_english() ? _n('%d practical section', '%d practical sections', $section_count, 'kepoli') : _n('%d sectiune practica', '%d sectiuni practice', $section_count, 'kepoli'), $section_count);
     }
     if ($faq_count > 0) {
-        $structure[] = sprintf(_n('%d raspuns rapid', '%d raspunsuri rapide', $faq_count, 'kepoli'), $faq_count);
+        $structure[] = sprintf(kepoli_is_english() ? _n('%d quick answer', '%d quick answers', $faq_count, 'kepoli') : _n('%d raspuns rapid', '%d raspunsuri rapide', $faq_count, 'kepoli'), $faq_count);
     }
     if ($structure !== []) {
         $items[] = [
-            'label' => __('Include', 'kepoli'),
-            'value' => implode(' si ', $structure),
+            'label' => kepoli_ui_text('Include', 'Includes'),
+            'value' => implode(kepoli_ui_text(' si ', ' and '), $structure),
             'icon' => 'question',
         ];
     }
 
     if ($related_recipe_count > 0) {
         $items[] = [
-            'label' => __('Aplici cu', 'kepoli'),
-            'value' => sprintf(_n('%d reteta legata', '%d retete legate', $related_recipe_count, 'kepoli'), $related_recipe_count),
+            'label' => kepoli_ui_text('Aplici cu', 'Use with'),
+            'value' => sprintf(kepoli_is_english() ? _n('%d related recipe', '%d related recipes', $related_recipe_count, 'kepoli') : _n('%d reteta legata', '%d retete legate', $related_recipe_count, 'kepoli'), $related_recipe_count),
             'icon' => 'arrow-right',
         ];
     }
@@ -2826,11 +2826,11 @@ function kepoli_post_card_meta_items(int $post_id = 0): array
         $servings = trim((string) ($data['servings'] ?? ''));
 
         if ($total !== '') {
-            $items[] = sprintf(__('Total %s', 'kepoli'), $total);
+            $items[] = sprintf(kepoli_ui_text('Total %s', 'Total %s'), $total);
         } elseif (!empty($data['prep_iso'])) {
             $prep = kepoli_format_iso_duration((string) $data['prep_iso']);
             if ($prep !== '') {
-                $items[] = sprintf(__('Pregatire %s', 'kepoli'), $prep);
+                $items[] = sprintf(kepoli_ui_text('Pregatire %s', 'Prep %s'), $prep);
             }
         }
 
