@@ -497,6 +497,20 @@ function kepoli_writer_name(): string
     return kepoli_site_name() ?: kepoli_ui_text('Autor', 'Author');
 }
 
+function kepoli_post_author_name(int $post_id = 0): string
+{
+    $post_id = $post_id > 0 ? $post_id : get_the_ID();
+    $author_id = $post_id > 0 ? (int) get_post_field('post_author', $post_id) : 0;
+    if ($author_id > 0) {
+        $name = trim((string) get_the_author_meta('display_name', $author_id));
+        if ($name !== '') {
+            return $name;
+        }
+    }
+
+    return kepoli_writer_name();
+}
+
 function kepoli_writer_email(): string
 {
     $email = trim((string) kepoli_profile_value(['writer', 'email'], kepoli_env('WRITER_EMAIL', '')));
@@ -2302,7 +2316,7 @@ function kepoli_meta_description(): void
     printf("<link rel=\"manifest\" href=\"%s\">\n", esc_url(home_url('/site.webmanifest')));
 
     if (is_singular('post')) {
-        printf("<meta name=\"author\" content=\"%s\">\n", esc_attr(get_the_author()));
+        printf("<meta name=\"author\" content=\"%s\">\n", esc_attr(kepoli_post_author_name()));
     }
 
     $verification = kepoli_env('SEARCH_CONSOLE_VERIFICATION');
@@ -2387,7 +2401,7 @@ function kepoli_social_meta(): void
     if (is_singular('post')) {
         printf("<meta property=\"article:published_time\" content=\"%s\">\n", esc_attr(get_the_date('c')));
         printf("<meta property=\"article:modified_time\" content=\"%s\">\n", esc_attr(get_the_modified_date('c')));
-        printf("<meta property=\"article:author\" content=\"%s\">\n", esc_attr(get_the_author()));
+        printf("<meta property=\"article:author\" content=\"%s\">\n", esc_attr(kepoli_post_author_name()));
         printf("<meta property=\"article:publisher\" content=\"%s\">\n", esc_url(home_url('/')));
 
         $category = kepoli_primary_category();
@@ -2864,8 +2878,7 @@ function kepoli_recipe_json_ld(): void
         return;
     }
 
-    $author_id = (int) get_post_field('post_author', get_the_ID());
-    $author_name = $author_id ? get_the_author_meta('display_name', $author_id) : kepoli_writer_name();
+    $author_name = kepoli_post_author_name();
     $recipe_image = kepoli_social_image_schema_object();
 
     $schema = [
@@ -2921,8 +2934,7 @@ function kepoli_article_json_ld(): void
         return;
     }
 
-    $author_id = (int) get_post_field('post_author', get_the_ID());
-    $author_name = $author_id ? get_the_author_meta('display_name', $author_id) : kepoli_writer_name();
+    $author_name = kepoli_post_author_name();
 
     $schema = [
         '@context' => 'https://schema.org',
@@ -3289,7 +3301,7 @@ function kepoli_breadcrumb_items(): array
 
 function kepoli_breadcrumb_json_ld(): void
 {
-    if (is_admin()) {
+    if (is_admin() || is_front_page()) {
         return;
     }
 

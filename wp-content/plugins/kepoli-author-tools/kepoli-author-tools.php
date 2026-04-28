@@ -185,6 +185,11 @@ final class Kepoli_Author_Tools
         return self::public_content_text($ro, $en);
     }
 
+    private static function content_text_for_locale(bool $is_english, string $ro, string $en): string
+    {
+        return $is_english ? $en : $ro;
+    }
+
     private static function site_name(): string
     {
         $name = trim((string) self::profile_value(['brand', 'name'], ''));
@@ -975,8 +980,10 @@ final class Kepoli_Author_Tools
             'description' => isset($_POST['kepoli_image_description']) ? sanitize_textarea_field(wp_unslash((string) $_POST['kepoli_image_description'])) : '',
         ];
         $auto_generated = self::text_was_auto_generated($post_id, '_kepoli_auto_image_meta');
+        $legacy_english = self::image_meta_uses_legacy_english_copy($post_id, $posted_meta, $pending, $planned);
         $should_refresh = ($auto_generated && self::image_meta_matches($posted_meta, $pending))
-            || (!$auto_generated && self::image_meta_is_empty($posted_meta) && self::image_meta_is_empty($pending) && self::image_meta_is_empty($planned));
+            || (!$auto_generated && self::image_meta_is_empty($posted_meta) && self::image_meta_is_empty($pending) && self::image_meta_is_empty($planned))
+            || $legacy_english;
 
         if ($should_refresh) {
             $resolved_meta = $generated;
@@ -1005,10 +1012,17 @@ final class Kepoli_Author_Tools
         }
 
         $existing = self::attachment_image_meta($thumbnail_id);
-        $alt = $posted_meta['alt'] !== '' ? $posted_meta['alt'] : ($existing['alt'] !== '' ? $existing['alt'] : $resolved_meta['alt']);
-        $title = $posted_meta['title'] !== '' ? $posted_meta['title'] : ($existing['title'] !== '' ? $existing['title'] : $resolved_meta['title']);
-        $caption = $posted_meta['caption'] !== '' ? $posted_meta['caption'] : ($existing['caption'] !== '' ? $existing['caption'] : $resolved_meta['caption']);
-        $description = $posted_meta['description'] !== '' ? $posted_meta['description'] : ($existing['description'] !== '' ? $existing['description'] : $resolved_meta['description']);
+        if ($should_refresh) {
+            $alt = $resolved_meta['alt'];
+            $title = $resolved_meta['title'];
+            $caption = $resolved_meta['caption'];
+            $description = $resolved_meta['description'];
+        } else {
+            $alt = $posted_meta['alt'] !== '' ? $posted_meta['alt'] : ($existing['alt'] !== '' ? $existing['alt'] : $resolved_meta['alt']);
+            $title = $posted_meta['title'] !== '' ? $posted_meta['title'] : ($existing['title'] !== '' ? $existing['title'] : $resolved_meta['title']);
+            $caption = $posted_meta['caption'] !== '' ? $posted_meta['caption'] : ($existing['caption'] !== '' ? $existing['caption'] : $resolved_meta['caption']);
+            $description = $posted_meta['description'] !== '' ? $posted_meta['description'] : ($existing['description'] !== '' ? $existing['description'] : $resolved_meta['description']);
+        }
 
         if ($alt !== '') {
             update_post_meta($thumbnail_id, '_wp_attachment_image_alt', self::limit_text($alt, 160));
@@ -1042,23 +1056,40 @@ final class Kepoli_Author_Tools
         ];
     }
 
-    private static function generated_image_meta(int $post_id): array
+    private static function generated_image_meta(int $post_id, ?bool $is_english = null): array
     {
+        $is_english = $is_english ?? self::public_is_english();
         $post = get_post($post_id);
         $title = $post ? trim((string) $post->post_title) : '';
-        $title = $title !== '' ? $title : sprintf(self::content_text('Reteta %s', '%s recipe'), self::site_name());
+        $title = $title !== '' ? $title : sprintf(self::content_text_for_locale($is_english, 'Reteta %s', '%s recipe'), self::site_name());
         $kind = self::post_kind($post_id);
         $prefix = $kind === 'article'
-            ? self::content_text('Imagine editoriala pentru', 'Editorial image for')
-            : self::content_text('Fotografie culinara pentru', 'Food photo for');
-        $published_on = sprintf(self::content_text('publicata pe %s.', 'published on %s.'), self::site_name());
+            ? self::content_text_for_locale($is_english, 'Imagine editoriala pentru', 'Editorial image for')
+            : self::content_text_for_locale($is_english, 'Fotografie culinara pentru', 'Food photo for');
+        $published_on = sprintf(self::content_text_for_locale($is_english, 'publicata pe %s.', 'published on %s.'), self::site_name());
 
         return [
             'alt' => self::sentence_limit($prefix . ' ' . $title . ', ' . $published_on, 150),
             'title' => self::limit_text($title, 90),
-            'caption' => self::sentence_limit(sprintf(self::content_text('%1$s pe %2$s.', '%1$s on %2$s.'), $title, self::site_name()), 120),
-            'description' => self::sentence_limit(sprintf(self::content_text('Imagine reprezentativa pentru %1$s, folosita in articolul culinar %2$s.', 'Representative image for %1$s, used in a %2$s food article.'), $title, self::site_name()), 220),
+            'caption' => self::sentence_limit(sprintf(self::content_text_for_locale($is_english, '%1$s pe %2$s.', '%1$s on %2$s.'), $title, self::site_name()), 120),
+            'description' => self::sentence_limit(sprintf(self::content_text_for_locale($is_english, 'Imagine reprezentativa pentru %1$s, folosita in articolul culinar %2$s.', 'Representative image for %1$s, used in a %2$s food article.'), $title, self::site_name()), 220),
         ];
+    }
+
+    private static function image_meta_uses_legacy_english_copy(int $post_id, array ...$metas): bool
+    {
+        if (self::public_is_english()) {
+            return false;
+        }
+
+        $english_generated = self::generated_image_meta($post_id, true);
+        foreach ($metas as $meta) {
+            if (self::image_meta_matches($meta, $english_generated)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static function post_kind(int $post_id): string
