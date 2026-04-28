@@ -573,6 +573,16 @@ function kepoli_current_description(): string
     return trim(wp_strip_all_tags((string) $description));
 }
 
+function kepoli_trim_meta_text(string $text, int $words = 28): string
+{
+    $text = trim(wp_strip_all_tags($text));
+    if ($text === '') {
+        return '';
+    }
+
+    return wp_trim_words($text, $words, '...');
+}
+
 function kepoli_current_seo_title(): string
 {
     $site_name = kepoli_site_name();
@@ -652,7 +662,8 @@ function kepoli_social_image_alt(): string
         }
     }
 
-    return kepoli_current_description() ?: kepoli_brand_description();
+    $fallback = kepoli_current_description() ?: kepoli_brand_description();
+    return kepoli_trim_meta_text($fallback, 32);
 }
 
 function kepoli_social_image_dimensions(): array
@@ -2304,7 +2315,7 @@ function kepoli_meta_description(): void
     $language = kepoli_language_tag();
 
     if ($description !== '') {
-        printf("<meta name=\"description\" content=\"%s\">\n", esc_attr(wp_trim_words($description, 28, '')));
+        printf("<meta name=\"description\" content=\"%s\">\n", esc_attr(kepoli_trim_meta_text($description, 28)));
     }
 
     printf("<meta name=\"robots\" content=\"%s\">\n", esc_attr(kepoli_robots_content()));
@@ -2374,7 +2385,7 @@ add_action('wp_head', 'kepoli_priority_image_preloads', 1);
 function kepoli_social_meta(): void
 {
     $title = kepoli_current_seo_title();
-    $description = wp_trim_words(kepoli_current_description(), 28, '');
+    $description = kepoli_trim_meta_text(kepoli_current_description(), 28);
     $url = kepoli_current_url();
     $type = is_singular('post') ? 'article' : 'website';
     $image = kepoli_social_image_url();
