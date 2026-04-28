@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.22
+ * Version: 1.8.23
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.22';
+    private const VERSION = '1.8.23';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -101,8 +101,50 @@ final class Kepoli_Author_Tools
         return get_bloginfo('name') ?: 'Food Blog';
     }
 
+    private static function fallback_public_language(): string
+    {
+        $language = strtolower((string) get_option('WPLANG'));
+        if ($language === '') {
+            $language = strtolower((string) get_locale());
+        }
+
+        return str_starts_with($language, 'en') ? 'en-US' : 'ro-RO';
+    }
+
+    private static function detected_public_language(): string
+    {
+        $parts = [];
+        if (is_singular()) {
+            $post = get_post();
+            if ($post instanceof WP_Post) {
+                $parts[] = (string) $post->post_title;
+                $parts[] = (string) $post->post_excerpt;
+                $parts[] = (string) $post->post_content;
+            }
+        } elseif (is_category()) {
+            $parts[] = single_cat_title('', false);
+            $parts[] = category_description();
+        } elseif (is_front_page()) {
+            $parts[] = (string) get_bloginfo('name');
+            $parts[] = (string) get_bloginfo('description');
+        }
+
+        $text = trim(implode(' ', array_filter(array_map('trim', $parts))));
+        $detected = $text !== '' ? self::detect_language($text) : 'unknown';
+        if ($detected === 'ro') {
+            return 'ro-RO';
+        }
+
+        if ($detected === 'en') {
+            return 'en-US';
+        }
+
+        return self::fallback_public_language();
+    }
+
     public static function init(): void
     {
+        add_filter('bloginfo', [self::class, 'filter_public_language'], 10, 2);
         add_filter('use_block_editor_for_post_type', [self::class, 'use_classic_editor_for_posts'], 10, 2);
         add_filter('mce_external_plugins', [self::class, 'register_tinymce_plugin']);
         add_filter('mce_buttons', [self::class, 'register_tinymce_buttons']);
@@ -117,6 +159,15 @@ final class Kepoli_Author_Tools
         add_action('pre_get_posts', [self::class, 'filter_posts_by_kind']);
         add_filter('the_content', [self::class, 'remove_template_prompts_from_content'], 4);
         add_filter('get_the_excerpt', [self::class, 'remove_template_prompts_from_excerpt'], 12, 2);
+    }
+
+    public static function filter_public_language($output, string $show)
+    {
+        if ($show !== 'language' || is_admin()) {
+            return $output;
+        }
+
+        return self::detected_public_language();
     }
 
     public static function use_classic_editor_for_posts(bool $use_block_editor, string $post_type): bool
@@ -1710,11 +1761,39 @@ final class Kepoli_Author_Tools
         }
 
         $quoted = implode('|', array_map(static fn (string $label): string => preg_quote($label, '/'), $labels));
-        if (!preg_match('/(?:' . $quoted . ')[^0-9]{0,32}((?:\d{1,2}\s*(?:h|hr|hrs|ora|ore|hour|hours)(?:\s*\d{1,3}\s*(?:m|min|mins|minute|minutes))?)|(?:\d{1,3}\s*(?:m|min|mins|minute|minutes))|(?:\d{1,3}))/i', $text, $matches)) {
+        if (!preg_match('/(?:^|[\s(\[-])(?:' . $quoted . ')(?![a-z])[^0-9]{0,32}((?:\d{1,2}\s*(?:h|hr|hrs|ora|ore|hour|hours)(?:\s*\d{1,3}\s*(?:m|min|mins|minute|minutes))?)|(?:\d{1,3}\s*(?:m|min|mins|minute|minutes))|(?:\d{1,3}))/i', $text, $matches)) {
             return 0;
         }
 
         return isset($matches[1]) ? self::recipe_duration_value_to_minutes((string) $matches[1]) : 0;
+    }
+
+    private static function recipe_minutes_from_lines(array $lines, array $labels): int
+    {
+        if (!$lines || !$labels) {
+            return 0;
+        }
+
+        $normalized_labels = array_values(array_unique(array_filter(array_map([self::class, 'normalized_heading'], $labels))));
+        foreach ($lines as $line) {
+            $normalized_line = self::normalized_heading((string) $line);
+            if ($normalized_line === '') {
+                continue;
+            }
+
+            foreach ($normalized_labels as $label) {
+                if ($normalized_line === $label || !str_starts_with($normalized_line, $label . ' ')) {
+                    continue;
+                }
+
+                $value = trim(substr($normalized_line, strlen($label)));
+                if ($value !== '') {
+                    return self::recipe_duration_value_to_minutes($value);
+                }
+            }
+        }
+
+        return 0;
     }
 
     private static function recipe_duration_value_to_minutes(string $value): int
@@ -1758,9 +1837,21 @@ final class Kepoli_Author_Tools
     private static function extract_recipe_data_from_content(string $content): array
     {
         $normalized = self::normalized_recipe_text($content);
-        $prep_minutes = self::recipe_minutes_from_text($normalized, ['timp de pregatire', 'timp pregatire', 'pregatire', 'preparare', 'prep time', 'preparation time', 'prep']);
-        $cook_minutes = self::recipe_minutes_from_text($normalized, ['timp de gatire', 'timp gatire', 'gatire', 'coacere', 'fierbere', 'cook time', 'cooking time', 'bake time', 'cook', 'cooking', 'bake', 'baking', 'boil', 'simmer']);
-        $total_minutes = self::recipe_minutes_from_text($normalized, ['timp total', 'total time', 'total']);
+        $source_lines = self::recipe_source_lines($content);
+        $prep_minutes = self::recipe_minutes_from_lines($source_lines, ['timp de pregatire', 'timp pregatire', 'prep time', 'preparation time', 'prep']);
+        if ($prep_minutes === 0) {
+            $prep_minutes = self::recipe_minutes_from_text($normalized, ['timp de pregatire', 'timp pregatire', 'prep time', 'preparation time', 'prep']);
+        }
+
+        $cook_minutes = self::recipe_minutes_from_lines($source_lines, ['timp de gatire', 'timp gatire', 'cook time', 'cooking time', 'bake time', 'timp de coacere', 'timp de fierbere']);
+        if ($cook_minutes === 0) {
+            $cook_minutes = self::recipe_minutes_from_text($normalized, ['timp de gatire', 'timp gatire', 'cook time', 'cooking time', 'bake time', 'boil time', 'simmer time', 'timp de coacere', 'timp de fierbere']);
+        }
+
+        $total_minutes = self::recipe_minutes_from_lines($source_lines, ['timp total', 'total time', 'total']);
+        if ($total_minutes === 0) {
+            $total_minutes = self::recipe_minutes_from_text($normalized, ['timp total', 'total time', 'total']);
+        }
 
         if ($prep_minutes > 0 && $cook_minutes === 0 && $total_minutes > $prep_minutes) {
             $cook_minutes = max(0, $total_minutes - $prep_minutes);
@@ -3613,7 +3704,12 @@ final class Kepoli_Author_Tools
             $end = $max_length;
         }
 
-        return rtrim(self::limit_text($slice, $end), " \t\n\r\0\x0B,;:") . '...';
+        $trimmed = rtrim(self::limit_text($slice, $end), " \t\n\r\0\x0B,;:.!?");
+        if ($end === $sentence_end + 1 && $trimmed !== '') {
+            return $trimmed;
+        }
+
+        return $trimmed . '...';
     }
 
     private static function posted_lines(string $field): array

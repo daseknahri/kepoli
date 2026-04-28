@@ -1055,16 +1055,75 @@
     return Array.from(new Set(sectionItems));
   }
 
+  function recipeSourceLinesFromText(text) {
+    return String(text || '')
+      .split(/\r\n|\r|\n/)
+      .map((line) => cleanText(line))
+      .filter(Boolean);
+  }
+
+  function durationToMinutes(value) {
+    if (!value) {
+      return 0;
+    }
+
+    const hoursMatch = value.match(/(\d{1,2})\s*(?:h|hr|hrs|ora|ore|hour|hours)\b/i);
+    const minutesMatch = value.match(/(\d{1,3})\s*(?:m|min|mins|minute|minutes)\b/i);
+    const hours = hoursMatch ? Number.parseInt(hoursMatch[1], 10) || 0 : 0;
+    const minutes = minutesMatch ? Number.parseInt(minutesMatch[1], 10) || 0 : 0;
+
+    if (!hours && !minutes) {
+      const plainNumber = value.match(/(\d{1,3})/);
+      return plainNumber ? Number.parseInt(plainNumber[1], 10) || 0 : 0;
+    }
+
+    return (hours * 60) + minutes;
+  }
+
+  function matchDurationFromLines(lines, labels) {
+    const normalizedLabels = labels
+      .map((label) => normalizedHeading(label))
+      .filter(Boolean);
+
+    for (const line of lines) {
+      const normalizedLine = normalizedHeading(line);
+      if (!normalizedLine) {
+        continue;
+      }
+
+      for (const label of normalizedLabels) {
+        if (normalizedLine === label || !normalizedLine.startsWith(`${label} `)) {
+          continue;
+        }
+
+        const value = normalizedLine.slice(label.length).trim();
+        if (value) {
+          return durationToMinutes(value);
+        }
+      }
+    }
+
+    return 0;
+  }
+
+  function matchDurationInText(text, labels) {
+    const quoted = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+    const pattern = new RegExp(`(?:^|[\\s(\\[-])(?:${quoted})(?![a-z])[^0-9]{0,32}((?:\\d{1,2}\\s*(?:h|hr|hrs|ora|ore|hour|hours)(?:\\s*\\d{1,3}\\s*(?:m|min|mins|minute|minutes))?)|(?:\\d{1,3}\\s*(?:m|min|mins|minute|minutes))|(?:\\d{1,3}))`, 'i');
+    const match = text.match(pattern);
+    return match ? durationToMinutes(match[1]) : 0;
+  }
+
   function extractRecipeMetaFromText() {
     const text = currentContentText();
+    const lines = recipeSourceLinesFromText(text);
     const servingsMatch = text.match(/(?:serves|servings|makes|yield|pentru|aproximativ|cam)?\s*(\d{1,2}\s*(?:servings?|people|persons|portii|persoane))/i);
-    const prepMatch = text.match(/(?:prep|preparation|pregatire|preparare)\s*:?\s*(\d{1,3})\s*(?:min|mins|minutes|minute)/i);
-    const cookMatch = text.match(/(?:cook|cooking|bake|baking|boil|simmer|gatire|coacere|fierbere)\s*:?\s*(\d{1,3})\s*(?:min|mins|minutes|minute)/i);
+    const prepMinutes = matchDurationFromLines(lines, ['timp de pregatire', 'timp pregatire', 'prep time', 'preparation time', 'prep']);
+    const cookMinutes = matchDurationFromLines(lines, ['timp de gatire', 'timp gatire', 'cook time', 'cooking time', 'bake time', 'timp de coacere', 'timp de fierbere']);
 
     return {
       servings: servingsMatch ? servingsMatch[1] : '',
-      prepMinutes: prepMatch ? prepMatch[1] : '',
-      cookMinutes: cookMatch ? cookMatch[1] : '',
+      prepMinutes: prepMinutes ? String(prepMinutes) : '',
+      cookMinutes: cookMinutes ? String(cookMinutes) : '',
       ingredients: extractRecipeSection('ingredients'),
       steps: extractRecipeSection('steps')
     };
@@ -1072,34 +1131,23 @@
 
   function extractRecipeMetaFromTextRobust() {
     const text = currentContentText();
-    const durationToMinutes = (value) => {
-      if (!value) {
-        return 0;
-      }
-
-      const hoursMatch = value.match(/(\d{1,2})\s*(?:h|hr|hrs|ora|ore|hour|hours)\b/i);
-      const minutesMatch = value.match(/(\d{1,3})\s*(?:m|min|mins|minute|minutes)\b/i);
-      const hours = hoursMatch ? Number.parseInt(hoursMatch[1], 10) || 0 : 0;
-      const minutes = minutesMatch ? Number.parseInt(minutesMatch[1], 10) || 0 : 0;
-
-      if (!hours && !minutes) {
-        const plainNumber = value.match(/(\d{1,3})/);
-        return plainNumber ? Number.parseInt(plainNumber[1], 10) || 0 : 0;
-      }
-
-      return (hours * 60) + minutes;
-    };
-    const matchDuration = (labels) => {
-      const quoted = labels.map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-      const pattern = new RegExp(`(?:${quoted})[^0-9]{0,32}((?:\\d{1,2}\\s*(?:h|hr|hrs|ora|ore|hour|hours)(?:\\s*\\d{1,3}\\s*(?:m|min|mins|minute|minutes))?)|(?:\\d{1,3}\\s*(?:m|min|mins|minute|minutes))|(?:\\d{1,3}))`, 'i');
-      const match = text.match(pattern);
-      return match ? durationToMinutes(match[1]) : 0;
-    };
     const basic = extractRecipeMetaFromText();
+    const lines = recipeSourceLinesFromText(text);
     const servingsMatch = text.match(/(?:serves|servings|makes|yield|portii|portie|persoane|pentru|aproximativ|cam)[^0-9]{0,24}(\d{1,2}(?:\s*(?:servings?|people|persons|portii|persoane))?)/i);
-    let prepMinutes = matchDuration(['timp de pregatire', 'timp pregatire', 'pregatire', 'preparare', 'prep time', 'preparation time', 'prep']);
-    let cookMinutes = matchDuration(['timp de gatire', 'timp gatire', 'gatire', 'coacere', 'fierbere', 'cook time', 'cooking time', 'bake time', 'cook', 'cooking', 'bake', 'baking', 'boil', 'simmer']);
-    const totalMinutes = matchDuration(['timp total', 'total time', 'total']);
+    let prepMinutes = matchDurationFromLines(lines, ['timp de pregatire', 'timp pregatire', 'prep time', 'preparation time', 'prep']);
+    if (!prepMinutes) {
+      prepMinutes = matchDurationInText(text, ['timp de pregatire', 'timp pregatire', 'prep time', 'preparation time', 'prep']);
+    }
+
+    let cookMinutes = matchDurationFromLines(lines, ['timp de gatire', 'timp gatire', 'cook time', 'cooking time', 'bake time', 'timp de coacere', 'timp de fierbere']);
+    if (!cookMinutes) {
+      cookMinutes = matchDurationInText(text, ['timp de gatire', 'timp gatire', 'cook time', 'cooking time', 'bake time', 'boil time', 'simmer time', 'timp de coacere', 'timp de fierbere']);
+    }
+
+    let totalMinutes = matchDurationFromLines(lines, ['timp total', 'total time', 'total']);
+    if (!totalMinutes) {
+      totalMinutes = matchDurationInText(text, ['timp total', 'total time', 'total']);
+    }
 
     if (prepMinutes > 0 && cookMinutes === 0 && totalMinutes > prepMinutes) {
       cookMinutes = totalMinutes - prepMinutes;
