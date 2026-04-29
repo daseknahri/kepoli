@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -76,6 +77,7 @@ checkThemeAndPlugins();
 checkDocs();
 checkEnvironment();
 runWorkflowSmokeTests();
+runCloneWriteSmokeTest();
 
 if (failures.length > 0) {
   console.error(`Engine readiness audit found ${failures.length} issue${failures.length === 1 ? '' : 's'}.`);
@@ -176,6 +178,7 @@ function checkCloneScripts() {
     /WP_ADMIN_LOCALE/,
     /EZOIC_ADSTXT_ACCOUNT_ID/,
     /EZOIC_ADSTXT_REDIRECT_URL/,
+    /seed\/bin\/bootstrap\.sh/,
   ]);
 
   requireText('generate-replica-shell profile generation', generateShell, [
@@ -190,6 +193,12 @@ function checkCloneScripts() {
     /profileValue\(\['assets',\s*'icon'\]\)/,
     /profileValue\(\['assets',\s*'social_cover'\]\)/,
     /hasAsset/,
+  ]);
+
+  requireText('rebrand audit ignores workflow-only source docs', readFile('scripts/audit-rebrand.mjs'), [
+    /docs\/new-blog-launch-plan\.md/,
+    /docs\/codex-new-site-prompt\.md/,
+    /docs\/replicate-food-blog\.md/,
   ]);
 }
 
@@ -302,6 +311,39 @@ function runWorkflowSmokeTests() {
   notes.push('Example brief and dry-run clone workflow passed.');
 }
 
+function runCloneWriteSmokeTest() {
+  const filesResult = spawnSync('git', ['ls-files', '-z'], {
+    cwd: root,
+    encoding: 'buffer',
+    stdio: 'pipe',
+  });
+
+  if (filesResult.status !== 0) {
+    failures.push('Temporary clone smoke test could not list tracked files with git ls-files.');
+    return;
+  }
+
+  const files = filesResult.stdout.toString('utf8').split('\0').filter(Boolean);
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'kepoli-engine-smoke-'));
+
+  try {
+    for (const file of files) {
+      const source = path.join(root, file);
+      const target = path.join(tempRoot, file);
+      if (!fs.existsSync(source)) continue;
+
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.copyFileSync(source, target);
+    }
+
+    runNodeCheckIn('Temporary clone write workflow', tempRoot, ['scripts/start-new-blog.mjs', '--brief', 'site-brief.example.json', '--write', '--no-backup']);
+    runNodeCheckIn('Temporary clone rebrand audit', tempRoot, ['scripts/audit-rebrand.mjs']);
+    notes.push('Temporary write-mode clone and rebrand audit passed.');
+  } finally {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+  }
+}
+
 function readFile(relativePath) {
   const absolutePath = path.join(root, relativePath);
   if (!fs.existsSync(absolutePath)) return '';
@@ -357,8 +399,12 @@ function requireText(label, content, patterns) {
 }
 
 function runNodeCheck(label, args) {
+  runNodeCheckIn(label, root, args);
+}
+
+function runNodeCheckIn(label, cwd, args) {
   const result = spawnSync(process.execPath, args, {
-    cwd: root,
+    cwd,
     encoding: 'utf8',
     stdio: 'pipe',
   });

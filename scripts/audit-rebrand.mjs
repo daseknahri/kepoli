@@ -16,7 +16,10 @@ It flags public-facing old names, emails, domains, AdSense IDs, seed content, an
 }
 
 const ignorePaths = new Set([
+  normalizePath('docs/codex-new-site-prompt.md'),
+  normalizePath('docs/new-blog-launch-plan.md'),
   normalizePath('docs/replicate-food-blog.md'),
+  normalizePath('scripts/audit-engine-readiness.mjs'),
   normalizePath('scripts/audit-rebrand.mjs'),
   normalizePath('scripts/prepare-replica.mjs'),
   normalizePath('scripts/reset-replica-content.mjs'),

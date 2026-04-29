@@ -422,6 +422,7 @@ function updatePublicIdentityFiles() {
     'docs/image-generation.md',
     'docs/replicate-food-blog.md',
     'content/pages.json',
+    'seed/bin/bootstrap.sh',
   ];
 
   for (const relativePath of files) {
