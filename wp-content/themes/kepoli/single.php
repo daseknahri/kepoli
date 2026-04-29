@@ -11,9 +11,9 @@ get_header();
     $updated_label = kepoli_post_updated_label();
     $share_links = kepoli_share_links();
     $article_headings = !$is_recipe ? kepoli_article_heading_index() : [];
-    $article_snapshot = !$is_recipe ? kepoli_article_snapshot_items() : [];
+    $article_snapshot = [];
     $recipe_snapshot = $is_recipe ? kepoli_recipe_snapshot_items() : [];
-    $post_next_steps = kepoli_post_next_steps();
+    $post_next_steps = $is_recipe ? kepoli_post_next_steps() : ['items' => []];
     $share_icons = ['facebook' => 'facebook', 'whatsapp' => 'whatsapp', 'email' => 'email', 'copy' => 'link', 'print' => 'print'];
     $recipe_jump_ids = kepoli_is_english()
         ? [

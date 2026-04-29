@@ -709,9 +709,9 @@ requireThemeIncludes('single', 'recipe snapshot support', [
   /entry-recipe-snapshot/,
 ]);
 
-requireThemeIncludes('single', 'article snapshot support', [
-  /kepoli_article_snapshot_items\s*\(/,
-  /entry-article-snapshot/,
+requireThemeIncludes('single', 'article outline without helper boxes', [
+  /\$article_snapshot\s*=\s*\[\]/,
+  /entry-outline/,
 ]);
 
 requireThemeIncludes('single', 'early featured image support', [
@@ -725,7 +725,7 @@ requireThemeIncludes('single', 'editorial recommendation reasons', [
 ]);
 
 requireThemeIncludes('single', 'post-end routing block', [
-  /kepoli_post_next_steps\s*\(/,
+  /\$is_recipe\s*\?\s*kepoli_post_next_steps\s*\(\)\s*:\s*\['items'\s*=>\s*\[\]\]/,
   /entry-next-steps/,
   /entry-next-grid/,
 ]);
