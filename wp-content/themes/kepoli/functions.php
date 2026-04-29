@@ -48,6 +48,11 @@ function kepoli_default_site_profile(): array
             'email' => kepoli_env('WRITER_EMAIL', ''),
             'bio' => '',
         ],
+        'assets' => [
+            'wordmark' => 'kepoli-wordmark',
+            'icon' => 'kepoli-icon',
+            'social_cover' => 'kepoli-social-cover',
+        ],
         'slugs' => [
             'home' => str_starts_with(strtolower($public_locale), 'en') ? 'home' : 'acasa',
             'recipes' => str_starts_with(strtolower($public_locale), 'en') ? 'recipes' : 'retete',
@@ -191,6 +196,40 @@ function kepoli_asset_uri(string $basename, string $fallback_extension = 'svg'):
     return $uri . "/assets/img/{$basename}.{$fallback_extension}";
 }
 
+function kepoli_asset_mime_type(string $url, string $fallback = 'image/svg+xml'): string
+{
+    $extension = strtolower(pathinfo((string) wp_parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
+
+    return match ($extension) {
+        'png' => 'image/png',
+        'jpg', 'jpeg' => 'image/jpeg',
+        'webp' => 'image/webp',
+        'svg' => 'image/svg+xml',
+        default => $fallback,
+    };
+}
+
+function kepoli_profile_asset(string $key, string $fallback): string
+{
+    $asset = sanitize_file_name((string) kepoli_profile_value(['assets', $key], ''));
+    return $asset !== '' ? pathinfo($asset, PATHINFO_FILENAME) : $fallback;
+}
+
+function kepoli_wordmark_asset(): string
+{
+    return kepoli_profile_asset('wordmark', 'kepoli-wordmark');
+}
+
+function kepoli_icon_asset(): string
+{
+    return kepoli_profile_asset('icon', 'kepoli-icon');
+}
+
+function kepoli_social_cover_asset(): string
+{
+    return kepoli_profile_asset('social_cover', 'kepoli-social-cover');
+}
+
 function kepoli_asset_dimensions(string $basename): array
 {
     $dimensions = [
@@ -199,6 +238,9 @@ function kepoli_asset_dimensions(string $basename): array
         'writer-photo' => [1024, 1024],
         'kepoli-wordmark' => [760, 360],
         'kepoli-icon' => [512, 512],
+        kepoli_social_cover_asset() => [1536, 1024],
+        kepoli_wordmark_asset() => [760, 360],
+        kepoli_icon_asset() => [512, 512],
     ];
 
     return $dimensions[$basename] ?? [];
@@ -645,9 +687,11 @@ function kepoli_social_image_url(): string
         }
     }
 
-    $social_cover = get_template_directory() . '/assets/img/kepoli-social-cover.jpg';
-    if (file_exists($social_cover)) {
-        return kepoli_asset_uri('kepoli-social-cover', 'jpg');
+    $social_cover_asset = kepoli_social_cover_asset();
+    foreach (['webp', 'jpg', 'jpeg', 'png'] as $extension) {
+        if (file_exists(get_template_directory() . "/assets/img/{$social_cover_asset}.{$extension}")) {
+            return kepoli_asset_uri($social_cover_asset, 'jpg');
+        }
     }
 
     return kepoli_asset_uri('writer-photo', 'jpg');
@@ -678,7 +722,7 @@ function kepoli_social_image_dimensions(): array
         }
     }
 
-    return kepoli_asset_dimensions('kepoli-social-cover');
+    return kepoli_asset_dimensions(kepoli_social_cover_asset());
 }
 
 function kepoli_schema_image_object(string $url, array $dimensions = [], string $caption = ''): array
@@ -726,7 +770,7 @@ function kepoli_social_image_schema_object(): array
         }
     }
 
-    return kepoli_schema_asset_image_object('kepoli-social-cover', 'jpg', kepoli_current_description());
+    return kepoli_schema_asset_image_object(kepoli_social_cover_asset(), 'jpg', kepoli_current_description());
 }
 
 function kepoli_schema_publisher(): array
@@ -749,7 +793,7 @@ function kepoli_schema_publisher(): array
             'availableLanguage' => array_values(array_unique(array_filter([$language, 'en']))),
         ],
         'publishingPrinciples' => kepoli_editorial_policy_url(),
-        'logo' => kepoli_schema_asset_image_object('kepoli-icon', 'svg', $site_name),
+        'logo' => kepoli_schema_asset_image_object(kepoli_icon_asset(), 'svg', $site_name),
     ];
 }
 
@@ -1647,7 +1691,7 @@ function kepoli_post_card_media_markup(int $post_id = 0, string $context = 'card
         return sprintf(
             '%1$s<span class="post-media__shade"></span><img class="post-media__mark" src="%2$s" alt="" loading="lazy" decoding="async">',
             $featured_image,
-            esc_url(kepoli_asset_uri('kepoli-icon'))
+            esc_url(kepoli_asset_uri(kepoli_icon_asset()))
         );
     }
 
@@ -1678,7 +1722,7 @@ function kepoli_post_media_url(int $post_id = 0, string $size = 'large'): string
         return kepoli_asset_uri('writer-photo', 'svg');
     }
 
-    return kepoli_asset_uri('kepoli-icon');
+    return kepoli_asset_uri(kepoli_icon_asset());
 }
 
 function kepoli_post_media_markup(int $post_id = 0, string $context = 'card', bool $priority = false): string
@@ -1697,7 +1741,7 @@ function kepoli_post_media_markup(int $post_id = 0, string $context = 'card', bo
                 '<div class="%1$s">%2$s<span class="post-media__shade"></span><img class="post-media__mark" src="%3$s" alt="" loading="lazy" decoding="async"></div>',
                 esc_attr($media_class),
                 $featured_image,
-                esc_url(kepoli_asset_uri('kepoli-icon'))
+                esc_url(kepoli_asset_uri(kepoli_icon_asset()))
             );
         }
 
@@ -1708,7 +1752,7 @@ function kepoli_post_media_markup(int $post_id = 0, string $context = 'card', bo
             esc_url($image),
             esc_attr($image_alt),
             $priority_attributes,
-            esc_url(kepoli_asset_uri('kepoli-icon'))
+            esc_url(kepoli_asset_uri(kepoli_icon_asset()))
         );
     }
 
@@ -2351,7 +2395,8 @@ function kepoli_meta_description(): void
         printf("<meta name=\"google-site-verification\" content=\"%s\">\n", esc_attr($verification));
     }
 
-    printf("<link rel=\"icon\" href=\"%s\" type=\"image/svg+xml\">\n", esc_url(kepoli_asset_uri('kepoli-icon')));
+    $icon_url = kepoli_asset_uri(kepoli_icon_asset());
+    printf("<link rel=\"icon\" href=\"%s\" type=\"%s\">\n", esc_url($icon_url), esc_attr(kepoli_asset_mime_type($icon_url)));
 }
 add_action('wp_head', 'kepoli_meta_description', 2);
 
@@ -3023,7 +3068,7 @@ function kepoli_site_json_ld(): void
                     'availableLanguage' => array_values(array_unique(array_filter([$language, 'en']))),
                 ],
                 'publishingPrinciples' => kepoli_editorial_policy_url(),
-                'logo' => kepoli_schema_asset_image_object('kepoli-wordmark', 'svg', $site_name),
+                'logo' => kepoli_schema_asset_image_object(kepoli_wordmark_asset(), 'svg', $site_name),
             ],
             [
                 '@type' => 'WebSite',

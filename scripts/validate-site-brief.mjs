@@ -261,10 +261,22 @@ function validateBrief(value) {
     }
   }
 
-  for (const key of ['brandTagline', 'brandDescription', 'writerBio', 'country', 'focus', 'audience']) {
+  for (const key of ['wordmarkAsset', 'iconAsset', 'socialCoverAsset']) {
+    const asset = stringValue(value[key]);
+    if (asset && !isSlug(asset)) {
+      failures.push(`${key} must be a lowercase asset basename without an extension.`);
+    }
+  }
+
+  for (const key of ['brandTagline', 'brandDescription', 'writerBio', 'country', 'focus', 'audience', 'ezoicAdsTxtAccountId', 'ezoicAdsTxtRedirectUrl']) {
     if (key in value && typeof value[key] !== 'string') {
       failures.push(`${key} must be a string.`);
     }
+  }
+
+  const ezoicRedirectUrl = stringValue(value.ezoicAdsTxtRedirectUrl);
+  if (ezoicRedirectUrl && !isValidHttpUrl(ezoicRedirectUrl)) {
+    failures.push('ezoicAdsTxtRedirectUrl must be a full http or https URL when provided.');
   }
 }
 

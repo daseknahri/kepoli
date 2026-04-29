@@ -15,7 +15,7 @@
 <header class="site-header">
     <div class="site-header__inner">
         <a class="site-brand" href="<?php echo esc_url(home_url('/')); ?>" aria-label="<?php echo esc_attr(sprintf(kepoli_ui_text('Acasa %s', '%s home'), kepoli_site_name())); ?>">
-            <img src="<?php echo esc_url(kepoli_asset_uri('kepoli-wordmark')); ?>" alt="<?php echo esc_attr(kepoli_site_name()); ?>"<?php echo kepoli_asset_dimension_attributes('kepoli-wordmark'); ?> decoding="async">
+            <img src="<?php echo esc_url(kepoli_asset_uri(kepoli_wordmark_asset())); ?>" alt="<?php echo esc_attr(kepoli_site_name()); ?>"<?php echo kepoli_asset_dimension_attributes(kepoli_wordmark_asset()); ?> decoding="async">
         </a>
         <div class="site-nav-panel" id="site-nav-panel" data-nav-panel>
             <div class="site-nav-panel__inner" data-nav-panel-inner>

@@ -22,6 +22,9 @@
   "brandTagline": "Recipes, food articles, and practical kitchen guides for home cooks.",
   "brandDescription": "New Blog publishes practical recipes and kitchen guides for home cooks.",
   "writerBio": "Writer Name writes practical recipes and kitchen guides for New Blog.",
+  "wordmarkAsset": "new-blog-wordmark",
+  "iconAsset": "new-blog-icon",
+  "socialCoverAsset": "new-blog-social-cover",
   "canonicalHosts": "www.new-domain.com",
   "country": "Poland",
   "focus": "everyday recipes, seasonal cooking ideas, and practical kitchen guides",
@@ -34,6 +37,8 @@
   "prepareForAdsense": false,
   "adsenseClientId": "",
   "adsensePubId": "",
+  "ezoicAdsTxtAccountId": "",
+  "ezoicAdsTxtRedirectUrl": "",
   "gaMeasurementId": "",
   "themeDescription": "A lightweight food blog theme for New Blog, built for recipes, food guides, internal linking, and ad-ready spacing."
 }

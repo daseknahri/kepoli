@@ -48,6 +48,9 @@ const audience = args.audience || defaultAudience(language);
 const brandTagline = args['brand-tagline'] || defaultBrandTagline(language, brand);
 const brandDescription = args['brand-description'] || defaultBrandDescription(language, brand);
 const writerBio = args['writer-bio'] || defaultWriterBio(language, brand, writerName);
+const wordmarkAsset = slugify(args['wordmark-asset'] || `${projectSlug}-wordmark`);
+const iconAsset = slugify(args['icon-asset'] || `${projectSlug}-icon`);
+const socialCoverAsset = slugify(args['social-cover-asset'] || `${projectSlug}-social-cover`);
 const operations = [];
 const backupRoot = path.join(root, '.replica-backups', timestamp());
 
@@ -99,6 +102,9 @@ Optional:
   --brand-tagline  Public tagline for content/site-profile.json
   --brand-description Public brand description for content/site-profile.json
   --writer-bio     Public writer bio for content/site-profile.json
+  --wordmark-asset Theme wordmark asset basename, default: {project-slug}-wordmark
+  --icon-asset     Theme icon asset basename, default: {project-slug}-icon
+  --social-cover-asset Social/share cover asset basename, default: {project-slug}-social-cover
   --home-slug      Home page slug, default: home or acasa
   --recipes-slug   Recipes landing page slug, default: recipes or retete
   --guides-slug    Guides/articles landing page slug, default: guides or articole
@@ -302,6 +308,11 @@ function buildSiteProfile() {
       name: writerName,
       email: writerEmail,
       bio: writerBio,
+    },
+    assets: {
+      wordmark: wordmarkAsset,
+      icon: iconAsset,
+      social_cover: socialCoverAsset,
     },
     slugs: {
       home: homeSlug,

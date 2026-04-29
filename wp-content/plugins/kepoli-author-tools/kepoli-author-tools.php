@@ -108,6 +108,11 @@ final class Kepoli_Author_Tools
                 'email' => '',
                 'bio' => '',
             ],
+            'assets' => [
+                'wordmark' => 'kepoli-wordmark',
+                'icon' => 'kepoli-icon',
+                'social_cover' => 'kepoli-social-cover',
+            ],
             'slugs' => [],
         ];
 

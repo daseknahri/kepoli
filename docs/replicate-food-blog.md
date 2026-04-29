@@ -65,6 +65,8 @@ WRITER_EMAIL=writer@example.com
 WP_LOCALE=en_US
 WP_ADMIN_LOCALE=en_US
 CANONICAL_REDIRECT_HOSTS=www.new-domain.com
+EZOIC_ADSTXT_ACCOUNT_ID=
+EZOIC_ADSTXT_REDIRECT_URL=
 
 WORDPRESS_DB_NAME=new_blog_name
 WORDPRESS_DB_USER=new_blog_user
@@ -91,17 +93,19 @@ SEARCH_CONSOLE_VERIFICATION=
 KEPOLI_DEPLOY_FINGERPRINT=0
 ```
 
-If the new site will use AdSense after approval, fill `ADSENSE_CLIENT_ID` and `ADSENSE_PUB_ID` with that account's IDs. If the new site will use Ezoic first, those values can stay empty until you decide to activate AdSense later.
+If the new site will use AdSense after approval, fill `ADSENSE_CLIENT_ID` and `ADSENSE_PUB_ID` with that account's IDs. If the new site will use Ezoic first, those values can stay empty until you decide to activate AdSense later; use `EZOIC_ADSTXT_ACCOUNT_ID` or `EZOIC_ADSTXT_REDIRECT_URL` only after Ezoic gives you the ads.txt manager details.
 
 ## Files To Rebrand
 
-- `content/site-profile.json`: replace brand name, tagline, description, public locale, writer identity, and canonical slugs. This is the first file to check.
+- `content/site-profile.json`: replace brand name, tagline, description, public locale, writer identity, canonical slugs, and public asset basenames. This is the first file to check.
+- `content/site-profile.json`: set `assets.wordmark`, `assets.icon`, and `assets.social_cover` to the public asset basenames used by the theme.
 - `.env.example`: replace domain, emails, database names, AdSense IDs, and canonical hosts. Keep `WP_LOCALE` equal to `content/site-profile.json` `locales.public`.
 - `WP_ADMIN_LOCALE`: keep this as `en_US` so WordPress admin and beginner-publisher tools stay in English, even if the public site uses Romanian or another language.
 - `docker-compose.yml`: replace default domain/email values and rename the image tags from `kepoli-wordpress` and `kepoli-wp-cli` to the new project name. This avoids image-name collisions if both blogs run on the same server.
 - `README.md` and `docs/*.md`: replace project name and old operational notes.
 - `wp-content/themes/kepoli/style.css`: change the public theme header: theme name, URI, author, author URI, and description.
 - `wp-content/themes/kepoli/assets/img/`: replace logo, social cover, homepage hero, icon, and writer photo.
+- The theme resolves wordmark, icon, and social cover from the profile first, so clone-specific files can use names like `new-blog-wordmark.svg`, `new-blog-icon.svg`, and `new-blog-social-cover.jpg`.
 - `wp-content/themes/kepoli/functions.php`: this should read public identity from `kepoli_site_profile`; avoid adding new brand-specific fallback copy here.
 - `wp-content/themes/kepoli/header.php`, `footer.php`, `front-page.php`, `page-despre-kepoli.php`, `page-despre-autor.php`, `page-retete.php`, and `page-articole.php`: keep these as layout templates. Public authenticity copy should come from `content/pages.json`; template labels can stay structural and locale-aware. The theme now resolves these templates from `content/site-profile.json` slugs, so clones do not need template-file renames.
 - `wp-content/mu-plugins/kepoli-adtech.php`: replace manifest name, short name, description, and icon if needed.
@@ -111,6 +115,16 @@ If the new site will use AdSense after approval, fill `ADSENSE_CLIENT_ID` and `A
 The folder name `wp-content/themes/kepoli`, PHP function prefixes like `kepoli_`, CSS classes, and text domain can stay for the first clone. Renaming all internal handles is cosmetic and riskier than useful. Rebrand the visible text first.
 
 If the new site switches language, run the mechanical clone scripts first, then do one calm public-copy pass through the theme and editor screens before launch. The scripts cover slugs, env defaults, starter pages, and brand identity, but they do not promise a perfect translation of every UI sentence.
+
+## Engine Readiness
+
+When you change the shared clone workflow, run this in the source/template repo:
+
+```powershell
+node scripts/audit-engine-readiness.mjs
+```
+
+This checks the site-profile contract, asset basenames, Ezoic/AdSense env defaults, admin/public locale split, clone scripts, docs, and dry-run workflow. It is source-repo safe, unlike `validate-new-blog`, which is intended for a rebranded clone.
 
 ## Content Reset
 

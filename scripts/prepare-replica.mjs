@@ -46,9 +46,14 @@ const disclaimerSlug = slugify(args['disclaimer-slug'] || defaultDisclaimerSlug(
 const brandTagline = args['brand-tagline'] || defaultBrandTagline(language, brand);
 const brandDescription = args['brand-description'] || defaultBrandDescription(language, brand);
 const writerBio = args['writer-bio'] || defaultWriterBio(language, brand, writerName);
+const wordmarkAsset = slugify(args['wordmark-asset'] || `${projectSlug}-wordmark`);
+const iconAsset = slugify(args['icon-asset'] || `${projectSlug}-icon`);
+const socialCoverAsset = slugify(args['social-cover-asset'] || `${projectSlug}-social-cover`);
 const canonicalHosts = args['canonical-hosts'] || `www.${hostname}`;
 const adsenseClientId = args['adsense-client-id'] || '';
 const adsensePubId = args['adsense-pub-id'] || '';
+const ezoicAdsTxtAccountId = args['ezoic-adstxt-account-id'] || '';
+const ezoicAdsTxtRedirectUrl = args['ezoic-adstxt-redirect-url'] || '';
 const gaMeasurementId = args['ga-measurement-id'] || '';
 const themeDescription = args['theme-description']
   || (language === 'en'
@@ -99,6 +104,9 @@ Optional:
   --brand-tagline     Public tagline written to content/site-profile.json
   --brand-description Public brand description written to content/site-profile.json
   --writer-bio        Public writer bio written to content/site-profile.json
+  --wordmark-asset    Theme wordmark asset basename, default: {project-slug}-wordmark
+  --icon-asset        Theme icon asset basename, default: {project-slug}-icon
+  --social-cover-asset Social/share cover asset basename, default: {project-slug}-social-cover
   --project-slug      Internal project slug for Docker image, DB, and volume names
   --home-slug         Home page slug, default: home or acasa
   --canonical-hosts   Extra hosts that should redirect to the canonical domain
@@ -116,6 +124,8 @@ Optional:
   --wp-admin-locale   Deprecated. Admin locale is always forced to en_US.
   --adsense-client-id AdSense client ID, usually blank until the new site is ready
   --adsense-pub-id    AdSense publisher ID, usually blank until the new site is ready
+  --ezoic-adstxt-account-id Optional Ezoic ads.txt manager account ID
+  --ezoic-adstxt-redirect-url Optional full Ezoic ads.txt redirect URL
   --ga-measurement-id GA4 measurement ID, usually blank until consent is ready
   --write             Apply changes. Without this, the script only reports planned changes.`);
 }
@@ -297,6 +307,11 @@ function buildSiteProfile() {
       email: writerEmail,
       bio: writerBio,
     },
+    assets: {
+      wordmark: wordmarkAsset,
+      icon: iconAsset,
+      social_cover: socialCoverAsset,
+    },
     slugs: {
       home: homeSlug,
       recipes: recipesSlug,
@@ -335,6 +350,8 @@ function updateEnvExample() {
     ['ADSENSE_CLIENT_ID', adsenseClientId],
     ['ADSENSE_PUB_ID', adsensePubId],
     ['ADSENSE_ENABLE', '0'],
+    ['EZOIC_ADSTXT_ACCOUNT_ID', ezoicAdsTxtAccountId],
+    ['EZOIC_ADSTXT_REDIRECT_URL', ezoicAdsTxtRedirectUrl],
     ['GA_ENABLE', '0'],
     ['GA_MEASUREMENT_ID', gaMeasurementId],
   ]);
@@ -374,6 +391,8 @@ function updateDockerCompose() {
     .replace(/CANONICAL_REDIRECT_HOSTS: \$\{CANONICAL_REDIRECT_HOSTS:-[^}]*}/g, `CANONICAL_REDIRECT_HOSTS: \${CANONICAL_REDIRECT_HOSTS:-${canonicalHosts}}`)
     .replace(/ADSENSE_CLIENT_ID: \$\{ADSENSE_CLIENT_ID:-[^}]*}/g, `ADSENSE_CLIENT_ID: \${ADSENSE_CLIENT_ID:-${adsenseClientId}}`)
     .replace(/ADSENSE_PUB_ID: \$\{ADSENSE_PUB_ID:-[^}]*}/g, `ADSENSE_PUB_ID: \${ADSENSE_PUB_ID:-${adsensePubId}}`)
+    .replace(/EZOIC_ADSTXT_ACCOUNT_ID: \$\{EZOIC_ADSTXT_ACCOUNT_ID:-[^}]*}/g, `EZOIC_ADSTXT_ACCOUNT_ID: \${EZOIC_ADSTXT_ACCOUNT_ID:-${ezoicAdsTxtAccountId}}`)
+    .replace(/EZOIC_ADSTXT_REDIRECT_URL: \$\{EZOIC_ADSTXT_REDIRECT_URL:-[^}]*}/g, `EZOIC_ADSTXT_REDIRECT_URL: \${EZOIC_ADSTXT_REDIRECT_URL:-${ezoicAdsTxtRedirectUrl}}`)
     .replace(/GA_MEASUREMENT_ID: \$\{GA_MEASUREMENT_ID:-[^}]*}/g, `GA_MEASUREMENT_ID: \${GA_MEASUREMENT_ID:-${gaMeasurementId}}`);
 
   writeFile(relativePath, compose, 'Updated Docker defaults, images, and volume names');

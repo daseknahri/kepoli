@@ -20,6 +20,7 @@ Before touching code, decide:
 - About slug
 - Author slug
 - Privacy, cookies, advertising, editorial, terms, and disclaimer slugs
+- Public asset basenames for `wordmark`, `icon`, and `social_cover`
 - Monetization path at launch: `generic`, `adsense`, or `ezoic`
 
 Rules:
@@ -80,6 +81,7 @@ node scripts/generate-replica-shell.mjs --brand "New Blog" --domain https://new-
 Result expected after this phase:
 
 - `content/site-profile.json` matches the new brand
+- `content/site-profile.json` names the public assets under `assets.wordmark`, `assets.icon`, and `assets.social_cover`
 - `content/pages.json` is fresh starter copy for the new locale
 - `content/categories.json` is fresh starter taxonomy
 - old Kepoli launch posts and images are no longer the intended public content
@@ -98,6 +100,7 @@ Replace:
 Check:
 
 - The artwork itself is rebranded, even if the internal filenames still contain `kepoli`
+- If you want clone-specific filenames, set the matching basenames in `content/site-profile.json` and place files such as `{asset}.svg`, `{asset}.jpg`, or `{asset}.webp` in `wp-content/themes/kepoli/assets/img/`
 - Theme header in `wp-content/themes/kepoli/style.css` reflects the new public brand
 
 ## 5. Review Site Profile And Public Copy
@@ -134,8 +137,19 @@ Minimum env checks:
 - `WP_ADMIN_LOCALE=en_US`
 - `ADSENSE_ENABLE=0` at launch
 - `GA_ENABLE=0` until consent is ready
+- `EZOIC_ADSTXT_ACCOUNT_ID` or `EZOIC_ADSTXT_REDIRECT_URL` is set only if the site will use Ezoic ads.txt management
 
-## 7. Add Original Content
+## 7. Engine Readiness
+
+From the source/template repo, run this whenever the shared workflow changes:
+
+```powershell
+node scripts/audit-engine-readiness.mjs
+```
+
+For a fresh clone, this audit should pass before you rely on the scripts. It confirms the profile contract, script forwarding, documentation, admin/public locale split, env defaults, and dry-run clone workflow still agree.
+
+## 8. Add Original Content
 
 Before launch, create:
 
@@ -145,7 +159,7 @@ Before launch, create:
 
 Do not launch with the source repo's starter content as your real public content.
 
-## 8. Validate Before First Deploy
+## 9. Validate Before First Deploy
 
 Run:
 
@@ -169,7 +183,7 @@ node scripts/audit-replica-readiness.mjs --min-posts 20
 git diff --check
 ```
 
-## 9. Deploy The New Site
+## 10. Deploy The New Site
 
 - Create a fresh Coolify app for the new repo
 - Use only `docker-compose.yml`
@@ -183,7 +197,7 @@ Optional live verification:
 node scripts/check-live-deploy.mjs https://new-domain.com
 ```
 
-## 10. Do The Final Manual Review
+## 11. Do The Final Manual Review
 
 Check the live site for:
 
@@ -198,7 +212,7 @@ Check the live site for:
 - Correct schema language
 - Correct logo and favicon
 
-## 11. Only Then Start Publishing
+## 12. Only Then Start Publishing
 
 Publishing is safe when all of these are true:
 
@@ -217,10 +231,11 @@ For every new blog:
 2. Run `create-site-brief`
 3. Run `start-new-blog`
 4. Replace assets
-5. Add original content
-6. Run validations
-7. Deploy
-8. Review live site
+5. Run engine readiness when the shared workflow changed
+6. Add original content
+7. Run validations
+8. Deploy
+9. Review live site
 
 If a future clone needs a different language or visual identity, change the profile, content pack, and assets first. Do not fork the engine logic unless the site really needs a different product.
 

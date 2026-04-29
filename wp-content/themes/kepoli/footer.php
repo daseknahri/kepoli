@@ -21,7 +21,7 @@ $site_email = trim((string) kepoli_profile_value(['brand', 'site_email'], kepoli
 <footer class="site-footer">
     <div class="site-footer__inner">
         <div class="site-footer__brand">
-            <img src="<?php echo esc_url(kepoli_asset_uri('kepoli-wordmark')); ?>" alt="<?php echo esc_attr($site_name); ?>"<?php echo kepoli_asset_dimension_attributes('kepoli-wordmark'); ?> loading="lazy" decoding="async">
+            <img src="<?php echo esc_url(kepoli_asset_uri(kepoli_wordmark_asset())); ?>" alt="<?php echo esc_attr($site_name); ?>"<?php echo kepoli_asset_dimension_attributes(kepoli_wordmark_asset()); ?> loading="lazy" decoding="async">
             <p><?php echo esc_html(kepoli_brand_description()); ?></p>
             <?php if ($site_email !== '') : ?>
                 <p><a href="mailto:<?php echo esc_attr($site_email); ?>"><?php echo esc_html($site_email); ?></a></p>

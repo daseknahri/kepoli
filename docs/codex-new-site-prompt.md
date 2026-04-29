@@ -37,6 +37,7 @@ Project inputs:
 - Editorial slug: [editorial slug]
 - Terms slug: [terms slug]
 - Disclaimer slug: [disclaimer slug]
+- Asset basenames: [wordmark basename], [icon basename], [social cover basename]
 - Monetization at launch: [generic / adsense / ezoic]
 
 Rules:
@@ -56,10 +57,11 @@ Execution standard:
 2. Run `scripts/validate-site-brief.mjs --brief site-brief.json`.
 3. Run the new blog bootstrap workflow for this brand.
 4. Review and adjust content/site-profile.json, content/pages.json, and content/categories.json.
-5. Check env and deployment defaults.
+5. Check env and deployment defaults, including optional Ezoic ads.txt values if monetization is Ezoic.
 6. Replace or flag public identity assets that still need manual replacement.
-7. Run `scripts/validate-new-blog.mjs` or the equivalent manual validation sequence.
-8. Summarize what is complete, what still needs manual input, and the exact next step.
+7. Run `scripts/audit-engine-readiness.mjs` if shared workflow files were changed.
+8. Run `scripts/validate-new-blog.mjs` or the equivalent manual validation sequence.
+9. Summarize what is complete, what still needs manual input, and the exact next step.
 
 Definition of done for this conversation:
 - `site-brief.json` is filled or updated.

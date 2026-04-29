@@ -302,6 +302,7 @@ function checkSiteProfile() {
   const forceAdmin = profileValue(['locales', 'force_admin']);
   const writerName = String(profileValue(['writer', 'name']) || '').trim();
   const writerEmail = String(profileValue(['writer', 'email']) || '').trim();
+  const assets = profileValue(['assets']);
   const slugs = profileValue(['slugs']);
 
   if (!brandName) failures.push('content/site-profile.json needs brand.name.');
@@ -311,6 +312,18 @@ function checkSiteProfile() {
   if (forceAdmin !== true) failures.push('content/site-profile.json must keep locales.force_admin=true.');
   if (!writerName) failures.push('content/site-profile.json needs writer.name.');
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(writerEmail)) failures.push('content/site-profile.json needs a real writer.email.');
+  if (!assets || typeof assets !== 'object' || Array.isArray(assets)) {
+    failures.push('content/site-profile.json needs an assets object.');
+  } else {
+    for (const key of ['wordmark', 'icon', 'social_cover']) {
+      const asset = String(assets[key] || '').trim();
+      if (!asset) {
+        failures.push(`content/site-profile.json is missing assets.${key}.`);
+      } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(asset)) {
+        failures.push(`content/site-profile.json assets.${key} must be a lowercase asset basename without an extension.`);
+      }
+    }
+  }
   if (!slugs || typeof slugs !== 'object' || Array.isArray(slugs)) {
     failures.push('content/site-profile.json needs a slugs object.');
     return;
@@ -470,9 +483,12 @@ function checkImages() {
 
 function checkThemeAssets() {
   const assetsDir = path.join(root, 'wp-content/themes/kepoli/assets/img');
+  const wordmark = String(profileValue(['assets', 'wordmark']) || 'kepoli-wordmark');
+  const icon = String(profileValue(['assets', 'icon']) || 'kepoli-icon');
+  const socialCover = String(profileValue(['assets', 'social_cover']) || 'kepoli-social-cover');
   const required = [
     'hero-homepage.jpg',
-    'kepoli-social-cover.jpg',
+    `${socialCover}.jpg`,
     'writer-photo.jpg',
   ];
 
@@ -482,9 +498,21 @@ function checkThemeAssets() {
     }
   }
 
-  if (fs.existsSync(path.join(assetsDir, 'kepoli-wordmark.svg'))) {
-    warnings.push('Logo filename is still kepoli-wordmark.svg. This can work, but make sure the artwork itself is rebranded.');
+  if (!hasAsset(assetsDir, wordmark, ['svg', 'png', 'jpg', 'jpeg', 'webp'])) {
+    warnings.push(`Theme wordmark asset missing or not replaced: ${wordmark}.svg/png/jpg/webp`);
   }
+
+  if (!hasAsset(assetsDir, icon, ['svg', 'png', 'jpg', 'jpeg', 'webp'])) {
+    warnings.push(`Theme icon asset missing or not replaced: ${icon}.svg/png/jpg/webp`);
+  }
+
+  if (wordmark === 'kepoli-wordmark' && fs.existsSync(path.join(assetsDir, 'kepoli-wordmark.svg'))) {
+    warnings.push('Logo filename is still kepoli-wordmark.svg. This can work, but make sure the artwork itself is rebranded or set assets.wordmark.');
+  }
+}
+
+function hasAsset(assetsDir, basename, extensions) {
+  return extensions.some((extension) => fs.existsSync(path.join(assetsDir, `${basename}.${extension}`)));
 }
 
 function checkOldIdentity() {

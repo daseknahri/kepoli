@@ -243,6 +243,11 @@ function kepoli_seed_normalize_site_profile(array $profile, array $pages): array
                 ? sprintf('Writes practical recipes and kitchen guides for %s.', $site_name)
                 : sprintf('Scrie retete si ghiduri practice pentru %s.', $site_name),
         ],
+        'assets' => [
+            'wordmark' => 'kepoli-wordmark',
+            'icon' => 'kepoli-icon',
+            'social_cover' => 'kepoli-social-cover',
+        ],
         'slugs' => [
             'home' => kepoli_seed_home_page_slug($pages) ?: ($is_english ? 'home' : 'acasa'),
             'recipes' => kepoli_seed_recipes_page_slug($pages),

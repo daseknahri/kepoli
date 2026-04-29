@@ -48,6 +48,9 @@ const disclaimerSlug = slugify(args['disclaimer-slug'] || defaultDisclaimerSlug(
 const brandTagline = stringOrFallback(args['brand-tagline'], defaultBrandTagline(language, brand));
 const brandDescription = stringOrFallback(args['brand-description'], defaultBrandDescription(language, brand));
 const writerBio = stringOrFallback(args['writer-bio'], defaultWriterBio(language, brand, writerName));
+const wordmarkAsset = slugify(args['wordmark-asset'] || `${projectSlug}-wordmark`);
+const iconAsset = slugify(args['icon-asset'] || `${projectSlug}-icon`);
+const socialCoverAsset = slugify(args['social-cover-asset'] || `${projectSlug}-social-cover`);
 const canonicalHosts = stringOrFallback(args['canonical-hosts'], `www.${hostname}`);
 const country = stringOrFallback(args.country, defaultCountry(language));
 const focus = stringOrFallback(args.focus, defaultFocus(language));
@@ -63,6 +66,8 @@ const expectedArticles = optionalIntegerArg('expected-articles');
 const prepareForAdsense = booleanArg('prepare-for-adsense', monetization === 'adsense');
 const adsenseClientId = stringOrFallback(args['adsense-client-id'], '');
 const adsensePubId = stringOrFallback(args['adsense-pub-id'], '');
+const ezoicAdsTxtAccountId = stringOrFallback(args['ezoic-adstxt-account-id'], '');
+const ezoicAdsTxtRedirectUrl = stringOrFallback(args['ezoic-adstxt-redirect-url'], '');
 const gaMeasurementId = stringOrFallback(args['ga-measurement-id'], '');
 const themeDescription = stringOrFallback(
   args['theme-description'],
@@ -95,6 +100,9 @@ const brief = {
   brandTagline,
   brandDescription,
   writerBio,
+  wordmarkAsset,
+  iconAsset,
+  socialCoverAsset,
   canonicalHosts,
   country,
   focus,
@@ -107,6 +115,8 @@ const brief = {
   prepareForAdsense,
   adsenseClientId,
   adsensePubId,
+  ezoicAdsTxtAccountId,
+  ezoicAdsTxtRedirectUrl,
   gaMeasurementId,
   themeDescription,
 };
@@ -175,6 +185,9 @@ Optional:
   --brand-tagline
   --brand-description
   --writer-bio
+  --wordmark-asset
+  --icon-asset
+  --social-cover-asset
   --canonical-hosts
   --country
   --focus
@@ -190,6 +203,8 @@ Optional:
   --prepare-for-adsense
   --adsense-client-id
   --adsense-pub-id
+  --ezoic-adstxt-account-id
+  --ezoic-adstxt-redirect-url
   --ga-measurement-id
   --theme-description
   --write
@@ -467,6 +482,10 @@ function validateGeneratedBrief(value) {
     } else if (hostParts.some((host) => host.includes('://') || host.includes('/'))) {
       failures.push('canonicalHosts must contain hostnames only, not full URLs.');
     }
+  }
+
+  if (value.ezoicAdsTxtRedirectUrl && !isValidHttpUrl(value.ezoicAdsTxtRedirectUrl)) {
+    failures.push('ezoicAdsTxtRedirectUrl must be a full http or https URL when provided.');
   }
 
   if (

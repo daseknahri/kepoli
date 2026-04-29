@@ -15,6 +15,11 @@
     "email": "isalunemerovik@gmail.com",
     "bio": "Scrie retete si ghiduri practice pentru Kepoli."
   },
+  "assets": {
+    "wordmark": "kepoli-wordmark",
+    "icon": "kepoli-icon",
+    "social_cover": "kepoli-social-cover"
+  },
   "slugs": {
     "home": "acasa",
     "recipes": "retete",

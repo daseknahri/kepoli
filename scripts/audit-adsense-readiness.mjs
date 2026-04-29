@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 const posts = JSON.parse(fs.readFileSync('content/posts.json', 'utf8'));
 const pages = JSON.parse(fs.readFileSync('content/pages.json', 'utf8'));
+const siteProfile = JSON.parse(fs.readFileSync('content/site-profile.json', 'utf8'));
 const envExample = fs.readFileSync('.env.example', 'utf8');
 const readme = fs.readFileSync('README.md', 'utf8');
 const adsenseDocs = fs.readFileSync('docs/adsense-readiness.md', 'utf8');
@@ -10,6 +11,9 @@ const wordpressDockerfile = fs.readFileSync('docker/wordpress/Dockerfile', 'utf8
 const apachePerformanceConf = fs.readFileSync('docker/wordpress/kepoli-performance.conf', 'utf8');
 const adtechMuPlugin = fs.readFileSync('wp-content/mu-plugins/kepoli-adtech.php', 'utf8');
 const newsletterMuPlugin = fs.readFileSync('wp-content/mu-plugins/kepoli-newsletter.php', 'utf8');
+const profileAssets = siteProfile.assets || {};
+const socialCoverAsset = profileAssets.social_cover || 'kepoli-social-cover';
+const canonicalRedirectHosts = String(envExample.match(/^CANONICAL_REDIRECT_HOSTS=(.+)$/m)?.[1] || '');
 const aboutPage = pages.find((page) => /^despre-/.test(String(page.slug || '')) && page.slug !== 'despre-autor') || pages.find((page) => page.slug === 'despre-kepoli');
 const aboutPageSlug = aboutPage?.slug || 'despre-kepoli';
 const aboutTemplatePath = fs.existsSync(`wp-content/themes/kepoli/page-${aboutPageSlug}.php`)
@@ -39,12 +43,12 @@ const seedBootstrap = fs.readFileSync('seed/bootstrap.php', 'utf8');
 const writerPhotoSvg = fs.readFileSync('wp-content/themes/kepoli/assets/img/writer-photo.svg', 'utf8');
 const obsoleteThemePngs = [
   'wp-content/themes/kepoli/assets/img/hero-homepage.png',
-  'wp-content/themes/kepoli/assets/img/kepoli-social-cover.png',
+  `wp-content/themes/kepoli/assets/img/${socialCoverAsset}.png`,
   'wp-content/themes/kepoli/assets/img/writer-photo.png',
 ];
 const themeAssetStats = {
   heroJpg: fs.statSync('wp-content/themes/kepoli/assets/img/hero-homepage.jpg').size,
-  socialCoverJpg: fs.statSync('wp-content/themes/kepoli/assets/img/kepoli-social-cover.jpg').size,
+  socialCoverJpg: fs.statSync(`wp-content/themes/kepoli/assets/img/${socialCoverAsset}.jpg`).size,
   writerJpg: fs.statSync('wp-content/themes/kepoli/assets/img/writer-photo.jpg').size,
   styleCss: fs.statSync('wp-content/themes/kepoli/style.css').size,
   styleMinCss: fs.statSync('wp-content/themes/kepoli/style.min.css').size,
@@ -109,6 +113,10 @@ function requireTextIncludes(label, value, patterns) {
       failures.push(`${label} is missing: ${pattern}`);
     }
   }
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function wordCount(value) {
@@ -212,13 +220,17 @@ requireTextIncludes('.env.example Google service gates', envExample, [
   /ADSENSE_ENABLE=0/,
   /GA_ENABLE=0/,
   /GA_MEASUREMENT_ID=/,
-  /CANONICAL_REDIRECT_HOSTS=www\.kepoli\.com,api\.kepoli\.com,recipe\.kepoli\.com/,
+  /EZOIC_ADSTXT_ACCOUNT_ID=/,
+  /EZOIC_ADSTXT_REDIRECT_URL=/,
+  new RegExp(`CANONICAL_REDIRECT_HOSTS=${escapeRegExp(canonicalRedirectHosts)}`),
 ]);
 
 requireTextIncludes('docker compose Google service gates', dockerCompose, [
   /GA_ENABLE:\s*\$\{GA_ENABLE:-0\}/,
   /ADSENSE_ENABLE:\s*\$\{ADSENSE_ENABLE:-0\}/,
-  /CANONICAL_REDIRECT_HOSTS:\s*\$\{CANONICAL_REDIRECT_HOSTS:-www\.kepoli\.com,api\.kepoli\.com,recipe\.kepoli\.com\}/,
+  /EZOIC_ADSTXT_ACCOUNT_ID:\s*\$\{EZOIC_ADSTXT_ACCOUNT_ID:-\}/,
+  /EZOIC_ADSTXT_REDIRECT_URL:\s*\$\{EZOIC_ADSTXT_REDIRECT_URL:-\}/,
+  new RegExp(`CANONICAL_REDIRECT_HOSTS:\\s*\\$\\{CANONICAL_REDIRECT_HOSTS:-${escapeRegExp(canonicalRedirectHosts)}\\}`),
 ]);
 
 requireTextIncludes('canonical host redirects', adtechMuPlugin, [
@@ -227,15 +239,17 @@ requireTextIncludes('canonical host redirects', adtechMuPlugin, [
   /www\.' \. \$canonical_host/,
   /api\.' \. \$canonical_host/,
   /recipe\.' \. \$canonical_host/,
-  /wp_redirect\(\$scheme \. ':\/\/' \. \$canonical_host \. \$request_uri,\s*301,\s*get_bloginfo\('name'\) \?: 'Food Blog'\)/,
+  /wp_redirect\(\$scheme \. ':\/\/' \. \$canonical_host \. \$request_uri,\s*301,\s*kepoli_mu_site_name\(\)\)/,
 ]);
 
 requireTextIncludes('machine-readable trust files', adtechMuPlugin, [
   /\/ads\.txt/,
+  /EZOIC_ADSTXT_ACCOUNT_ID/,
+  /EZOIC_ADSTXT_REDIRECT_URL/,
   /\/\.well-known\/security\.txt/,
   /\/site\.webmanifest/,
   /Contact:\s*mailto:/,
-  /Preferred-Languages:/,
+  /kepoli_mu_public_locale\(\)/,
   /,\s*en\\n/,
   /Canonical:/,
   /background_color'\s*=>\s*'#fbf7ef'/,
@@ -334,7 +348,7 @@ requireThemeIncludes('functions', 'theme image dimensions', [
 ]);
 
 requireThemeIncludes('header', 'wordmark dimensions', [
-  /kepoli_asset_dimension_attributes\('kepoli-wordmark'\)/,
+  /kepoli_asset_dimension_attributes\((?:'kepoli-wordmark'|kepoli_wordmark_asset\(\))\)/,
 ]);
 
 requireThemeIncludes('front-page', 'static image dimensions', [

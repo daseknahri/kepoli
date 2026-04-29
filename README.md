@@ -2,7 +2,7 @@
 
 Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and kitchen articles. This repo contains the live site stack, content seed, custom theme, and the clone tooling used to launch future sibling food blogs from the same engine.
 
-For repeatable cloning and launch steps, use `docs/new-blog-launch-plan.md`. For deeper clone details, use `docs/replicate-food-blog.md`. For a fresh Codex handoff prompt, use `docs/codex-new-site-prompt.md`. The most robust path is: create `site-brief.json` with `node scripts/create-site-brief.mjs ... --write`, run `node scripts/start-new-blog.mjs --brief site-brief.json --write`, then run `node scripts/validate-new-blog.mjs --brief site-brief.json`.
+For repeatable cloning and launch steps, use `docs/new-blog-launch-plan.md`. For deeper clone details, use `docs/replicate-food-blog.md`. For a fresh Codex handoff prompt, use `docs/codex-new-site-prompt.md`. The most robust path is: create `site-brief.json` with `node scripts/create-site-brief.mjs ... --write`, run `node scripts/start-new-blog.mjs --brief site-brief.json --write`, then run `node scripts/validate-new-blog.mjs --brief site-brief.json`. When changing the shared engine itself, run `node scripts/audit-engine-readiness.mjs` before using it for another clone.
 
 ## What This Repo Builds
 
@@ -50,7 +50,7 @@ Use only `docker-compose.yml` in Coolify. Do not add `docker-compose.local.yml`;
 
 ## AdSense Notes
 
-The theme contains inactive ad placements. Live ad markup is emitted only when `ADSENSE_ENABLE=1`, an AdSense client ID exists, and the matching slot environment variable is set. `ads.txt` is generated only when `ADSENSE_PUB_ID` is configured.
+The theme contains inactive ad placements. Live ad markup is emitted only when `ADSENSE_ENABLE=1`, an AdSense client ID exists, and the matching slot environment variable is set. `ads.txt` serves the configured AdSense publisher record when `ADSENSE_PUB_ID` is set, or redirects to Ezoic ads.txt management when `EZOIC_ADSTXT_ACCOUNT_ID` or `EZOIC_ADSTXT_REDIRECT_URL` is configured.
 
 The newsletter signup is a small native WordPress form on the front page and the About Kepoli page. Signups are stored in WordPress admin under `Newsletter`, where you can review them or export a CSV and follow up manually from `contact@kepoli.com` without adding a paid newsletter service.
 

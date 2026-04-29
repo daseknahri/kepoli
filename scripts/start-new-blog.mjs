@@ -14,6 +14,9 @@ const sharedOptionKeys = [
   'brand-tagline',
   'brand-description',
   'writer-bio',
+  'wordmark-asset',
+  'icon-asset',
+  'social-cover-asset',
   'home-slug',
   'recipes-slug',
   'guides-slug',
@@ -29,6 +32,8 @@ const sharedOptionKeys = [
   'canonical-hosts',
   'adsense-client-id',
   'adsense-pub-id',
+  'ezoic-adstxt-account-id',
+  'ezoic-adstxt-redirect-url',
   'ga-measurement-id',
   'theme-description',
 ];
@@ -75,6 +80,9 @@ const briefFieldMap = {
   brandTagline: 'brand-tagline',
   brandDescription: 'brand-description',
   writerBio: 'writer-bio',
+  wordmarkAsset: 'wordmark-asset',
+  iconAsset: 'icon-asset',
+  socialCoverAsset: 'social-cover-asset',
   homeSlug: 'home-slug',
   recipesSlug: 'recipes-slug',
   guidesSlug: 'guides-slug',
@@ -89,6 +97,8 @@ const briefFieldMap = {
   canonicalHosts: 'canonical-hosts',
   adsenseClientId: 'adsense-client-id',
   adsensePubId: 'adsense-pub-id',
+  ezoicAdsTxtAccountId: 'ezoic-adstxt-account-id',
+  ezoicAdsTxtRedirectUrl: 'ezoic-adstxt-redirect-url',
   gaMeasurementId: 'ga-measurement-id',
   themeDescription: 'theme-description',
   monetization: 'monetization',
@@ -244,6 +254,9 @@ Common options:
   --brand-tagline
   --brand-description
   --writer-bio
+  --wordmark-asset
+  --icon-asset
+  --social-cover-asset
   --home-slug
   --recipes-slug
   --guides-slug
@@ -263,6 +276,8 @@ Common options:
   --audience
   --adsense-client-id
   --adsense-pub-id
+  --ezoic-adstxt-account-id
+  --ezoic-adstxt-redirect-url
   --ga-measurement-id
   --theme-description
   --delete-images
