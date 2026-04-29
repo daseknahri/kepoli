@@ -49,6 +49,16 @@ const shellSharedOptionKeys = [
   'no-backup',
 ];
 
+const shellIdentityOptionKeys = sharedOptionKeys.filter((key) => ![
+  'canonical-hosts',
+  'adsense-client-id',
+  'adsense-pub-id',
+  'ezoic-adstxt-account-id',
+  'ezoic-adstxt-redirect-url',
+  'ga-measurement-id',
+  'theme-description',
+].includes(key));
+
 const resetOptionKeys = [
   'delete-images',
   'clear-categories',
@@ -186,7 +196,7 @@ const steps = [
   {
     label: 'Generate starter shell',
     script: 'generate-replica-shell.mjs',
-    args: [...sharedArgs, ...buildFlagList(args, shellOnlyOptionKeys), ...buildFlagList(args, shellSharedOptionKeys), ...writeFlag],
+    args: [...buildFlagList(args, shellIdentityOptionKeys), ...buildFlagList(args, shellOnlyOptionKeys), ...buildFlagList(args, shellSharedOptionKeys), ...writeFlag],
   },
 ];
 

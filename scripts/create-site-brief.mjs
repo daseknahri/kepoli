@@ -4,11 +4,66 @@ import path from 'node:path';
 const root = process.cwd();
 const failures = [];
 const args = parseArgs(process.argv.slice(2));
+const knownArgs = new Set([
+  'brand',
+  'domain',
+  'writer-name',
+  'writer-email',
+  'site-email',
+  'output',
+  'language',
+  'lang',
+  'public-locale',
+  'wp-locale',
+  'project-slug',
+  'home-slug',
+  'recipes-slug',
+  'guides-slug',
+  'about-slug',
+  'author-slug',
+  'privacy-slug',
+  'cookies-slug',
+  'advertising-slug',
+  'editorial-slug',
+  'terms-slug',
+  'disclaimer-slug',
+  'monetization',
+  'brand-tagline',
+  'brand-description',
+  'writer-bio',
+  'wordmark-asset',
+  'icon-asset',
+  'social-cover-asset',
+  'canonical-hosts',
+  'country',
+  'focus',
+  'audience',
+  'delete-images',
+  'clear-categories',
+  'no-backup',
+  'min-posts-target',
+  'min-categories-target',
+  'expected-posts',
+  'expected-recipes',
+  'expected-articles',
+  'prepare-for-adsense',
+  'adsense-client-id',
+  'adsense-pub-id',
+  'ezoic-adstxt-account-id',
+  'ezoic-adstxt-redirect-url',
+  'ga-measurement-id',
+  'theme-description',
+  'write',
+  'help',
+  'h',
+]);
 
 if (args.help || args.h) {
   printHelp();
   process.exit(0);
 }
+
+rejectUnknownArgs(args, knownArgs);
 
 const write = Boolean(args.write);
 const outputPath = String(args.output || 'site-brief.json').trim() || 'site-brief.json';
@@ -29,7 +84,7 @@ if (failures.length > 0) {
 }
 
 const normalizedDomain = normalizeSiteUrl(domain);
-const hostname = new URL(normalizedDomain).hostname.replace(/^www\./i, '');
+const hostname = hostnameFromSiteUrl(normalizedDomain).replace(/^www\./i, '');
 const language = resolveLanguage(args.language || args.lang || '', args['public-locale'] || args['wp-locale']);
 const publicLocale = normalizeLocale(args['public-locale'] || args['wp-locale'] || defaultPublicLocale(language));
 const monetization = resolveMonetization(args.monetization || '');
@@ -242,6 +297,13 @@ function parseArgs(argv) {
   return parsed;
 }
 
+function rejectUnknownArgs(parsed, allowed) {
+  const unknown = Object.keys(parsed).filter((key) => !allowed.has(key));
+  if (unknown.length > 0) {
+    failures.push(`Unknown option${unknown.length === 1 ? '' : 's'}: ${unknown.map((key) => `--${key}`).join(', ')}`);
+  }
+}
+
 function stringArg(name) {
   const value = args[name];
   if (typeof value !== 'string' || value.trim() === '') {
@@ -298,6 +360,15 @@ function normalizeBoolean(value, name, fallback) {
 function normalizeSiteUrl(value) {
   const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
   return withProtocol.replace(/\/+$/, '');
+}
+
+function hostnameFromSiteUrl(value) {
+  try {
+    return new URL(value).hostname;
+  } catch {
+    failures.push('domain must be a valid http or https URL.');
+    return 'example.com';
+  }
 }
 
 function normalizeLocale(value) {

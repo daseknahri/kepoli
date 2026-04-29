@@ -155,6 +155,7 @@ function checkBriefContract() {
 
 function checkCloneScripts() {
   requireText('create-site-brief engine options', createBrief, [
+    /const knownArgs = new Set/,
     /wordmarkAsset/,
     /iconAsset/,
     /socialCoverAsset/,
@@ -171,6 +172,7 @@ function checkCloneScripts() {
   ]);
 
   requireText('prepare-replica profile and env generation', prepareReplica, [
+    /const knownArgs = new Set/,
     /assets:\s*\{/,
     /wordmark:\s*wordmarkAsset/,
     /icon:\s*iconAsset/,
@@ -182,6 +184,7 @@ function checkCloneScripts() {
   ]);
 
   requireText('generate-replica-shell profile generation', generateShell, [
+    /const knownArgs = new Set/,
     /assets:\s*\{/,
     /wordmark:\s*wordmarkAsset/,
     /icon:\s*iconAsset/,
@@ -308,7 +311,53 @@ function checkEnvironment() {
 function runWorkflowSmokeTests() {
   runNodeCheck('Validate example site brief', ['scripts/validate-site-brief.mjs', '--brief', 'site-brief.example.json']);
   runNodeCheck('Dry-run new-blog workflow from example brief', ['scripts/start-new-blog.mjs', '--brief', 'site-brief.example.json']);
+  runNodeFailureCheck('create-site-brief rejects unknown options', [
+    'scripts/create-site-brief.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'https://new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+    '--site-email',
+    'contact@new-domain.com',
+    '--writer-emial',
+    'typo@example.com',
+  ]);
+  runNodeFailureCheck('prepare-replica rejects unknown options', [
+    'scripts/prepare-replica.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'https://new-domain.com',
+    '--site-email',
+    'contact@new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+    '--writer-emial',
+    'typo@example.com',
+  ]);
+  runNodeFailureCheck('generate-replica-shell rejects unknown options', [
+    'scripts/generate-replica-shell.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'https://new-domain.com',
+    '--site-email',
+    'contact@new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+    '--writer-emial',
+    'typo@example.com',
+  ]);
   notes.push('Example brief and dry-run clone workflow passed.');
+  notes.push('Clone scripts reject unknown option typos.');
 }
 
 function runCloneWriteSmokeTest() {
@@ -336,12 +385,39 @@ function runCloneWriteSmokeTest() {
       fs.copyFileSync(source, target);
     }
 
-    runNodeCheckIn('Temporary clone write workflow', tempRoot, ['scripts/start-new-blog.mjs', '--brief', 'site-brief.example.json', '--write', '--no-backup']);
+    const smokeBriefPath = path.join(tempRoot, 'engine-smoke-brief.json');
+    fs.writeFileSync(smokeBriefPath, `${JSON.stringify(buildSmokeBrief(), null, 2)}\n`);
+
+    runNodeCheckIn('Temporary clone write workflow', tempRoot, ['scripts/start-new-blog.mjs', '--brief', 'engine-smoke-brief.json', '--write', '--no-backup']);
     runNodeCheckIn('Temporary clone rebrand audit', tempRoot, ['scripts/audit-rebrand.mjs']);
-    notes.push('Temporary write-mode clone and rebrand audit passed.');
+    runNodeCheckIn('Temporary clone replica-readiness audit', tempRoot, ['scripts/audit-replica-readiness.mjs', '--min-posts', '0', '--min-categories', '4']);
+    notes.push('Temporary write-mode clone, rebrand audit, and zero-post replica-readiness audit passed.');
   } finally {
     fs.rmSync(tempRoot, { recursive: true, force: true });
   }
+}
+
+function buildSmokeBrief() {
+  return {
+    ...briefExample,
+    brand: 'Kitchen Orbit',
+    domain: 'https://kitchen-orbit.test',
+    writerName: 'Mira Stone',
+    writerEmail: 'mira@kitchen-orbit.test',
+    siteEmail: 'hello@kitchen-orbit.test',
+    projectSlug: 'kitchen-orbit',
+    aboutSlug: 'about-kitchen-orbit',
+    brandTagline: 'Practical test recipes and kitchen guides for home cooks.',
+    brandDescription: 'Kitchen Orbit publishes practical recipes and kitchen guides for home cooks.',
+    writerBio: 'Mira Stone writes practical recipes and kitchen guides for Kitchen Orbit.',
+    wordmarkAsset: 'kitchen-orbit-wordmark',
+    iconAsset: 'kitchen-orbit-icon',
+    socialCoverAsset: 'kitchen-orbit-social-cover',
+    canonicalHosts: 'www.kitchen-orbit.test',
+    country: 'Test Market',
+    focus: 'everyday recipes, seasonal cooking ideas, and practical kitchen guides',
+    audience: 'readers who cook at home and want clear, trustworthy guidance',
+  };
 }
 
 function readFile(relativePath) {
@@ -420,6 +496,20 @@ function runNodeCheckIn(label, cwd, args) {
     .join('\n');
 
   failures.push(`${label} failed: ${output || `exit ${result.status}`}`);
+}
+
+function runNodeFailureCheck(label, args) {
+  const result = spawnSync(process.execPath, args, {
+    cwd: root,
+    encoding: 'utf8',
+    stdio: 'pipe',
+  });
+
+  if (result.status !== 0 && /Unknown option/.test(`${result.stdout}\n${result.stderr}`)) {
+    return;
+  }
+
+  failures.push(`${label} did not fail with an unknown-option error.`);
 }
 
 function isSlug(value) {

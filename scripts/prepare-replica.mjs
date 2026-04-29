@@ -4,11 +4,52 @@ import path from 'node:path';
 const root = process.cwd();
 const failures = [];
 const args = parseArgs(process.argv.slice(2));
+const knownArgs = new Set([
+  'brand',
+  'domain',
+  'site-email',
+  'writer-name',
+  'writer-email',
+  'language',
+  'lang',
+  'brand-tagline',
+  'brand-description',
+  'writer-bio',
+  'wordmark-asset',
+  'icon-asset',
+  'social-cover-asset',
+  'project-slug',
+  'home-slug',
+  'canonical-hosts',
+  'about-slug',
+  'author-slug',
+  'recipes-slug',
+  'guides-slug',
+  'privacy-slug',
+  'cookies-slug',
+  'advertising-slug',
+  'editorial-slug',
+  'terms-slug',
+  'disclaimer-slug',
+  'wp-locale',
+  'wp-admin-locale',
+  'adsense-client-id',
+  'adsense-pub-id',
+  'ezoic-adstxt-account-id',
+  'ezoic-adstxt-redirect-url',
+  'ga-measurement-id',
+  'theme-description',
+  'write',
+  'help',
+  'h',
+]);
 
 if (args.help || args.h) {
   printHelp();
   process.exit(0);
 }
+
+rejectUnknownArgs(args, knownArgs);
 
 const write = Boolean(args.write);
 const brand = stringArg('brand');
@@ -25,7 +66,7 @@ if (failures.length > 0) {
 }
 
 const siteUrl = normalizeSiteUrl(domain);
-const hostname = new URL(siteUrl).hostname;
+const hostname = hostnameFromSiteUrl(siteUrl);
 const projectSlug = slugify(args['project-slug'] || brand);
 const projectUnderscore = projectSlug.replace(/-/g, '_');
 const writerParts = splitName(writerName);
@@ -160,6 +201,13 @@ function parseArgs(argv) {
   return parsed;
 }
 
+function rejectUnknownArgs(parsed, allowed) {
+  const unknown = Object.keys(parsed).filter((key) => !allowed.has(key));
+  if (unknown.length > 0) {
+    failures.push(`Unknown option${unknown.length === 1 ? '' : 's'}: ${unknown.map((key) => `--${key}`).join(', ')}`);
+  }
+}
+
 function stringArg(name) {
   const value = args[name];
   if (typeof value !== 'string' || value.trim() === '') {
@@ -173,6 +221,15 @@ function stringArg(name) {
 function normalizeSiteUrl(value) {
   const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
   return withProtocol.replace(/\/+$/, '');
+}
+
+function hostnameFromSiteUrl(value) {
+  try {
+    return new URL(value).hostname;
+  } catch {
+    failures.push('domain must be a valid http or https URL.');
+    return 'example.com';
+  }
 }
 
 function slugify(value) {
