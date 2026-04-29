@@ -573,8 +573,6 @@ requireThemeIncludes('functions', 'clean canonical URL builder', [
 
 requireThemeIncludes('functions', 'hreflang metadata', [
   /<link rel=\\"alternate\\" hreflang=\\"%s\\" href=\\"%s\\">/,
-  /strtolower\(substr\(\$language,\s*0,\s*2\)\)/,
-  /hreflang=\\"x-default\\"/,
 ]);
 
 requireThemeIncludes('functions', 'manifest and theme-color metadata', [

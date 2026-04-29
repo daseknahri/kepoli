@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.25
+ * Version: 1.8.26
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.25';
+    private const VERSION = '1.8.26';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -880,6 +880,7 @@ final class Kepoli_Author_Tools
                 'slug' => (string) $term->slug,
                 'name' => (string) $term->name,
                 'description' => (string) $term->description,
+                'isArticle' => self::is_article_category_term($term),
             ];
         }
 
@@ -2223,7 +2224,7 @@ final class Kepoli_Author_Tools
         }
 
         $title = self::remove_template_prompt_text($title);
-        return rtrim(self::sentence_limit($title, 65, 30), '. ');
+        return rtrim(self::sentence_limit($title, 58, 30), '. ');
     }
 
     private static function text_was_auto_generated(int $post_id, string $meta_key): bool
@@ -2339,16 +2340,16 @@ final class Kepoli_Author_Tools
     {
         $existing = (string) get_post_meta($post_id, '_kepoli_seo_title', true);
         $posted = isset($_POST['kepoli_seo_title']) ? sanitize_text_field(wp_unslash((string) $_POST['kepoli_seo_title'])) : '';
-        $posted = self::limit_text(self::remove_template_prompt_text($posted), 70);
+        $posted = self::limit_text(self::remove_template_prompt_text($posted), 58);
         $auto_generated = self::text_was_auto_generated($post_id, '_kepoli_auto_seo_title');
-        $generated = self::limit_text(self::generate_seo_title($post), 70);
+        $generated = self::limit_text(self::generate_seo_title($post), 58);
 
         if (self::should_refresh_auto_text($posted, $existing, $auto_generated)) {
             $value = $generated;
             $is_auto = true;
         } else {
             $value = $posted !== '' ? $posted : $existing;
-            $value = self::limit_text($value, 70);
+            $value = self::limit_text($value, 58);
             $is_auto = $value !== '' && self::plain_text($value) === self::plain_text($generated);
         }
 
@@ -2388,13 +2389,13 @@ final class Kepoli_Author_Tools
         $tags = [];
 
         foreach ((array) $parts as $part) {
-            $tag = trim(sanitize_text_field((string) $part));
+            $tag = self::clean_tag_value((string) $part);
             if ($tag !== '') {
                 $tags[] = $tag;
             }
         }
 
-        return array_values(array_unique($tags));
+        return self::dedupe_tag_values($tags);
     }
 
     private static function has_non_default_category(array $category_ids): bool
@@ -2422,7 +2423,7 @@ final class Kepoli_Author_Tools
         $normalized = [];
 
         foreach ($tags as $tag) {
-            $clean = trim(sanitize_text_field((string) $tag));
+            $clean = self::clean_tag_value((string) $tag);
             if ($clean !== '') {
                 $normalized[] = strtolower($clean);
             }
@@ -2431,6 +2432,43 @@ final class Kepoli_Author_Tools
         $normalized = array_values(array_unique($normalized));
         sort($normalized);
         return $normalized;
+    }
+
+    private static function clean_tag_value(string $tag): string
+    {
+        $tag = trim(sanitize_text_field(self::plain_text($tag)));
+        $tag = preg_replace('/\s+/', ' ', $tag) ?: '';
+        $tag = trim($tag, " \t\n\r\0\x0B,;:.!?\"'“”‘’");
+
+        $length = function_exists('mb_strlen') ? mb_strlen($tag, 'UTF-8') : strlen($tag);
+        if ($tag === '' || $length > 70) {
+            return '';
+        }
+
+        return $tag;
+    }
+
+    private static function dedupe_tag_values(array $tags): array
+    {
+        $result = [];
+        $seen = [];
+
+        foreach ($tags as $tag) {
+            $clean = self::clean_tag_value((string) $tag);
+            if ($clean === '') {
+                continue;
+            }
+
+            $key = remove_accents(function_exists('mb_strtolower') ? mb_strtolower($clean, 'UTF-8') : strtolower($clean));
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $result[] = $clean;
+        }
+
+        return $result;
     }
 
     private static function tags_look_stale_for_post(array $tags, WP_Post $post): bool
@@ -2467,11 +2505,32 @@ final class Kepoli_Author_Tools
         ]));
 
         return in_array((string) $category->slug, self::article_category_slugs(), true)
-            || str_contains($label, 'article')
-            || str_contains($label, 'guide');
+            || in_array($label, ['articol', 'articole', 'article', 'articles', 'guide', 'guides'], true);
     }
 
     private static function article_category_id(): int
+    {
+        $category_id = self::existing_article_category_id();
+        if ($category_id > 0) {
+            return $category_id;
+        }
+
+        $name = self::public_is_english() ? 'Guides' : 'Articole';
+        $slug = self::guides_slug();
+        $created = wp_insert_term($name, 'category', [
+            'slug' => $slug,
+            'description' => self::content_text('Articole culinare si ghiduri practice.', 'Food articles and practical kitchen guides.'),
+        ]);
+
+        if (is_wp_error($created)) {
+            $existing = get_term_by('slug', $slug, 'category');
+            return $existing instanceof WP_Term ? (int) $existing->term_id : 0;
+        }
+
+        return isset($created['term_id']) ? (int) $created['term_id'] : 0;
+    }
+
+    private static function existing_article_category_id(): int
     {
         $categories = get_terms([
             'taxonomy' => 'category',
@@ -2864,7 +2923,7 @@ final class Kepoli_Author_Tools
             return $score_compare !== 0 ? $score_compare : strcasecmp($left, $right);
         });
 
-        return array_slice(array_keys($tag_scores), 0, 5);
+        return array_slice(self::dedupe_tag_values(array_keys($tag_scores)), 0, 5);
     }
 
     private static function clean_slug_from_title(string $title): string

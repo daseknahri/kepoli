@@ -625,6 +625,78 @@ function kepoli_trim_meta_text(string $text, int $words = 28): string
     return wp_trim_words($text, $words, '...');
 }
 
+function kepoli_trim_document_title_text(string $title, string $site_name): string
+{
+    $title = trim(wp_strip_all_tags($title));
+    $site_name = trim(wp_strip_all_tags($site_name));
+    if ($title === '') {
+        return $site_name;
+    }
+
+    $suffix = $site_name !== '' ? ' | ' . $site_name : '';
+    $max_total = 66;
+    $max_title = max(32, $max_total - (function_exists('mb_strlen') ? mb_strlen($suffix, 'UTF-8') : strlen($suffix)));
+
+    if ((function_exists('mb_strlen') ? mb_strlen($title . $suffix, 'UTF-8') : strlen($title . $suffix)) <= $max_total) {
+        return $title;
+    }
+
+    $words = preg_split('/\s+/', $title) ?: [];
+    $kept = [];
+    foreach ($words as $word) {
+        $candidate = trim(implode(' ', array_merge($kept, [$word])));
+        if ((function_exists('mb_strlen') ? mb_strlen($candidate, 'UTF-8') : strlen($candidate)) > $max_title) {
+            break;
+        }
+        $kept[] = $word;
+    }
+
+    $trimmed = trim(implode(' ', $kept));
+    if ($trimmed === '') {
+        $trimmed = function_exists('mb_substr') ? mb_substr($title, 0, $max_title, 'UTF-8') : substr($title, 0, $max_title);
+    }
+
+    return rtrim($trimmed, " \t\n\r\0\x0B,;:.!?");
+}
+
+function kepoli_clean_tag_name(string $tag): string
+{
+    $tag = trim(wp_strip_all_tags($tag));
+    $tag = preg_replace('/\s+/', ' ', $tag) ?: '';
+    $tag = trim($tag, " \t\n\r\0\x0B,;:.!?\"'“”‘’");
+    $length = function_exists('mb_strlen') ? mb_strlen($tag, 'UTF-8') : strlen($tag);
+
+    return $length > 70 ? '' : $tag;
+}
+
+function kepoli_clean_post_tag_names(int $post_id = 0): array
+{
+    $post_id = $post_id ?: get_the_ID();
+    $tags = wp_get_post_tags($post_id, ['fields' => 'names']);
+    if (!is_array($tags)) {
+        return [];
+    }
+
+    $result = [];
+    $seen = [];
+    foreach ($tags as $tag) {
+        $clean = kepoli_clean_tag_name((string) $tag);
+        if ($clean === '') {
+            continue;
+        }
+
+        $key = remove_accents(function_exists('mb_strtolower') ? mb_strtolower($clean, 'UTF-8') : strtolower($clean));
+        if (isset($seen[$key])) {
+            continue;
+        }
+
+        $seen[$key] = true;
+        $result[] = $clean;
+    }
+
+    return $result;
+}
+
 function kepoli_current_seo_title(): string
 {
     $site_name = kepoli_site_name();
@@ -664,6 +736,8 @@ function kepoli_current_seo_title(): string
     if ($paged > 1) {
         $title .= kepoli_is_english() ? ' - Page ' . $paged : ' - Pagina ' . $paged;
     }
+
+    $title = kepoli_trim_document_title_text($title, $site_name);
 
     if (!str_contains($title, $site_name)) {
         $title .= ' | ' . $site_name;
@@ -1689,9 +1763,10 @@ function kepoli_post_card_media_markup(int $post_id = 0, string $context = 'card
 
     if ($featured_image !== '') {
         return sprintf(
-            '%1$s<span class="post-media__shade"></span><img class="post-media__mark" src="%2$s" alt="" loading="lazy" decoding="async">',
+            '%1$s<span class="post-media__shade"></span><img class="post-media__mark" src="%2$s" alt="%3$s" loading="lazy" decoding="async">',
             $featured_image,
-            esc_url(kepoli_asset_uri(kepoli_icon_asset()))
+            esc_url(kepoli_asset_uri(kepoli_icon_asset())),
+            esc_attr(kepoli_site_name())
         );
     }
 
@@ -1733,33 +1808,39 @@ function kepoli_post_media_markup(int $post_id = 0, string $context = 'card', bo
     $size = $context === 'related' ? 'medium_large' : 'medium_large';
     $image = kepoli_post_media_url($post_id, $size);
     $image_alt = $mode === 'photo' && kepoli_post_featured_image_id($post_id) ? kepoli_post_featured_image_alt($post_id) : '';
+    if ($image_alt === '') {
+        $image_alt = trim(sprintf('%s - %s', get_the_title($post_id), kepoli_site_name()), ' -');
+    }
 
     if ($mode === 'photo') {
         $featured_image = kepoli_post_featured_image_markup($post_id, $size, kepoli_post_media_image_attrs($context, 'post-media__image', $priority));
         if ($featured_image !== '') {
             return sprintf(
-                '<div class="%1$s">%2$s<span class="post-media__shade"></span><img class="post-media__mark" src="%3$s" alt="" loading="lazy" decoding="async"></div>',
+                '<div class="%1$s">%2$s<span class="post-media__shade"></span><img class="post-media__mark" src="%3$s" alt="%4$s" loading="lazy" decoding="async"></div>',
                 esc_attr($media_class),
                 $featured_image,
-                esc_url(kepoli_asset_uri(kepoli_icon_asset()))
+                esc_url(kepoli_asset_uri(kepoli_icon_asset())),
+                esc_attr(kepoli_site_name())
             );
         }
 
         $priority_attributes = $priority ? ' loading="eager" fetchpriority="high"' : ' loading="lazy"';
         return sprintf(
-            '<div class="%1$s"><img class="post-media__image" src="%2$s" alt="%3$s"%4$s decoding="async"><span class="post-media__shade"></span><img class="post-media__mark" src="%5$s" alt="" loading="lazy" decoding="async"></div>',
+            '<div class="%1$s"><img class="post-media__image" src="%2$s" alt="%3$s"%4$s decoding="async"><span class="post-media__shade"></span><img class="post-media__mark" src="%5$s" alt="%6$s" loading="lazy" decoding="async"></div>',
             esc_attr($media_class),
             esc_url($image),
             esc_attr($image_alt),
             $priority_attributes,
-            esc_url(kepoli_asset_uri(kepoli_icon_asset()))
+            esc_url(kepoli_asset_uri(kepoli_icon_asset())),
+            esc_attr(kepoli_site_name())
         );
     }
 
     return sprintf(
-        '<div class="%1$s"><span class="post-media__fill"></span><img class="post-media__icon" src="%2$s" alt="" loading="lazy" decoding="async"></div>',
+        '<div class="%1$s"><span class="post-media__fill"></span><img class="post-media__icon" src="%2$s" alt="%3$s" loading="lazy" decoding="async"></div>',
         esc_attr($media_class),
-        esc_url($image)
+        esc_url($image),
+        esc_attr($image_alt)
     );
 }
 
@@ -2381,8 +2462,6 @@ function kepoli_meta_description(): void
     printf("<meta name=\"robots\" content=\"%s\">\n", esc_attr(kepoli_robots_content()));
     printf("<link rel=\"canonical\" href=\"%s\">\n", esc_url($canonical_url));
     printf("<link rel=\"alternate\" hreflang=\"%s\" href=\"%s\">\n", esc_attr($language), esc_url($canonical_url));
-    printf("<link rel=\"alternate\" hreflang=\"%s\" href=\"%s\">\n", esc_attr(strtolower(substr($language, 0, 2))), esc_url($canonical_url));
-    printf("<link rel=\"alternate\" hreflang=\"x-default\" href=\"%s\">\n", esc_url($canonical_url));
     printf("<meta name=\"theme-color\" content=\"#252416\">\n");
     printf("<link rel=\"manifest\" href=\"%s\">\n", esc_url(home_url('/site.webmanifest')));
 
@@ -2481,7 +2560,7 @@ function kepoli_social_meta(): void
             printf("<meta property=\"article:section\" content=\"%s\">\n", esc_attr($category->name));
         }
 
-        foreach (wp_get_post_tags(get_the_ID(), ['fields' => 'names']) as $tag) {
+        foreach (kepoli_clean_post_tag_names(get_the_ID()) as $tag) {
             printf("<meta property=\"article:tag\" content=\"%s\">\n", esc_attr($tag));
         }
     }
@@ -2780,17 +2859,7 @@ function kepoli_recipe_step_name(string $step): string
 function kepoli_recipe_keywords(int $post_id = 0): string
 {
     $post_id = $post_id ?: get_the_ID();
-    $keywords = wp_get_post_tags($post_id, ['fields' => 'names']);
-
-    if (!is_array($keywords)) {
-        return '';
-    }
-
-    $keywords = array_values(array_unique(array_filter(array_map(static function ($keyword): string {
-        return trim((string) $keyword);
-    }, $keywords))));
-
-    return implode(', ', $keywords);
+    return implode(', ', kepoli_clean_post_tag_names($post_id));
 }
 
 function kepoli_article_snapshot_data(int $post_id = 0): array

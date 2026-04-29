@@ -442,7 +442,7 @@
 
   function generatedSeoTitle() {
     const title = currentTitle();
-    return title ? shortSentence(title, 65).replace(/\.\.\.$/, '') : '';
+    return title ? shortSentence(title, 58).replace(/\.\.\.$/, '') : '';
   }
 
   function outlineHeadingTargets() {
@@ -708,7 +708,7 @@
 
   function dedupeTags(tags) {
     const seen = new Set();
-    return tags.filter((tag) => {
+    return tags.map(cleanTagValue).filter((tag) => {
       const key = tag.toLowerCase();
       if (!tag || seen.has(key)) {
         return false;
@@ -717,6 +717,18 @@
       seen.add(key);
       return true;
     });
+  }
+
+  function cleanTagValue(tag) {
+    const clean = cleanText(tag)
+      .replace(/^[,;:.!?"'“”‘’\s]+|[,;:.!?"'“”‘’\s]+$/g, '')
+      .trim();
+
+    if (!clean || clean.length > 70) {
+      return '';
+    }
+
+    return clean;
   }
 
   function tagsLookStale(tags, sourceWords) {
@@ -864,9 +876,17 @@
         return false;
       }
 
-      const label = normalizeWords([category.slug, category.name, category.description].join(' ')).join(' ');
       const categorySlug = String(category.slug || '').trim().toLowerCase();
-      return categorySlug === GUIDES_SLUG || categorySlug === 'articole' || label.includes('article') || label.includes('guide');
+      if (category.isArticle !== undefined) {
+        return !!category.isArticle;
+      }
+
+      const label = normalizeWords([category.slug, category.name, category.description].join(' ')).join(' ');
+      return categorySlug === GUIDES_SLUG
+        || categorySlug === 'articole'
+        || categorySlug === 'guides'
+        || categorySlug === 'articles'
+        || ['articol', 'articole', 'article', 'articles', 'guide', 'guides'].includes(label);
     };
     const articleCategory = categories.find((category) => isArticleCategory(category)) || null;
 
