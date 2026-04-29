@@ -67,7 +67,7 @@ const siteUrl = normalizeSiteUrl(domain);
 const hostname = hostnameFromSiteUrl(siteUrl);
 const projectSlug = slugify(args['project-slug'] || brand);
 const language = resolveLanguage(args.language || args.lang || '', args['wp-locale']);
-const wpLocale = args['wp-locale'] || (language === 'en' ? 'en_US' : 'ro_RO');
+const wpLocale = normalizeLocale(args['wp-locale'] || (language === 'en' ? 'en_US' : 'ro_RO'));
 const monetization = resolveMonetization(args.monetization || '');
 const homeSlug = slugify(args['home-slug'] || defaultHomeSlug(language));
 const recipesSlug = slugify(args['recipes-slug'] || defaultRecipesSlug(language));
@@ -86,9 +86,18 @@ const audience = args.audience || defaultAudience(language);
 const brandTagline = args['brand-tagline'] || defaultBrandTagline(language, brand);
 const brandDescription = args['brand-description'] || defaultBrandDescription(language, brand);
 const writerBio = args['writer-bio'] || defaultWriterBio(language, brand, writerName);
-const wordmarkAsset = slugify(args['wordmark-asset'] || `${projectSlug}-wordmark`);
-const iconAsset = slugify(args['icon-asset'] || `${projectSlug}-icon`);
-const socialCoverAsset = slugify(args['social-cover-asset'] || `${projectSlug}-social-cover`);
+const wordmarkAsset = assetSlug(args['wordmark-asset'], `${projectSlug}-wordmark`);
+const iconAsset = assetSlug(args['icon-asset'], `${projectSlug}-icon`);
+const socialCoverAsset = assetSlug(args['social-cover-asset'], `${projectSlug}-social-cover`);
+
+validateShellConfig();
+
+if (failures.length > 0) {
+  console.error('Replica shell generation could not continue:');
+  for (const failure of failures) console.error(`- ${failure}`);
+  process.exit(1);
+}
+
 const operations = [];
 const backupRoot = path.join(root, '.replica-backups', timestamp());
 
@@ -209,8 +218,16 @@ function stringArg(name) {
 }
 
 function normalizeSiteUrl(value) {
-  const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  const raw = String(value || '').trim();
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`;
   return withProtocol.replace(/\/+$/, '');
+}
+
+function normalizeLocale(value) {
+  const raw = String(value || '').trim().replace('-', '_');
+  const parts = raw.split('_');
+  if (parts.length !== 2) return raw;
+  return `${parts[0].toLowerCase()}_${parts[1].toUpperCase()}`;
 }
 
 function hostnameFromSiteUrl(value) {
@@ -233,15 +250,31 @@ function slugify(value) {
   return slug || 'food-blog';
 }
 
+function assetSlug(value, fallback) {
+  const raw = String(value || fallback).trim().replace(/\.(svg|png|jpe?g|webp)$/i, '');
+  return slugify(raw);
+}
+
 function resolveLanguage(value, locale) {
-  const raw = String(value || locale || '').trim().toLowerCase();
-  if (raw.startsWith('en')) return 'en';
+  const explicit = String(value || '').trim().toLowerCase().replace('-', '_');
+  if (explicit) {
+    if (explicit.startsWith('en')) return 'en';
+    if (explicit.startsWith('ro')) return 'ro';
+    failures.push('language must be `en` or `ro`.');
+    return 'ro';
+  }
+
+  const rawLocale = String(locale || '').trim().toLowerCase().replace('-', '_');
+  if (rawLocale.startsWith('en')) return 'en';
+  if (rawLocale.startsWith('ro')) return 'ro';
   return 'ro';
 }
 
 function resolveMonetization(value) {
   const raw = String(value || '').trim().toLowerCase();
-  if (raw === 'adsense' || raw === 'ezoic') return raw;
+  if (!raw) return 'generic';
+  if (raw === 'generic' || raw === 'adsense' || raw === 'ezoic') return raw;
+  failures.push('monetization must be `generic`, `adsense`, or `ezoic`.');
   return 'generic';
 }
 
@@ -317,6 +350,108 @@ function defaultWriterBio(languageCode, siteBrand, name) {
   return languageCode === 'en'
     ? `${name} writes practical recipes and kitchen guides for ${siteBrand}.`
     : `${name} scrie retete si ghiduri practice pentru ${siteBrand}.`;
+}
+
+function validateShellConfig() {
+  if (!isValidHttpUrl(siteUrl)) {
+    failures.push('domain must be a full http or https URL.');
+  }
+
+  if (!isValidEmail(siteEmail)) {
+    failures.push('site-email must look like a real email address.');
+  }
+
+  if (!isValidEmail(writerEmail)) {
+    failures.push('writer-email must look like a real email address.');
+  }
+
+  if (!['en', 'ro'].includes(language)) {
+    failures.push('language must be `en` or `ro`.');
+  }
+
+  if (!/^[a-z]{2}_[A-Z]{2}$/.test(wpLocale)) {
+    failures.push('wp-locale must look like `en_US` or `ro_RO`.');
+  }
+
+  if (language === 'en' && !wpLocale.startsWith('en_')) {
+    failures.push('language=en conflicts with wp-locale.');
+  }
+
+  if (language === 'ro' && !wpLocale.startsWith('ro_')) {
+    failures.push('language=ro conflicts with wp-locale.');
+  }
+
+  if (!['generic', 'adsense', 'ezoic'].includes(monetization)) {
+    failures.push('monetization must be `generic`, `adsense`, or `ezoic`.');
+  }
+
+  for (const [key, slug] of [
+    ['project-slug', projectSlug],
+    ['home-slug', homeSlug],
+    ['recipes-slug', recipesSlug],
+    ['guides-slug', guidesSlug],
+    ['about-slug', aboutSlug],
+    ['author-slug', authorSlug],
+    ['privacy-slug', privacySlug],
+    ['cookies-slug', cookiesSlug],
+    ['advertising-slug', advertisingSlug],
+    ['editorial-slug', editorialSlug],
+    ['terms-slug', termsSlug],
+    ['disclaimer-slug', disclaimerSlug],
+  ]) {
+    if (!isSlug(slug)) {
+      failures.push(`${key} must be lowercase and slug-safe.`);
+    }
+  }
+
+  const pageSlugs = [
+    ['home-slug', homeSlug],
+    ['recipes-slug', recipesSlug],
+    ['guides-slug', guidesSlug],
+    ['about-slug', aboutSlug],
+    ['author-slug', authorSlug],
+    ['privacy-slug', privacySlug],
+    ['cookies-slug', cookiesSlug],
+    ['advertising-slug', advertisingSlug],
+    ['editorial-slug', editorialSlug],
+    ['terms-slug', termsSlug],
+    ['disclaimer-slug', disclaimerSlug],
+  ];
+  const seenSlugs = new Map();
+  for (const [key, slug] of pageSlugs) {
+    if (seenSlugs.has(slug)) {
+      failures.push(`Slug conflict: ${key} duplicates ${seenSlugs.get(slug)} (${slug}).`);
+    } else {
+      seenSlugs.set(slug, key);
+    }
+  }
+
+  for (const [key, asset] of [
+    ['wordmark-asset', wordmarkAsset],
+    ['icon-asset', iconAsset],
+    ['social-cover-asset', socialCoverAsset],
+  ]) {
+    if (!isSlug(asset)) {
+      failures.push(`${key} must be a lowercase asset basename without an extension.`);
+    }
+  }
+}
+
+function isValidHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isValidEmail(value) {
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value);
+}
+
+function isSlug(value) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(value || ''));
 }
 
 function timestamp() {

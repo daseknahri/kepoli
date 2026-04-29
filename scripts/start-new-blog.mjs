@@ -65,11 +65,16 @@ const resetOptionKeys = [
   'no-backup',
 ];
 
+const wrapperOnlyOptionKeys = [
+  'public-locale',
+];
+
 const knownArgs = new Set([
   ...sharedOptionKeys,
   ...shellOnlyOptionKeys,
   ...shellSharedOptionKeys,
   ...resetOptionKeys,
+  ...wrapperOnlyOptionKeys,
   'brief',
   'write',
   'help',
@@ -125,6 +130,10 @@ const failures = [];
 const rawArgs = parseArgs(process.argv.slice(2), failures);
 const briefArgs = loadBriefArgs(rawArgs.brief, failures);
 const args = { ...briefArgs, ...rawArgs };
+
+if ('public-locale' in args && !('wp-locale' in args)) {
+  args['wp-locale'] = args['public-locale'];
+}
 
 if (args.help || args.h) {
   printHelp();
@@ -261,6 +270,7 @@ Required if --brief is not used:
 Common options:
   --project-slug
   --language
+  --public-locale
   --brand-tagline
   --brand-description
   --writer-bio

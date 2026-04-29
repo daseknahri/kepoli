@@ -103,9 +103,9 @@ const disclaimerSlug = slugify(args['disclaimer-slug'] || defaultDisclaimerSlug(
 const brandTagline = stringOrFallback(args['brand-tagline'], defaultBrandTagline(language, brand));
 const brandDescription = stringOrFallback(args['brand-description'], defaultBrandDescription(language, brand));
 const writerBio = stringOrFallback(args['writer-bio'], defaultWriterBio(language, brand, writerName));
-const wordmarkAsset = slugify(args['wordmark-asset'] || `${projectSlug}-wordmark`);
-const iconAsset = slugify(args['icon-asset'] || `${projectSlug}-icon`);
-const socialCoverAsset = slugify(args['social-cover-asset'] || `${projectSlug}-social-cover`);
+const wordmarkAsset = assetSlug(args['wordmark-asset'], `${projectSlug}-wordmark`);
+const iconAsset = assetSlug(args['icon-asset'], `${projectSlug}-icon`);
+const socialCoverAsset = assetSlug(args['social-cover-asset'], `${projectSlug}-social-cover`);
 const canonicalHosts = stringOrFallback(args['canonical-hosts'], `www.${hostname}`);
 const country = stringOrFallback(args.country, defaultCountry(language));
 const focus = stringOrFallback(args.focus, defaultFocus(language));
@@ -358,7 +358,8 @@ function normalizeBoolean(value, name, fallback) {
 }
 
 function normalizeSiteUrl(value) {
-  const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  const raw = String(value || '').trim();
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`;
   return withProtocol.replace(/\/+$/, '');
 }
 
@@ -372,12 +373,24 @@ function hostnameFromSiteUrl(value) {
 }
 
 function normalizeLocale(value) {
-  return String(value || '').trim().replace('-', '_');
+  const raw = String(value || '').trim().replace('-', '_');
+  const parts = raw.split('_');
+  if (parts.length !== 2) return raw;
+  return `${parts[0].toLowerCase()}_${parts[1].toUpperCase()}`;
 }
 
 function resolveLanguage(value, locale) {
-  const raw = String(value || locale || '').trim().toLowerCase();
-  if (raw.startsWith('en')) return 'en';
+  const explicit = String(value || '').trim().toLowerCase().replace('-', '_');
+  if (explicit) {
+    if (explicit.startsWith('en')) return 'en';
+    if (explicit.startsWith('ro')) return 'ro';
+    failures.push('language must be `en` or `ro`.');
+    return 'ro';
+  }
+
+  const rawLocale = String(locale || '').trim().toLowerCase().replace('-', '_');
+  if (rawLocale.startsWith('en')) return 'en';
+  if (rawLocale.startsWith('ro')) return 'ro';
   return 'ro';
 }
 
@@ -387,7 +400,9 @@ function defaultPublicLocale(languageCode) {
 
 function resolveMonetization(value) {
   const raw = String(value || '').trim().toLowerCase();
-  if (raw === 'adsense' || raw === 'ezoic') return raw;
+  if (!raw) return 'generic';
+  if (raw === 'generic' || raw === 'adsense' || raw === 'ezoic') return raw;
+  failures.push('monetization must be `generic`, `adsense`, or `ezoic`.');
   return 'generic';
 }
 
@@ -400,6 +415,11 @@ function slugify(value) {
     .replace(/^-+|-+$/g, '');
 
   return slug || 'food-blog';
+}
+
+function assetSlug(value, fallback) {
+  const raw = String(value || fallback).trim().replace(/\.(svg|png|jpe?g|webp)$/i, '');
+  return slugify(raw);
 }
 
 function defaultHomeSlug(languageCode) {
@@ -511,6 +531,16 @@ function validateGeneratedBrief(value) {
 
   if (!['generic', 'adsense', 'ezoic'].includes(value.monetization)) {
     failures.push('monetization must be `generic`, `adsense`, or `ezoic`.');
+  }
+
+  for (const [key, asset] of [
+    ['wordmarkAsset', value.wordmarkAsset],
+    ['iconAsset', value.iconAsset],
+    ['socialCoverAsset', value.socialCoverAsset],
+  ]) {
+    if (!isSlug(asset)) {
+      failures.push(`${key} must be a lowercase asset basename without an extension.`);
+    }
   }
 
   const slugEntries = [

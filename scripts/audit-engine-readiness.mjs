@@ -146,6 +146,8 @@ function checkBriefContract() {
   }
 
   requireText('validate-site-brief asset contract', validateBrief, [
+    /const knownArgs = new Set/,
+    /normalizeLocale/,
     /wordmarkAsset/,
     /iconAsset/,
     /socialCoverAsset/,
@@ -156,14 +158,17 @@ function checkBriefContract() {
 function checkCloneScripts() {
   requireText('create-site-brief engine options', createBrief, [
     /const knownArgs = new Set/,
+    /function assetSlug/,
     /wordmarkAsset/,
     /iconAsset/,
     /socialCoverAsset/,
     /ezoicAdsTxtAccountId/,
     /ezoicAdsTxtRedirectUrl/,
+    /rejectUnknownArgs/,
   ]);
 
   requireText('start-new-blog option forwarding', startNewBlog, [
+    /public-locale/,
     /wordmarkAsset:\s*'wordmark-asset'/,
     /iconAsset:\s*'icon-asset'/,
     /socialCoverAsset:\s*'social-cover-asset'/,
@@ -173,6 +178,8 @@ function checkCloneScripts() {
 
   requireText('prepare-replica profile and env generation', prepareReplica, [
     /const knownArgs = new Set/,
+    /validateReplicaConfig/,
+    /function assetSlug/,
     /assets:\s*\{/,
     /wordmark:\s*wordmarkAsset/,
     /icon:\s*iconAsset/,
@@ -185,6 +192,8 @@ function checkCloneScripts() {
 
   requireText('generate-replica-shell profile generation', generateShell, [
     /const knownArgs = new Set/,
+    /validateShellConfig/,
+    /function assetSlug/,
     /assets:\s*\{/,
     /wordmark:\s*wordmarkAsset/,
     /icon:\s*iconAsset/,
@@ -326,6 +335,64 @@ function runWorkflowSmokeTests() {
     '--writer-emial',
     'typo@example.com',
   ]);
+  runNodeFailureCheck('create-site-brief rejects unsupported URL schemes', [
+    'scripts/create-site-brief.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'ftp://new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+    '--site-email',
+    'contact@new-domain.com',
+  ], /domain must be a full http or https URL/);
+  runNodeFailureCheck('create-site-brief rejects invalid language values', [
+    'scripts/create-site-brief.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'https://new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+    '--site-email',
+    'contact@new-domain.com',
+    '--language',
+    'fr',
+  ], /language must be `en` or `ro`/);
+  runNodeOutputCheck('create-site-brief normalizes public locale casing', [
+    'scripts/create-site-brief.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'https://new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+    '--site-email',
+    'contact@new-domain.com',
+    '--public-locale',
+    'en-us',
+  ], /"publicLocale":\s*"en_US"/);
+  runNodeOutputCheck('create-site-brief strips asset file extensions', [
+    'scripts/create-site-brief.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'https://new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+    '--site-email',
+    'contact@new-domain.com',
+    '--wordmark-asset',
+    'Bad Asset.png',
+  ], /"wordmarkAsset":\s*"bad-asset"/);
   runNodeFailureCheck('prepare-replica rejects unknown options', [
     'scripts/prepare-replica.mjs',
     '--brand',
@@ -341,6 +408,32 @@ function runWorkflowSmokeTests() {
     '--writer-emial',
     'typo@example.com',
   ]);
+  runNodeFailureCheck('prepare-replica rejects invalid email values', [
+    'scripts/prepare-replica.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'https://new-domain.com',
+    '--site-email',
+    'not-an-email',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+  ], /site-email must look like a real email address/);
+  runNodeFailureCheck('prepare-replica rejects unsupported URL schemes', [
+    'scripts/prepare-replica.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'ftp://new-domain.com',
+    '--site-email',
+    'contact@new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+  ], /domain must be a full http or https URL/);
   runNodeFailureCheck('generate-replica-shell rejects unknown options', [
     'scripts/generate-replica-shell.mjs',
     '--brand',
@@ -356,8 +449,77 @@ function runWorkflowSmokeTests() {
     '--writer-emial',
     'typo@example.com',
   ]);
+  runNodeFailureCheck('generate-replica-shell rejects unsupported URL schemes', [
+    'scripts/generate-replica-shell.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'ftp://new-domain.com',
+    '--site-email',
+    'contact@new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+  ], /domain must be a full http or https URL/);
+  runNodeFailureCheck('generate-replica-shell rejects invalid monetization values', [
+    'scripts/generate-replica-shell.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'https://new-domain.com',
+    '--site-email',
+    'contact@new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+    '--monetization',
+    'adsenze',
+  ], /monetization must be `generic`, `adsense`, or `ezoic`/);
+  runNodeFailureCheck('generate-replica-shell rejects duplicate page slugs', [
+    'scripts/generate-replica-shell.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'https://new-domain.com',
+    '--site-email',
+    'contact@new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+    '--recipes-slug',
+    'guides',
+    '--guides-slug',
+    'guides',
+  ], /Slug conflict/);
+  runNodeFailureCheck('validate-site-brief rejects unknown options', [
+    'scripts/validate-site-brief.mjs',
+    '--brief',
+    'site-brief.example.json',
+    '--breif',
+    'site-brief.example.json',
+  ]);
+  runNodeCheck('Dry-run new-blog workflow accepts public-locale alias', [
+    'scripts/start-new-blog.mjs',
+    '--brand',
+    'New Blog',
+    '--domain',
+    'https://new-domain.com',
+    '--site-email',
+    'contact@new-domain.com',
+    '--writer-name',
+    'Writer Name',
+    '--writer-email',
+    'writer@example.com',
+    '--language',
+    'en',
+    '--public-locale',
+    'en-us',
+  ]);
   notes.push('Example brief and dry-run clone workflow passed.');
-  notes.push('Clone scripts reject unknown option typos.');
+  notes.push('Clone scripts reject unknown option typos and invalid values.');
 }
 
 function runCloneWriteSmokeTest() {
@@ -498,18 +660,33 @@ function runNodeCheckIn(label, cwd, args) {
   failures.push(`${label} failed: ${output || `exit ${result.status}`}`);
 }
 
-function runNodeFailureCheck(label, args) {
+function runNodeFailureCheck(label, args, expectedPattern = /Unknown option/) {
   const result = spawnSync(process.execPath, args, {
     cwd: root,
     encoding: 'utf8',
     stdio: 'pipe',
   });
 
-  if (result.status !== 0 && /Unknown option/.test(`${result.stdout}\n${result.stderr}`)) {
+  if (result.status !== 0 && expectedPattern.test(`${result.stdout}\n${result.stderr}`)) {
     return;
   }
 
-  failures.push(`${label} did not fail with an unknown-option error.`);
+  failures.push(`${label} did not fail with the expected validation error.`);
+}
+
+function runNodeOutputCheck(label, args, expectedPattern) {
+  const result = spawnSync(process.execPath, args, {
+    cwd: root,
+    encoding: 'utf8',
+    stdio: 'pipe',
+  });
+
+  const output = `${result.stdout}\n${result.stderr}`;
+  if (result.status === 0 && expectedPattern.test(output)) {
+    return;
+  }
+
+  failures.push(`${label} did not produce the expected output.`);
 }
 
 function isSlug(value) {

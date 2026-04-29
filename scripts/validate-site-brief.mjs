@@ -4,11 +4,14 @@ import path from 'node:path';
 const failures = [];
 const warnings = [];
 const args = parseArgs(process.argv.slice(2));
+const knownArgs = new Set(['brief', 'help', 'h']);
 
 if (args.help || args.h) {
   printHelp();
   process.exit(0);
 }
+
+rejectUnknownArgs(args, knownArgs);
 
 const briefPath = String(args.brief || 'site-brief.json').trim();
 if (!briefPath) {
@@ -100,6 +103,13 @@ function parseArgs(argv) {
   return parsed;
 }
 
+function rejectUnknownArgs(parsed, allowed) {
+  const unknown = Object.keys(parsed).filter((key) => !allowed.has(key));
+  if (unknown.length > 0) {
+    failures.push(`Unknown option${unknown.length === 1 ? '' : 's'}: ${unknown.map((key) => `--${key}`).join(', ')}`);
+  }
+}
+
 function validateBrief(value) {
   const requiredStrings = [
     'brand',
@@ -134,7 +144,7 @@ function validateBrief(value) {
   const writerEmail = stringValue(value.writerEmail);
   const siteEmail = stringValue(value.siteEmail);
   const language = stringValue(value.language || value.lang);
-  const publicLocale = stringValue(value.publicLocale || value.wpLocale).replace('-', '_');
+  const publicLocale = normalizeLocale(stringValue(value.publicLocale || value.wpLocale));
   const monetization = stringValue(value.monetization);
   const canonicalHosts = stringValue(value.canonicalHosts);
 
@@ -282,6 +292,13 @@ function validateBrief(value) {
 
 function stringValue(value) {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeLocale(value) {
+  const raw = String(value || '').trim().replace('-', '_');
+  const parts = raw.split('_');
+  if (parts.length !== 2) return raw;
+  return `${parts[0].toLowerCase()}_${parts[1].toUpperCase()}`;
 }
 
 function isValidHttpUrl(value) {

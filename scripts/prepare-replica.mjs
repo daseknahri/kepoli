@@ -71,7 +71,7 @@ const projectSlug = slugify(args['project-slug'] || brand);
 const projectUnderscore = projectSlug.replace(/-/g, '_');
 const writerParts = splitName(writerName);
 const language = resolveLanguage(args.language || args.lang || '', args['wp-locale']);
-const wpLocale = args['wp-locale'] || (language === 'en' ? 'en_US' : 'ro_RO');
+const wpLocale = normalizeLocale(args['wp-locale'] || (language === 'en' ? 'en_US' : 'ro_RO'));
 const wpAdminLocale = 'en_US';
 const homeSlug = slugify(args['home-slug'] || defaultHomeSlug(language));
 const authorSlug = slugify(args['author-slug'] || defaultAuthorSlug(language));
@@ -87,9 +87,9 @@ const disclaimerSlug = slugify(args['disclaimer-slug'] || defaultDisclaimerSlug(
 const brandTagline = args['brand-tagline'] || defaultBrandTagline(language, brand);
 const brandDescription = args['brand-description'] || defaultBrandDescription(language, brand);
 const writerBio = args['writer-bio'] || defaultWriterBio(language, brand, writerName);
-const wordmarkAsset = slugify(args['wordmark-asset'] || `${projectSlug}-wordmark`);
-const iconAsset = slugify(args['icon-asset'] || `${projectSlug}-icon`);
-const socialCoverAsset = slugify(args['social-cover-asset'] || `${projectSlug}-social-cover`);
+const wordmarkAsset = assetSlug(args['wordmark-asset'], `${projectSlug}-wordmark`);
+const iconAsset = assetSlug(args['icon-asset'], `${projectSlug}-icon`);
+const socialCoverAsset = assetSlug(args['social-cover-asset'], `${projectSlug}-social-cover`);
 const canonicalHosts = args['canonical-hosts'] || `www.${hostname}`;
 const adsenseClientId = args['adsense-client-id'] || '';
 const adsensePubId = args['adsense-pub-id'] || '';
@@ -101,6 +101,14 @@ const themeDescription = args['theme-description']
     ? `A lightweight food blog theme for ${brand}, built for recipes, food guides, internal linking, and ad-ready spacing.`
     : `A lightweight food blog theme for ${brand}, built for recipes, editorial reading, internal linking, and ad-ready spacing.`);
 
+validateReplicaConfig();
+
+if (failures.length > 0) {
+  console.error('Replica preparation could not continue:');
+  for (const failure of failures) console.error(`- ${failure}`);
+  process.exit(1);
+}
+
 const operations = [];
 
 updateSiteProfile();
@@ -108,12 +116,6 @@ updateEnvExample();
 updateDockerCompose();
 updateThemeHeader();
 updatePublicIdentityFiles();
-
-if (failures.length > 0) {
-  console.error('Replica preparation could not continue:');
-  for (const failure of failures) console.error(`- ${failure}`);
-  process.exit(1);
-}
 
 if (operations.length === 0) {
   console.log('No replica changes needed.');
@@ -219,8 +221,16 @@ function stringArg(name) {
 }
 
 function normalizeSiteUrl(value) {
-  const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  const raw = String(value || '').trim();
+  const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`;
   return withProtocol.replace(/\/+$/, '');
+}
+
+function normalizeLocale(value) {
+  const raw = String(value || '').trim().replace('-', '_');
+  const parts = raw.split('_');
+  if (parts.length !== 2) return raw;
+  return `${parts[0].toLowerCase()}_${parts[1].toUpperCase()}`;
 }
 
 function hostnameFromSiteUrl(value) {
@@ -243,6 +253,11 @@ function slugify(value) {
   return slug || 'food-blog';
 }
 
+function assetSlug(value, fallback) {
+  const raw = String(value || fallback).trim().replace(/\.(svg|png|jpe?g|webp)$/i, '');
+  return slugify(raw);
+}
+
 function splitName(value) {
   const parts = value.trim().split(/\s+/);
   return {
@@ -252,8 +267,17 @@ function splitName(value) {
 }
 
 function resolveLanguage(value, locale) {
-  const raw = String(value || locale || '').trim().toLowerCase();
-  if (raw.startsWith('en')) return 'en';
+  const explicit = String(value || '').trim().toLowerCase().replace('-', '_');
+  if (explicit) {
+    if (explicit.startsWith('en')) return 'en';
+    if (explicit.startsWith('ro')) return 'ro';
+    failures.push('language must be `en` or `ro`.');
+    return 'ro';
+  }
+
+  const rawLocale = String(locale || '').trim().toLowerCase().replace('-', '_');
+  if (rawLocale.startsWith('en')) return 'en';
+  if (rawLocale.startsWith('ro')) return 'ro';
   return 'ro';
 }
 
@@ -317,6 +341,119 @@ function defaultWriterBio(languageCode, siteBrand, name) {
   return languageCode === 'en'
     ? `${name} writes practical recipes and kitchen guides for ${siteBrand}.`
     : `${name} scrie retete si ghiduri practice pentru ${siteBrand}.`;
+}
+
+function validateReplicaConfig() {
+  if (!isValidHttpUrl(siteUrl)) {
+    failures.push('domain must be a full http or https URL.');
+  }
+
+  if (!isValidEmail(siteEmail)) {
+    failures.push('site-email must look like a real email address.');
+  }
+
+  if (!isValidEmail(writerEmail)) {
+    failures.push('writer-email must look like a real email address.');
+  }
+
+  if (!['en', 'ro'].includes(language)) {
+    failures.push('language must be `en` or `ro`.');
+  }
+
+  if (!/^[a-z]{2}_[A-Z]{2}$/.test(wpLocale)) {
+    failures.push('wp-locale must look like `en_US` or `ro_RO`.');
+  }
+
+  if (language === 'en' && !wpLocale.startsWith('en_')) {
+    failures.push('language=en conflicts with wp-locale.');
+  }
+
+  if (language === 'ro' && !wpLocale.startsWith('ro_')) {
+    failures.push('language=ro conflicts with wp-locale.');
+  }
+
+  if ('wp-admin-locale' in args && args['wp-admin-locale'] !== 'en_US') {
+    failures.push('wp-admin-locale is deprecated and must remain en_US.');
+  }
+
+  for (const [key, slug] of [
+    ['project-slug', projectSlug],
+    ['home-slug', homeSlug],
+    ['recipes-slug', recipesSlug],
+    ['guides-slug', guidesSlug],
+    ['about-slug', aboutSlug],
+    ['author-slug', authorSlug],
+    ['privacy-slug', privacySlug],
+    ['cookies-slug', cookiesSlug],
+    ['advertising-slug', advertisingSlug],
+    ['editorial-slug', editorialSlug],
+    ['terms-slug', termsSlug],
+    ['disclaimer-slug', disclaimerSlug],
+  ]) {
+    if (!isSlug(slug)) {
+      failures.push(`${key} must be lowercase and slug-safe.`);
+    }
+  }
+
+  const pageSlugs = [
+    ['home-slug', homeSlug],
+    ['recipes-slug', recipesSlug],
+    ['guides-slug', guidesSlug],
+    ['about-slug', aboutSlug],
+    ['author-slug', authorSlug],
+    ['privacy-slug', privacySlug],
+    ['cookies-slug', cookiesSlug],
+    ['advertising-slug', advertisingSlug],
+    ['editorial-slug', editorialSlug],
+    ['terms-slug', termsSlug],
+    ['disclaimer-slug', disclaimerSlug],
+  ];
+  const seenSlugs = new Map();
+  for (const [key, slug] of pageSlugs) {
+    if (seenSlugs.has(slug)) {
+      failures.push(`Slug conflict: ${key} duplicates ${seenSlugs.get(slug)} (${slug}).`);
+    } else {
+      seenSlugs.set(slug, key);
+    }
+  }
+
+  for (const [key, asset] of [
+    ['wordmark-asset', wordmarkAsset],
+    ['icon-asset', iconAsset],
+    ['social-cover-asset', socialCoverAsset],
+  ]) {
+    if (!isSlug(asset)) {
+      failures.push(`${key} must be a lowercase asset basename without an extension.`);
+    }
+  }
+
+  const hostParts = canonicalHosts.split(',').map((part) => part.trim()).filter(Boolean);
+  if (hostParts.length === 0) {
+    failures.push('canonical-hosts must contain at least one hostname.');
+  } else if (hostParts.some((host) => host.includes('://') || host.includes('/'))) {
+    failures.push('canonical-hosts must contain hostnames only, not full URLs.');
+  }
+
+  if (ezoicAdsTxtRedirectUrl && !isValidHttpUrl(ezoicAdsTxtRedirectUrl)) {
+    failures.push('ezoic-adstxt-redirect-url must be a full http or https URL when provided.');
+  }
+}
+
+function isValidHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function isValidEmail(value) {
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value);
+}
+
+function isSlug(value) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(value || ''));
 }
 
 function filePath(relativePath) {
