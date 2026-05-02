@@ -1292,6 +1292,9 @@
   function fillRecipeSchema(extractOnlyIfEmpty) {
     const data = extractRecipeMetaFromTextRobust();
     const setter = extractOnlyIfEmpty ? setFieldIfEmpty : setField;
+    if (!data.totalMinutes && (data.prepMinutes || data.cookMinutes)) {
+      data.totalMinutes = String((Number.parseInt(data.prepMinutes || '0', 10) || 0) + (Number.parseInt(data.cookMinutes || '0', 10) || 0));
+    }
 
     setter('input[name="kepoli_recipe_servings"]', data.servings);
     setter('input[name="kepoli_recipe_prep_minutes"]', data.prepMinutes);
@@ -1892,7 +1895,7 @@
 
   function bindChecklist() {
     const fields = document.querySelectorAll(
-      '#title, #content, input[name="kepoli_post_kind"], textarea[name="kepoli_post_excerpt"], textarea[name="kepoli_meta_description"], textarea[name="kepoli_related_recipe_slugs"], textarea[name="kepoli_related_article_slugs"], input[name="kepoli_image_alt"], input[name="kepoli_recipe_servings"], input[name="kepoli_recipe_prep_minutes"], input[name="kepoli_recipe_cook_minutes"], textarea[name="kepoli_recipe_ingredients"], textarea[name="kepoli_recipe_steps"], #_thumbnail_id'
+      '#title, #content, input[name="kepoli_post_kind"], textarea[name="kepoli_post_excerpt"], textarea[name="kepoli_meta_description"], textarea[name="kepoli_related_recipe_slugs"], textarea[name="kepoli_related_article_slugs"], input[name="kepoli_image_alt"], input[name="kepoli_recipe_servings"], input[name="kepoli_recipe_prep_minutes"], input[name="kepoli_recipe_cook_minutes"], input[name="kepoli_recipe_total_minutes"], textarea[name="kepoli_recipe_ingredients"], textarea[name="kepoli_recipe_steps"], #_thumbnail_id'
     );
 
     if (!fields.length) {
@@ -1945,7 +1948,7 @@
 
   function bindCompanionRefresh() {
     const fields = document.querySelectorAll(
-      '#title, #content, input[name="kepoli_post_kind"], textarea[name="kepoli_post_excerpt"], textarea[name="kepoli_meta_description"], textarea[name="kepoli_related_recipe_slugs"], textarea[name="kepoli_related_article_slugs"], input[name="kepoli_image_alt"], input[name="kepoli_recipe_servings"], input[name="kepoli_recipe_prep_minutes"], input[name="kepoli_recipe_cook_minutes"], textarea[name="kepoli_recipe_ingredients"], textarea[name="kepoli_recipe_steps"], #_thumbnail_id'
+      '#title, #content, input[name="kepoli_post_kind"], textarea[name="kepoli_post_excerpt"], textarea[name="kepoli_meta_description"], textarea[name="kepoli_related_recipe_slugs"], textarea[name="kepoli_related_article_slugs"], input[name="kepoli_image_alt"], input[name="kepoli_recipe_servings"], input[name="kepoli_recipe_prep_minutes"], input[name="kepoli_recipe_cook_minutes"], input[name="kepoli_recipe_total_minutes"], textarea[name="kepoli_recipe_ingredients"], textarea[name="kepoli_recipe_steps"], #_thumbnail_id'
     );
 
     fields.forEach((field) => {

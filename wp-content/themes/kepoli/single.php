@@ -15,27 +15,6 @@ get_header();
     $recipe_snapshot = $is_recipe ? kepoli_recipe_snapshot_items() : [];
     $post_next_steps = $is_recipe ? kepoli_post_next_steps() : ['items' => []];
     $share_icons = ['facebook' => 'facebook', 'whatsapp' => 'whatsapp', 'email' => 'email', 'copy' => 'link', 'print' => 'print'];
-    $recipe_jump_ids = kepoli_is_english()
-        ? [
-            'highlights' => 'what-to-know-first',
-            'ingredients' => 'ingredients',
-            'method' => 'method',
-            'before' => 'before-you-start',
-            'tips' => 'success-notes',
-            'storage' => 'storage',
-            'faq' => 'frequently-asked-questions',
-            'next' => 'useful-next-links',
-        ]
-        : [
-            'highlights' => 'ce-merita-sa-stii',
-            'ingredients' => 'ingrediente',
-            'method' => 'mod-de-preparare',
-            'before' => 'inainte-sa-incepi',
-            'tips' => 'sfaturi-pentru-reusita',
-            'storage' => 'cum-pastrezi',
-            'faq' => 'intrebari-frecvente',
-            'next' => 'legaturi-utile',
-        ];
     $featured_image = kepoli_post_featured_image_markup(get_the_ID(), 'large', [
         'class' => 'entry-featured-media__image',
         'loading' => 'eager',
@@ -124,18 +103,7 @@ get_header();
                     </div>
                 <?php endif; ?>
                 <?php kepoli_render_reader_trust_links(); ?>
-                <?php if ($is_recipe) : ?>
-                    <nav class="entry-jumpnav" aria-label="<?php echo esc_attr(kepoli_ui_text('Navigatie reteta', 'Recipe navigation')); ?>">
-                        <a href="#<?php echo esc_attr($recipe_jump_ids['highlights']); ?>"><?php echo kepoli_icon('tips'); ?><span><?php echo esc_html(kepoli_ui_text('Repere', 'Highlights')); ?></span></a>
-                        <a href="#<?php echo esc_attr($recipe_jump_ids['ingredients']); ?>"><?php echo kepoli_icon('ingredients'); ?><span><?php echo esc_html(kepoli_ui_text('Ingrediente', 'Ingredients')); ?></span></a>
-                        <a href="#<?php echo esc_attr($recipe_jump_ids['method']); ?>"><?php echo kepoli_icon('steps'); ?><span><?php echo esc_html(kepoli_ui_text('Preparare', 'Method')); ?></span></a>
-                        <a href="#<?php echo esc_attr($recipe_jump_ids['before']); ?>"><?php echo kepoli_icon('prep'); ?><span><?php echo esc_html(kepoli_ui_text('Inainte', 'Before')); ?></span></a>
-                        <a href="#<?php echo esc_attr($recipe_jump_ids['tips']); ?>"><?php echo kepoli_icon('tips'); ?><span><?php echo esc_html(kepoli_ui_text('Sfaturi', 'Tips')); ?></span></a>
-                        <a href="#<?php echo esc_attr($recipe_jump_ids['storage']); ?>"><?php echo kepoli_icon('storage'); ?><span><?php echo esc_html(kepoli_ui_text('Pastrare', 'Storage')); ?></span></a>
-                        <a href="#<?php echo esc_attr($recipe_jump_ids['faq']); ?>"><?php echo kepoli_icon('question'); ?><span><?php esc_html_e('FAQ', 'kepoli'); ?></span></a>
-                        <a href="#<?php echo esc_attr($recipe_jump_ids['next']); ?>"><?php echo kepoli_icon('arrow-right'); ?><span><?php echo esc_html(kepoli_ui_text('Mai departe', 'Next')); ?></span></a>
-                    </nav>
-                <?php elseif (count($article_headings) > 1) : ?>
+                <?php if (!$is_recipe && count($article_headings) > 1) : ?>
                     <nav class="entry-outline" aria-label="<?php echo esc_attr(kepoli_ui_text('In acest articol', 'In this article')); ?>">
                         <div class="entry-outline__header">
                             <p class="eyebrow"><?php echo esc_html(kepoli_ui_text('In articol', 'In this article')); ?></p>
