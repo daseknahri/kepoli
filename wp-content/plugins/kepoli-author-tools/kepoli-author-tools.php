@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.26
+ * Version: 1.8.27
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.26';
+    private const VERSION = '1.8.27';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -4030,6 +4030,30 @@ final class Kepoli_Author_Tools
 
             if ((int) $resolved_data['total_minutes'] === 0 && $extracted_data['total_minutes'] > 0) {
                 $resolved_data['total_minutes'] = $extracted_data['total_minutes'];
+            }
+
+            if ($resolved_data['ingredients'] === [] && $existing['ingredients'] !== []) {
+                $resolved_data['ingredients'] = $existing['ingredients'];
+            }
+
+            if ($resolved_data['steps'] === [] && $existing['steps'] !== []) {
+                $resolved_data['steps'] = $existing['steps'];
+            }
+
+            if ($resolved_data['servings'] === '' && $existing['servings'] !== '') {
+                $resolved_data['servings'] = $existing['servings'];
+            }
+
+            if ((int) $resolved_data['prep_minutes'] === 0 && $existing['prep_minutes'] > 0) {
+                $resolved_data['prep_minutes'] = $existing['prep_minutes'];
+            }
+
+            if ((int) $resolved_data['cook_minutes'] === 0 && $existing['cook_minutes'] > 0) {
+                $resolved_data['cook_minutes'] = $existing['cook_minutes'];
+            }
+
+            if ((int) $resolved_data['total_minutes'] === 0 && $existing['total_minutes'] > 0) {
+                $resolved_data['total_minutes'] = $existing['total_minutes'];
             }
 
             $is_auto = !self::recipe_data_is_empty($extracted_data) && self::recipe_data_matches($resolved_data, $extracted_data);

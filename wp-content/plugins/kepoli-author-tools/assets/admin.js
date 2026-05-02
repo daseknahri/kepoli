@@ -584,29 +584,108 @@
     return sections;
   }
 
+  function recipeExtractionText() {
+    const html = currentContentHtml();
+    if (!html) {
+      return '';
+    }
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+
+    container.querySelectorAll('br').forEach((node) => {
+      node.replaceWith('\n');
+    });
+
+    container.querySelectorAll('li').forEach((node) => {
+      node.prepend('\n- ');
+      node.append('\n');
+    });
+
+    container.querySelectorAll('p, div, section, article, header, footer, ul, ol, blockquote, table, tr').forEach((node) => {
+      node.append('\n');
+    });
+
+    container.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((node) => {
+      node.prepend('\n');
+      node.append('\n');
+    });
+
+    return String(container.textContent || html)
+      .replace(/\r/g, '\n')
+      .replace(/\u00a0/g, ' ')
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n[ \t]+/g, '\n')
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  function recipeExtractionLines() {
+    return recipeExtractionText()
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+
+  function stripRecipeListMarker(line) {
+    return cleanText(line)
+      .replace(/^[\s>*\u2022\u00b7-]+/u, '')
+      .replace(/^\d{1,2}\s*[.)-]\s*/u, '')
+      .replace(/^\([a-z0-9]+\)\s*/i, '')
+      .trim();
+  }
+
+  function canonicalRecipeHeading(line) {
+    const heading = normalizedHeading(stripRecipeListMarker(line).replace(/:$/, ''));
+
+    if (/^(ingredients?|ingredient list|ingredient checklist|what you need|ingrediente|lista ingrediente)$/.test(heading)) {
+      return 'ingredients';
+    }
+
+    if (/^(method|instructions?|directions?|preparation|preparation method|steps?|cooking steps?|mod de preparare|preparare|pasi|pasii|instructiuni)$/.test(heading)) {
+      return 'steps';
+    }
+
+    if (/^(recipe details?|details?|what to know first|serving ideas?|serving notes?|serving|how to serve|success notes?|tips?|storage|storage and reheating|variations?|common mistakes?|faq|frequently asked questions?|conclusion|notes?|nutrition|nutritional values?|pe scurt|detalii despre reteta|cum se serveste|cum servesti|sfaturi|cum pastrezi|variante|intrebari frecvente|concluzie)$/.test(heading)) {
+      return 'stop';
+    }
+
+    return '';
+  }
+
+  function looksLikeRecipeMetaLine(line) {
+    return /^(prep|preparation|rest|cook|cooking|bake|baking|total|servings?|serves|makes|yield|difficulty|timp|portii|nivel)\b/i.test(stripRecipeListMarker(line));
+  }
+
   function extractRecipeSectionFromLines(sectionName) {
-    const sectionHeadings = {
-      ingredients: ['ingrediente', 'ingredients', 'ingredient list'],
-      steps: ['mod de preparare', 'preparare', 'pasi', 'pasii', 'method', 'instructions', 'directions', 'preparation', 'steps']
-    };
-
-    const targets = (sectionHeadings[sectionName] || []).map((heading) => normalizedHeading(heading));
     const items = [];
+    let active = false;
 
-    parsedRecipeSections().forEach((section) => {
-      if (!targets.includes(section.key)) {
+    recipeExtractionLines().forEach((line) => {
+      const canonicalHeading = canonicalRecipeHeading(line);
+
+      if (canonicalHeading === sectionName) {
+        active = true;
         return;
       }
 
-      section.lines.forEach((line) => {
-        const itemText = cleanRecipeItemLine(line, sectionName);
-        if (itemText) {
-          items.push(itemText);
-        }
-      });
+      if (active && canonicalHeading && canonicalHeading !== sectionName) {
+        active = false;
+        return;
+      }
+
+      if (!active || looksLikeRecipeMetaLine(line)) {
+        return;
+      }
+
+      const itemText = cleanRecipeItemLine(stripRecipeListMarker(line), sectionName);
+      if (itemText) {
+        items.push(itemText);
+      }
     });
 
-    return Array.from(new Set(items));
+    return Array.from(new Set(items)).slice(0, sectionName === 'ingredients' ? 40 : 30);
   }
 
   function summarySourceText() {
