@@ -1512,7 +1512,74 @@
     }
 
     const byLine = clean.split(/\r\n|\r|\n/).map((line) => line.trim()).filter(Boolean);
-    return byLine.length > 1 ? byLine : byParagraph;
+    if (byLine.length > 1) {
+      return byLine;
+    }
+
+    return sentenceContentBlocks(clean, 2);
+  }
+
+  function sentenceContentBlocks(content, parts) {
+    const plain = cleanText(content);
+    if (!plain) {
+      return [];
+    }
+
+    let sentences = plain.split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
+    if (sentences.length <= parts) {
+      sentences = wordChunkBlocks(plain, parts * 3);
+    }
+
+    if (sentences.length <= parts) {
+      return [];
+    }
+
+    const totalWords = blockWordCount(plain);
+    const targetWords = Math.max(90, Math.ceil(totalWords / Math.max(1, parts * 2)));
+    const blocks = [];
+    let current = [];
+    let currentWords = 0;
+
+    sentences.forEach((sentence) => {
+      current.push(sentence);
+      currentWords += blockWordCount(sentence);
+
+      if (currentWords >= targetWords) {
+        blocks.push(current.join(' '));
+        current = [];
+        currentWords = 0;
+      }
+    });
+
+    if (current.length) {
+      blocks.push(current.join(' '));
+    }
+
+    return blocks.filter(Boolean);
+  }
+
+  function wordChunkBlocks(plain, targetChunks) {
+    const words = String(plain || '').trim().split(/\s+/).filter(Boolean);
+    if (words.length < 2) {
+      return [];
+    }
+
+    const chunkSize = Math.max(90, Math.ceil(words.length / Math.max(1, targetChunks)));
+    const chunks = [];
+    for (let index = 0; index < words.length; index += chunkSize) {
+      chunks.push(words.slice(index, index + chunkSize).join(' '));
+    }
+
+    return chunks;
+  }
+
+  function expandBlocksForSplit(blocks, content, parts) {
+    if (blocks.length > parts) {
+      return blocks;
+    }
+
+    const expanded = sentenceContentBlocks(content, parts);
+    return expanded.length > parts ? expanded : blocks;
   }
 
   function computeSplitBreaks(blocks, parts, preferred) {
@@ -1599,7 +1666,7 @@
       return;
     }
 
-    const blocks = splitContentBlocks(textarea.value);
+    const blocks = expandBlocksForSplit(splitContentBlocks(textarea.value), textarea.value, parts);
     const preferred = preferredTextBreakIndexes(blocks);
 
     if (blocks.length <= parts) {
