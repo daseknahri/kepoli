@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.28
+ * Version: 1.8.29
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.28';
+    private const VERSION = '1.8.29';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -406,8 +406,9 @@ final class Kepoli_Author_Tools
         $meta_description = (string) get_post_meta($post->ID, '_kepoli_meta_description', true);
         $related_recipes = self::array_meta_to_text($post->ID, '_kepoli_related_recipe_slugs');
         $related_articles = self::array_meta_to_text($post->ID, '_kepoli_related_article_slugs');
-        $auto_split_parts = (int) get_post_meta($post->ID, '_kepoli_auto_split_parts', true);
-        $auto_split_parts = in_array($auto_split_parts, [2, 3], true) ? $auto_split_parts : 0;
+        $auto_split_raw = get_post_meta($post->ID, '_kepoli_auto_split_parts', true);
+        $auto_split_parts = $auto_split_raw === '' ? -1 : (int) $auto_split_raw;
+        $auto_split_parts = in_array($auto_split_parts, [-1, 0, 2, 3], true) ? $auto_split_parts : -1;
         $recipe = self::recipe_data($post->ID);
         $image_meta = self::featured_image_meta($post->ID);
         $has_image_meta = array_filter($image_meta, static function ($value): bool {
@@ -460,11 +461,12 @@ final class Kepoli_Author_Tools
                 <label>
                     <span><?php echo esc_html(self::ui_text('Impartire automata', 'Automatic split')); ?></span>
                     <select name="kepoli_auto_split_parts">
+                        <option value="-1" <?php selected($auto_split_parts, -1); ?>><?php echo esc_html(self::ui_text('Smart: 2-3 parti pentru postari lungi', 'Smart: 2-3 parts for long posts')); ?></option>
                         <option value="0" <?php selected($auto_split_parts, 0); ?>><?php echo esc_html(self::ui_text('Fara impartire automata', 'No automatic split')); ?></option>
                         <option value="2" <?php selected($auto_split_parts, 2); ?>><?php echo esc_html(self::ui_text('2 parti la salvare', '2 parts on save')); ?></option>
                         <option value="3" <?php selected($auto_split_parts, 3); ?>><?php echo esc_html(self::ui_text('3 parti la salvare', '3 parts on save')); ?></option>
                     </select>
-                    <small><?php echo esc_html(self::ui_text('Pauzele manuale din editor raman prioritare. Impartirea automata se aplica doar daca postarea nu are deja nextpage.', 'Manual page breaks stay in control. Automatic split only runs if the post does not already have nextpage markers.')); ?></small>
+                    <small><?php echo esc_html(self::ui_text('Smart pastreaza postarile scurte pe o pagina, imparte postarile lungi in 2 parti si cele foarte lungi in 3. Pauzele manuale din editor raman prioritare.', 'Smart keeps short posts on one page, splits long posts into 2 parts, and very long posts into 3. Manual page breaks stay in control.')); ?></small>
                 </label>
             </div>
 
@@ -599,8 +601,8 @@ final class Kepoli_Author_Tools
         $kind = isset($_POST['kepoli_post_kind']) ? sanitize_key(wp_unslash((string) $_POST['kepoli_post_kind'])) : 'recipe';
         $kind = in_array($kind, ['recipe', 'article'], true) ? $kind : 'recipe';
         update_post_meta($post_id, '_kepoli_post_kind', $kind);
-        $auto_split_parts = isset($_POST['kepoli_auto_split_parts']) ? (int) wp_unslash((string) $_POST['kepoli_auto_split_parts']) : 0;
-        $auto_split_parts = in_array($auto_split_parts, [2, 3], true) ? $auto_split_parts : 0;
+        $auto_split_parts = isset($_POST['kepoli_auto_split_parts']) ? (int) wp_unslash((string) $_POST['kepoli_auto_split_parts']) : -1;
+        $auto_split_parts = in_array($auto_split_parts, [-1, 0, 2, 3], true) ? $auto_split_parts : -1;
         update_post_meta($post_id, '_kepoli_auto_split_parts', $auto_split_parts);
         self::maybe_clean_post_slug($post_id, $post);
         self::maybe_normalize_content_structure($post_id, $post, $kind);
@@ -2168,13 +2170,24 @@ final class Kepoli_Author_Tools
 
     private static function maybe_apply_auto_split(int $post_id, WP_Post $post, int $parts): void
     {
-        if (!in_array($parts, [2, 3], true)) {
+        if (!in_array($parts, [-1, 2, 3], true)) {
             return;
         }
 
         $content = (string) $post->post_content;
         if ($content === '' || stripos($content, '<!--nextpage-->') !== false) {
             return;
+        }
+
+        if ($parts === -1) {
+            $words = self::word_count($content);
+            if ($words >= 1500) {
+                $parts = 3;
+            } elseif ($words >= 750) {
+                $parts = 2;
+            } else {
+                return;
+            }
         }
 
         $split = self::split_content_into_parts($content, $parts);
@@ -3086,7 +3099,7 @@ final class Kepoli_Author_Tools
         }
 
         $preferred = self::preferred_block_break_indexes($blocks);
-        $breaks = self::compute_split_breaks(count($blocks), $parts, $preferred);
+        $breaks = self::compute_split_breaks($blocks, $parts, $preferred);
         if (!$breaks) {
             return $content;
         }
@@ -3155,36 +3168,75 @@ final class Kepoli_Author_Tools
         return $indexes;
     }
 
-    private static function compute_split_breaks(int $total, int $parts, array $preferred): array
+    private static function block_word_count(string $block): int
     {
+        return max(1, self::word_count($block));
+    }
+
+    private static function compute_split_breaks(array $blocks, int $parts, array $preferred): array
+    {
+        $total = count($blocks);
+        if ($total <= $parts) {
+            return [];
+        }
+
+        $weights = array_map([self::class, 'block_word_count'], $blocks);
+        $total_words = array_sum($weights);
+        if ($total_words <= 0) {
+            return [];
+        }
+
+        $preferred_lookup = array_flip($preferred);
         $breaks = [];
         $used = [];
-        $tolerance = max(1, (int) floor($total / ($parts * 2)));
+        $min_words_per_part = max(80, (int) floor(($total_words / $parts) * 0.35));
 
         for ($index = 1; $index < $parts; $index++) {
-            $target = max(1, (int) round(($total * $index) / $parts));
-            $chosen = $target;
+            $target_words = (int) round(($total_words * $index) / $parts);
+            $chosen = 0;
+            $best_score = PHP_INT_MAX;
+            $running_words = 0;
 
-            foreach ($preferred as $candidate) {
-                if (isset($used[$candidate]) || $candidate <= 0 || $candidate >= $total) {
+            for ($candidate = 1; $candidate < $total; $candidate++) {
+                $running_words += $weights[$candidate - 1];
+
+                if (isset($used[$candidate])) {
                     continue;
                 }
 
-                if (abs($candidate - $target) <= $tolerance && abs($candidate - $target) < abs($chosen - $target)) {
+                $previous_break = $breaks ? max($breaks) : 0;
+                if ($candidate <= $previous_break) {
+                    continue;
+                }
+
+                $current_part_words = array_sum(array_slice($weights, $previous_break, $candidate - $previous_break));
+                $remaining_words = array_sum(array_slice($weights, $candidate));
+                $remaining_parts = $parts - $index;
+                if ($current_part_words < $min_words_per_part || $remaining_words < ($min_words_per_part * $remaining_parts)) {
+                    continue;
+                }
+
+                $score = abs($running_words - $target_words);
+                if (isset($preferred_lookup[$candidate])) {
+                    $score = max(0, $score - 30);
+                }
+
+                if ($score < $best_score) {
+                    $best_score = $score;
                     $chosen = $candidate;
                 }
             }
 
-            while (isset($used[$chosen]) && $chosen < ($total - 1)) {
-                $chosen++;
+            if ($chosen <= 0) {
+                $chosen = max(1, min($total - 1, (int) round(($total * $index) / $parts)));
             }
 
-            $chosen = max(1, min($total - 1, $chosen));
             $used[$chosen] = true;
             $breaks[] = $chosen;
         }
 
-        return $breaks;
+        sort($breaks);
+        return array_values(array_unique($breaks));
     }
 
     private static function build_recipe_faq_block(int $post_id, string $content): string

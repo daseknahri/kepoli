@@ -15,6 +15,8 @@ get_header();
     $recipe_snapshot = $is_recipe ? kepoli_recipe_snapshot_items() : [];
     $post_next_steps = $is_recipe ? kepoli_post_next_steps() : ['items' => []];
     $share_icons = ['facebook' => 'facebook', 'whatsapp' => 'whatsapp', 'email' => 'email', 'copy' => 'link', 'print' => 'print'];
+    global $page, $numpages;
+    $show_after_article = max(1, (int) $page) >= max(1, (int) $numpages);
     $featured_image = kepoli_post_featured_image_markup(get_the_ID(), 'large', [
         'class' => 'entry-featured-media__image',
         'loading' => 'eager',
@@ -132,7 +134,7 @@ get_header();
                 'link_after' => '</span>',
             ]);
             ?>
-            <?php if (!empty($post_next_steps['items'])) : ?>
+            <?php if ($show_after_article && !empty($post_next_steps['items'])) : ?>
                 <section class="entry-next-steps">
                     <div class="entry-next-steps__header">
                         <p class="eyebrow"><?php echo esc_html($post_next_steps['eyebrow']); ?></p>
@@ -150,10 +152,12 @@ get_header();
                     </div>
                 </section>
             <?php endif; ?>
-            <?php echo kepoli_ad_slot('below_content'); ?>
+            <?php if ($show_after_article) : ?>
+                <?php echo kepoli_ad_slot('below_content'); ?>
+            <?php endif; ?>
             <?php
             $related_posts = kepoli_related_posts_by_kind(get_the_ID(), $is_recipe ? 'article' : 'recipe');
-            if ($related_posts) :
+            if ($show_after_article && $related_posts) :
                 ?>
                 <section class="related-posts related-posts--cards">
                     <div class="related-posts__heading">
@@ -194,7 +198,7 @@ get_header();
             <?php
             $previous_post = get_previous_post();
             $next_post = get_next_post();
-            if ($previous_post || $next_post) :
+            if ($show_after_article && ($previous_post || $next_post)) :
                 ?>
                 <nav class="post-navigation-simple" aria-label="<?php echo esc_attr(kepoli_ui_text('Navigatie intre articole', 'Post navigation')); ?>">
                     <?php if ($previous_post) : ?>

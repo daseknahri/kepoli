@@ -1468,35 +1468,62 @@
     }, []);
   }
 
-  function computeSplitBreaks(total, parts, preferred) {
+  function blockWordCount(block) {
+    const plain = String(block || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    return Math.max(1, plain ? plain.split(/\s+/).length : 1);
+  }
+
+  function computeSplitBreaks(blocks, parts, preferred) {
+    const total = blocks.length;
+    const weights = blocks.map(blockWordCount);
+    const totalWords = weights.reduce((sum, weight) => sum + weight, 0);
+    const preferredSet = new Set(preferred);
+    const minWordsPerPart = Math.max(80, Math.floor((totalWords / parts) * 0.35));
     const breaks = [];
     const used = new Set();
-    const tolerance = Math.max(1, Math.floor(total / (parts * 2)));
 
     for (let index = 1; index < parts; index += 1) {
-      const target = Math.max(1, Math.round((total * index) / parts));
-      let chosen = target;
+      const targetWords = Math.round((totalWords * index) / parts);
+      const previousBreak = breaks.length ? Math.max(...breaks) : 0;
+      let chosen = 0;
+      let bestScore = Number.POSITIVE_INFINITY;
+      let runningWords = 0;
 
-      preferred.forEach((candidate) => {
-        if (used.has(candidate) || candidate <= 0 || candidate >= total) {
-          return;
+      for (let candidate = 1; candidate < total; candidate += 1) {
+        runningWords += weights[candidate - 1];
+
+        if (used.has(candidate) || candidate <= previousBreak) {
+          continue;
         }
 
-        if (Math.abs(candidate - target) <= tolerance && Math.abs(candidate - target) < Math.abs(chosen - target)) {
+        const currentPartWords = weights.slice(previousBreak, candidate).reduce((sum, weight) => sum + weight, 0);
+        const remainingWords = weights.slice(candidate).reduce((sum, weight) => sum + weight, 0);
+        const remainingParts = parts - index;
+
+        if (currentPartWords < minWordsPerPart || remainingWords < minWordsPerPart * remainingParts) {
+          continue;
+        }
+
+        let score = Math.abs(runningWords - targetWords);
+        if (preferredSet.has(candidate)) {
+          score = Math.max(0, score - 30);
+        }
+
+        if (score < bestScore) {
+          bestScore = score;
           chosen = candidate;
         }
-      });
-
-      while (used.has(chosen) && chosen < total - 1) {
-        chosen += 1;
       }
 
-      chosen = Math.max(1, Math.min(total - 1, chosen));
+      if (!chosen) {
+        chosen = Math.max(1, Math.min(total - 1, Math.round((total * index) / parts)));
+      }
+
       used.add(chosen);
       breaks.push(chosen);
     }
 
-    return breaks;
+    return Array.from(new Set(breaks)).sort((a, b) => a - b);
   }
 
   function splitTextarea(parts) {
@@ -1514,7 +1541,7 @@
       return;
     }
 
-    const breaks = computeSplitBreaks(blocks.length, parts, preferred);
+    const breaks = computeSplitBreaks(blocks, parts, preferred);
 
     const output = [];
     blocks.forEach((block, index) => {

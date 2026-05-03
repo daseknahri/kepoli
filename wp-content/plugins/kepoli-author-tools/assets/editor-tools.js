@@ -50,38 +50,75 @@
     }, []);
   }
 
-  function computeBreaks(total, parts, preferred) {
+  function nodeWordCount(node) {
+    var plain = node && node.textContent ? node.textContent.replace(/\s+/g, ' ').trim() : '';
+    return Math.max(1, plain ? plain.split(/\s+/).length : 1);
+  }
+
+  function computeBreaks(nodes, parts, preferred) {
+    var total = nodes.length;
+    var weights = nodes.map(nodeWordCount);
+    var totalWords = weights.reduce(function (sum, weight) { return sum + weight; }, 0);
+    var preferredSet = {};
+    var minWordsPerPart = Math.max(80, Math.floor((totalWords / parts) * 0.35));
     var breaks = [];
     var used = {};
-    var tolerance = Math.max(1, Math.floor(total / (parts * 2)));
     var index;
 
+    preferred.forEach(function (candidate) {
+      preferredSet[candidate] = true;
+    });
+
     for (index = 1; index < parts; index += 1) {
-      var target = Math.max(1, Math.round((total * index) / parts));
-      var chosen = target;
+      var targetWords = Math.round((totalWords * index) / parts);
+      var previousBreak = breaks.length ? Math.max.apply(null, breaks) : 0;
+      var chosen = 0;
+      var bestScore = Number.POSITIVE_INFINITY;
+      var runningWords = 0;
+      var candidate;
 
-      preferred.forEach(function (candidate) {
-        if (used[candidate] || candidate <= 0 || candidate >= total) {
-          return;
+      for (candidate = 1; candidate < total; candidate += 1) {
+        var currentPartWords;
+        var remainingWords;
+        var remainingParts;
+        var score;
+
+        runningWords += weights[candidate - 1];
+
+        if (used[candidate] || candidate <= previousBreak) {
+          continue;
         }
 
-        if (Math.abs(candidate - target) <= tolerance && Math.abs(candidate - target) < Math.abs(chosen - target)) {
+        currentPartWords = weights.slice(previousBreak, candidate).reduce(function (sum, weight) { return sum + weight; }, 0);
+        remainingWords = weights.slice(candidate).reduce(function (sum, weight) { return sum + weight; }, 0);
+        remainingParts = parts - index;
+
+        if (currentPartWords < minWordsPerPart || remainingWords < minWordsPerPart * remainingParts) {
+          continue;
+        }
+
+        score = Math.abs(runningWords - targetWords);
+        if (preferredSet[candidate]) {
+          score = Math.max(0, score - 30);
+        }
+
+        if (score < bestScore) {
+          bestScore = score;
           chosen = candidate;
-        }
-      });
-
-      if (used[chosen]) {
-        while (used[chosen] && chosen < total) {
-          chosen += 1;
         }
       }
 
-      chosen = Math.max(1, Math.min(total - 1, chosen));
+      if (!chosen) {
+        chosen = Math.max(1, Math.min(total - 1, Math.round((total * index) / parts)));
+      }
+
       used[chosen] = true;
       breaks.push(chosen);
     }
 
-    return breaks;
+    return breaks.filter(function (value, valueIndex, list) {
+      return list.indexOf(value) === valueIndex;
+    }).sort(function (a, b) { return a - b; });
   }
 
   function splitEditorContent(editor, parts) {
@@ -95,7 +132,7 @@
       return;
     }
 
-    breaks = computeBreaks(nodes.length, parts, preferred);
+    breaks = computeBreaks(nodes, parts, preferred);
 
     nodes.forEach(function (node, nodeIndex) {
       if (breaks.indexOf(nodeIndex) !== -1) {
