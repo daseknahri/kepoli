@@ -2,7 +2,7 @@
 
 Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and kitchen articles. This repo contains the live site stack, content seed, custom theme, and the clone tooling used to launch future sibling food blogs from the same engine.
 
-For repeatable cloning and launch steps, use `docs/new-blog-launch-plan.md`. For deeper clone details, use `docs/replicate-food-blog.md`. For a fresh Codex handoff prompt, use `docs/codex-new-site-prompt.md`. The most robust path is: create `site-brief.json` with `node scripts/create-site-brief.mjs ... --write`, run `node scripts/start-new-blog.mjs --brief site-brief.json --write`, then run `node scripts/validate-new-blog.mjs --brief site-brief.json`. When changing the shared engine itself, run `node scripts/audit-engine-readiness.mjs` before using it for another clone.
+For repeatable cloning and launch steps, use `docs/new-blog-launch-plan.md`. For deeper clone details, use `docs/replicate-food-blog.md`. For a fresh Codex handoff prompt, use `docs/codex-new-site-prompt.md`. For current operating status, use `docs/project-status.md`. The most robust path is: create `site-brief.json` with `node scripts/create-site-brief.mjs ... --write`, run `node scripts/start-new-blog.mjs --brief site-brief.json --write`, then run `node scripts/validate-new-blog.mjs --brief site-brief.json`. When changing the shared engine itself, run `node scripts/audit-engine-readiness.mjs` before using it for another clone.
 
 ## What This Repo Builds
 
@@ -27,7 +27,7 @@ docker compose -f docker-compose.yml -f docker-compose.local.yml --profile seed 
 
 3. Open `http://localhost:8080`.
 
-The seed is idempotent: rerunning `docker compose -f docker-compose.yml -f docker-compose.local.yml --profile seed run --rm wp-init` updates content by slug instead of duplicating it. For normal starts and Coolify deploys, the WordPress service self-seeds once from the baked-in `seed` and `content` folders.
+The seed is idempotent for a fresh launch, but after the site is live it should not be used as a normal update mechanism. For normal starts and Coolify deploys, the WordPress service self-seeds only on an empty install from the baked-in `seed` and `content` folders.
 
 ## Coolify
 
@@ -36,15 +36,24 @@ The seed is idempotent: rerunning `docker compose -f docker-compose.yml -f docke
 3. Add the environment variables from `.env.example`.
 4. Assign `https://kepoli.com` to the `wordpress` service on port `80`.
 5. Enable GitHub auto-deploy on push.
-6. Do not enable the `seed` profile for normal Coolify deploys. WordPress self-seeds automatically from the app image.
+6. Do not enable the `seed` profile for normal Coolify deploys. WordPress self-seeds only on first launch, before real content exists.
 
 The `CANONICAL_REDIRECT_HOSTS` value should include any extra hostnames that may reach the app, such as `www.kepoli.com`, `api.kepoli.com`, or `recipe.kepoli.com`. The MU plugin redirects those hosts to `SITE_URL` so Search Console and readers see one canonical site.
 
-If you need to manually reseed after launch, run:
+After launch, keep:
+
+```env
+KEPOLI_AUTOSEED_ENABLE=1
+KEPOLI_FORCE_RESEED=0
+```
+
+This allows a fresh empty install to self-seed once, while protecting manual posts, manual images, post dates, and live content on normal redeploys. If you truly need to manually reseed after launch, set `KEPOLI_FORCE_RESEED=1` temporarily, redeploy or run:
 
 ```sh
 docker compose --profile seed run --rm wp-init
 ```
+
+Then set `KEPOLI_FORCE_RESEED=0` immediately after the repair.
 
 Use only `docker-compose.yml` in Coolify. Do not add `docker-compose.local.yml`; that file publishes `localhost:8080` for local development only. Coolify should build the included `kepoli-wordpress` image from the repo so the theme, MU plugins, seed scripts, and content are copied into the running WordPress container.
 

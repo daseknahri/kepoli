@@ -12,7 +12,9 @@ This repo includes a small `kepoli-author-tools` plugin for writing posts. The p
   - `3 parti`: splits the current content into three WordPress pages.
 - The Text editor tab also gets the same quick buttons.
 - The split buttons now try to break long posts at cleaner section boundaries, especially around `H2` and `H3` headings, instead of cutting only by rough paragraph count.
+- If content is pasted as one large paragraph, the splitter falls back to sentence and word chunks instead of silently skipping the split.
 - The setup box also includes `Impartire automata`, so a writer can choose `2 parti` or `3 parti` and let the tool apply the split on save. If the post already has manual `nextpage` breaks, the plugin leaves them alone.
+- Smart split is conservative for Kepoli: about `650+` words becomes 2 parts, and about `1300+` words becomes 3 parts.
 - The `Post setup` box lets the writer choose `Reteta` or `Articol`, write an excerpt, and optionally adjust manual SEO, related links, image metadata, and recipe structured data.
 - The setup box keeps one main action in front: `Completeaza automat`. Extra helper actions stay under `Mai multe unelte`, so the editor remains simple for day-to-day use.
 - Manual SEO title, meta description, and related-link slug fields now stay inside `Detalii SEO si legaturi`, so the main writing view stays focused on the essentials.
