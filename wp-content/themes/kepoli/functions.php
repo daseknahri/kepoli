@@ -912,6 +912,11 @@ function kepoli_ga_enabled(): bool
     return kepoli_env_bool('GA_ENABLE', false);
 }
 
+function kepoli_histats_enabled(): bool
+{
+    return kepoli_env_bool('HISTATS_ENABLE', false);
+}
+
 function kepoli_primary_category(int $post_id = 0): ?WP_Term
 {
     $post_id = $post_id ?: get_the_ID();
@@ -2636,6 +2641,48 @@ function kepoli_ga_head(): void
     <?php
 }
 add_action('wp_head', 'kepoli_ga_head', 9);
+
+function kepoli_histats_should_render(): bool
+{
+    if (!kepoli_histats_enabled()) {
+        return false;
+    }
+
+    if (is_admin() || wp_doing_ajax() || is_feed()) {
+        return false;
+    }
+
+    if (kepoli_env_bool('HISTATS_EXCLUDE_ADMINS', true) && is_user_logged_in() && current_user_can('manage_options')) {
+        return false;
+    }
+
+    return true;
+}
+
+function kepoli_histats_footer(): void
+{
+    if (!kepoli_histats_should_render()) {
+        return;
+    }
+
+    $encoded = kepoli_env('HISTATS_CODE_BASE64');
+    if ($encoded === '') {
+        return;
+    }
+
+    $decoded = base64_decode($encoded, true);
+    if (!is_string($decoded)) {
+        return;
+    }
+
+    $code = trim($decoded);
+    if ($code === '') {
+        return;
+    }
+
+    echo "\n<!-- Histats analytics -->\n" . $code . "\n";
+}
+add_action('wp_footer', 'kepoli_histats_footer', 90);
 
 function kepoli_newsletter_cta(string $class = ''): string
 {

@@ -48,6 +48,9 @@ services:
       GA_ENABLE: ${GA_ENABLE:-0}
       GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
       SEARCH_CONSOLE_VERIFICATION: ${SEARCH_CONSOLE_VERIFICATION:-}
+      HISTATS_ENABLE: ${HISTATS_ENABLE:-0}
+      HISTATS_CODE_BASE64: ${HISTATS_CODE_BASE64:-}
+      HISTATS_EXCLUDE_ADMINS: ${HISTATS_EXCLUDE_ADMINS:-1}
     volumes:
       - kepoli_wordpress:/var/www/html
       - kepoli_uploads:/var/www/html/wp-content/uploads
@@ -94,6 +97,9 @@ services:
       GA_ENABLE: ${GA_ENABLE:-0}
       GA_MEASUREMENT_ID: ${GA_MEASUREMENT_ID:-}
       SEARCH_CONSOLE_VERIFICATION: ${SEARCH_CONSOLE_VERIFICATION:-}
+      HISTATS_ENABLE: ${HISTATS_ENABLE:-0}
+      HISTATS_CODE_BASE64: ${HISTATS_CODE_BASE64:-}
+      HISTATS_EXCLUDE_ADMINS: ${HISTATS_EXCLUDE_ADMINS:-1}
     volumes:
       - kepoli_wordpress:/var/www/html
       - kepoli_uploads:/var/www/html/wp-content/uploads
