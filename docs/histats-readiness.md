@@ -1,6 +1,6 @@
 # Histats Readiness
 
-Kepoli can use Histats as a lightweight live-traffic counter while AdSense approval is pending. Keep it env-controlled so analytics can be enabled, replaced, or removed without editing theme files.
+This site can use Histats as a lightweight live-traffic counter while monetization approval or traffic testing is in progress. Keep it env-controlled so analytics can be enabled, replaced, or removed without editing theme files.
 
 ## Recommended Setup
 

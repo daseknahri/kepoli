@@ -1451,7 +1451,11 @@
   }
 
   function isHeadingBlock(block) {
-    return /^<h[1-6]\b/i.test(block);
+    if (/^<h[1-6]\b/i.test(block)) {
+      return true;
+    }
+
+    return isOutlineHeading(cleanText(String(block || '').replace(/:$/, '')));
   }
 
   function preferredTextBreakIndexes(blocks) {
@@ -1471,6 +1475,44 @@
   function blockWordCount(block) {
     const plain = String(block || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
     return Math.max(1, plain ? plain.split(/\s+/).length : 1);
+  }
+
+  function splitContentBlocks(content) {
+    const clean = String(content || '').replace(/<!--\s*nextpage\s*-->/gi, '').trim();
+    if (!clean) {
+      return [];
+    }
+
+    const byParagraph = clean.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+    if (byParagraph.length > 1) {
+      return byParagraph;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = clean;
+    const htmlBlocks = Array.from(wrapper.childNodes)
+      .filter((node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return String(node.textContent || '').trim() !== '';
+        }
+
+        return node.nodeType === Node.ELEMENT_NODE;
+      })
+      .map((node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          return String(node.textContent || '').trim();
+        }
+
+        return String(node.outerHTML || node.textContent || '').trim();
+      })
+      .filter(Boolean);
+
+    if (htmlBlocks.length > 1) {
+      return htmlBlocks;
+    }
+
+    const byLine = clean.split(/\r\n|\r|\n/).map((line) => line.trim()).filter(Boolean);
+    return byLine.length > 1 ? byLine : byParagraph;
   }
 
   function computeSplitBreaks(blocks, parts, preferred) {
@@ -1516,7 +1558,7 @@
       }
 
       if (!chosen) {
-        chosen = Math.max(1, Math.min(total - 1, Math.round((total * index) / parts)));
+        chosen = fallbackSplitBreak(weights, targetWords, previousBreak, parts - index);
       }
 
       used.add(chosen);
@@ -1526,14 +1568,38 @@
     return Array.from(new Set(breaks)).sort((a, b) => a - b);
   }
 
+  function fallbackSplitBreak(weights, targetWords, previousBreak, remainingParts) {
+    const total = weights.length;
+    const minCandidate = Math.max(previousBreak + 1, 1);
+    const maxCandidate = Math.max(minCandidate, total - Math.max(1, remainingParts));
+    let runningWords = 0;
+    let chosen = minCandidate;
+    let bestScore = Number.POSITIVE_INFINITY;
+
+    for (let candidate = 1; candidate < total; candidate += 1) {
+      runningWords += weights[candidate - 1] || 1;
+
+      if (candidate < minCandidate || candidate > maxCandidate) {
+        continue;
+      }
+
+      const score = Math.abs(runningWords - targetWords);
+      if (score < bestScore) {
+        bestScore = score;
+        chosen = candidate;
+      }
+    }
+
+    return Math.max(minCandidate, Math.min(maxCandidate, chosen));
+  }
+
   function splitTextarea(parts) {
     const textarea = getTextarea();
     if (!textarea) {
       return;
     }
 
-    const clean = textarea.value.replace(/<!--\s*nextpage\s*-->/gi, '').trim();
-    const blocks = clean.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+    const blocks = splitContentBlocks(textarea.value);
     const preferred = preferredTextBreakIndexes(blocks);
 
     if (blocks.length <= parts) {

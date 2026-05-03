@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.29
+ * Version: 1.8.30
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.29';
+    private const VERSION = '1.8.30';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -2174,8 +2174,12 @@ final class Kepoli_Author_Tools
             return;
         }
 
-        $content = (string) $post->post_content;
-        if ($content === '' || stripos($content, '<!--nextpage-->') !== false) {
+        $content = (string) get_post_field('post_content', $post_id);
+        if ($content === '') {
+            $content = (string) $post->post_content;
+        }
+
+        if ($content === '' || preg_match('/<!--\s*nextpage\s*-->/i', $content)) {
             return;
         }
 
@@ -3117,9 +3121,10 @@ final class Kepoli_Author_Tools
 
     private static function content_blocks(string $content): array
     {
+        $line_blocks = self::line_content_blocks($content);
+
         if (!class_exists('DOMDocument')) {
-            $blocks = preg_split('/\n{2,}/', trim($content)) ?: [];
-            return array_values(array_filter(array_map('trim', $blocks)));
+            return $line_blocks;
         }
 
         $document = new DOMDocument('1.0', 'UTF-8');
@@ -3131,8 +3136,7 @@ final class Kepoli_Author_Tools
 
         $root = $document->getElementById('kepoli-split-root');
         if (!$root) {
-            $blocks = preg_split('/\n{2,}/', trim($content)) ?: [];
-            return array_values(array_filter(array_map('trim', $blocks)));
+            return $line_blocks;
         }
 
         $blocks = [];
@@ -3148,7 +3152,31 @@ final class Kepoli_Author_Tools
             $blocks[] = trim($document->saveHTML($node));
         }
 
-        return array_values(array_filter($blocks));
+        $blocks = array_values(array_filter($blocks));
+
+        return count($blocks) > 1 ? $blocks : $line_blocks;
+    }
+
+    private static function line_content_blocks(string $content): array
+    {
+        $content = preg_replace('/<!--\s*nextpage\s*-->/i', '', trim($content));
+        if (!is_string($content) || $content === '') {
+            return [];
+        }
+
+        $blocks = preg_split('/\n{2,}/', $content) ?: [];
+        $blocks = array_values(array_filter(array_map('trim', $blocks)));
+        if (count($blocks) > 1) {
+            return $blocks;
+        }
+
+        $lines = preg_split('/\r\n|\r|\n/', $content) ?: [];
+        $lines = array_values(array_filter(array_map('trim', $lines)));
+        if (count($lines) > 1) {
+            return $lines;
+        }
+
+        return $blocks;
     }
 
     private static function preferred_block_break_indexes(array $blocks): array
@@ -3160,12 +3188,22 @@ final class Kepoli_Author_Tools
                 continue;
             }
 
-            if (preg_match('/^<h[23]\b/i', $block)) {
+            if (self::is_split_heading_block($block)) {
                 $indexes[] = $index;
             }
         }
 
         return $indexes;
+    }
+
+    private static function is_split_heading_block(string $block): bool
+    {
+        if (preg_match('/^<h[23]\b/i', $block)) {
+            return true;
+        }
+
+        $plain = trim(rtrim(self::plain_text($block), ':'));
+        return $plain !== '' && self::is_outline_heading($plain);
     }
 
     private static function block_word_count(string $block): int
@@ -3228,7 +3266,7 @@ final class Kepoli_Author_Tools
             }
 
             if ($chosen <= 0) {
-                $chosen = max(1, min($total - 1, (int) round(($total * $index) / $parts)));
+                $chosen = self::fallback_split_break($weights, $target_words, $breaks ? max($breaks) : 0, $parts - $index);
             }
 
             $used[$chosen] = true;
@@ -3237,6 +3275,32 @@ final class Kepoli_Author_Tools
 
         sort($breaks);
         return array_values(array_unique($breaks));
+    }
+
+    private static function fallback_split_break(array $weights, int $target_words, int $previous_break, int $remaining_parts): int
+    {
+        $total = count($weights);
+        $min_candidate = max($previous_break + 1, 1);
+        $max_candidate = max($min_candidate, $total - max(1, $remaining_parts));
+        $running_words = 0;
+        $chosen = $min_candidate;
+        $best_score = PHP_INT_MAX;
+
+        for ($candidate = 1; $candidate < $total; $candidate++) {
+            $running_words += (int) ($weights[$candidate - 1] ?? 1);
+
+            if ($candidate < $min_candidate || $candidate > $max_candidate) {
+                continue;
+            }
+
+            $score = abs($running_words - $target_words);
+            if ($score < $best_score) {
+                $best_score = $score;
+                $chosen = $candidate;
+            }
+        }
+
+        return max($min_candidate, min($max_candidate, $chosen));
     }
 
     private static function build_recipe_faq_block(int $post_id, string $content): string
