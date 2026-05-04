@@ -44,3 +44,11 @@ git diff --check
 ```
 
 If a live deploy needs verification, temporarily set `KEPOLI_DEPLOY_FINGERPRINT=1`, redeploy, run `node scripts\check-live-deploy.mjs https://kepoli.com`, then turn the fingerprint off.
+
+## Key Docs
+
+- `docs/ai-content-growth-strategy.md`: future AI, content, Facebook, SEO, and monetization direction.
+- `docs/author-workflow.md`: posting, auto-fill, and auto-split workflow.
+- `docs/adsense-readiness.md`: AdSense-safe checks and policy guardrails.
+- `docs/new-blog-launch-plan.md`: repeatable new-site workflow.
+- `docs/replicate-food-blog.md`: clone/rebrand process.
