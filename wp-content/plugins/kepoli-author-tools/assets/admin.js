@@ -1516,7 +1516,22 @@
       return byLine;
     }
 
-    return sentenceContentBlocks(clean, 2);
+    return canUseSentenceSplitFallback(clean) ? sentenceContentBlocks(clean, 2) : byParagraph;
+  }
+
+  function canUseSentenceSplitFallback(content) {
+    const clean = String(content || '').replace(/<!--\s*nextpage\s*-->/gi, '').trim();
+    if (!clean) {
+      return false;
+    }
+
+    // Sentence chunks are plain text only. Formatted posts must keep their
+    // existing paragraphs, headings, lists, and line breaks.
+    if (/<[^>]+>/.test(clean)) {
+      return false;
+    }
+
+    return !/[\r\n]/.test(clean);
   }
 
   function sentenceContentBlocks(content, parts) {
@@ -1575,6 +1590,10 @@
 
   function expandBlocksForSplit(blocks, content, parts) {
     if (blocks.length > parts) {
+      return blocks;
+    }
+
+    if (!canUseSentenceSplitFallback(content)) {
       return blocks;
     }
 

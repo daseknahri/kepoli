@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.31
+ * Version: 1.8.32
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.31';
+    private const VERSION = '1.8.32';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -3185,8 +3185,28 @@ final class Kepoli_Author_Tools
             return $blocks;
         }
 
+        if (!self::can_use_sentence_split_fallback($content)) {
+            return $blocks;
+        }
+
         $sentence_blocks = self::sentence_content_blocks($content, $parts);
         return count($sentence_blocks) > $parts ? $sentence_blocks : $blocks;
+    }
+
+    private static function can_use_sentence_split_fallback(string $content): bool
+    {
+        $clean = trim((string) preg_replace('/<!--\s*nextpage\s*-->/i', '', $content));
+        if ($clean === '') {
+            return false;
+        }
+
+        // Sentence chunks are plain text only. Formatted posts must keep their
+        // existing paragraphs, headings, lists, and line breaks.
+        if (preg_match('/<[^>]+>/', $clean)) {
+            return false;
+        }
+
+        return !preg_match('/\r\n|\r|\n/', $clean);
     }
 
     private static function sentence_content_blocks(string $content, int $parts): array
