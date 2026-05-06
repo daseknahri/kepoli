@@ -57,6 +57,14 @@
 
   function computeBreaks(nodes, parts, preferred) {
     var total = nodes.length;
+    if (total < parts) {
+      return [];
+    }
+
+    if (total === parts) {
+      return Array.from({ length: parts - 1 }, function (unused, index) { return index + 1; });
+    }
+
     var weights = nodes.map(nodeWordCount);
     var totalWords = weights.reduce(function (sum, weight) { return sum + weight; }, 0);
     var preferredSet = {};
@@ -127,7 +135,7 @@
     var output = [];
     var preferred = preferredBreakIndexes(nodes);
 
-    if (nodes.length <= parts) {
+    if (nodes.length < parts) {
       insertPageBreak(editor);
       return;
     }

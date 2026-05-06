@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.32
+ * Version: 1.8.33
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.32';
+    private const VERSION = '1.8.33';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -3098,7 +3098,7 @@ final class Kepoli_Author_Tools
     private static function split_content_into_parts(string $content, int $parts): string
     {
         $blocks = self::expand_blocks_for_split(self::content_blocks($content), $content, $parts);
-        if (count($blocks) <= $parts) {
+        if (count($blocks) < $parts) {
             return $content;
         }
 
@@ -3181,8 +3181,13 @@ final class Kepoli_Author_Tools
 
     private static function expand_blocks_for_split(array $blocks, string $content, int $parts): array
     {
-        if (count($blocks) > $parts) {
+        if (count($blocks) >= $parts) {
             return $blocks;
+        }
+
+        $structured_blocks = self::structure_preserving_split_blocks($blocks, $parts);
+        if (count($structured_blocks) >= $parts) {
+            return $structured_blocks;
         }
 
         if (!self::can_use_sentence_split_fallback($content)) {
@@ -3207,6 +3212,101 @@ final class Kepoli_Author_Tools
         }
 
         return !preg_match('/\r\n|\r|\n/', $clean);
+    }
+
+    private static function structure_preserving_split_blocks(array $blocks, int $parts): array
+    {
+        if (!$blocks) {
+            return [];
+        }
+
+        $total_words = array_sum(array_map([self::class, 'block_word_count'], $blocks));
+        $target_words = max(90, (int) ceil($total_words / max(1, $parts * 2)));
+        $output = [];
+
+        foreach ($blocks as $block) {
+            $split = self::split_single_structured_block($block, $target_words);
+            foreach ($split as $piece) {
+                $piece = trim($piece);
+                if ($piece !== '') {
+                    $output[] = $piece;
+                }
+            }
+        }
+
+        return count($output) > count($blocks) ? $output : $blocks;
+    }
+
+    private static function split_single_structured_block(string $block, int $target_words): array
+    {
+        $trimmed = trim($block);
+        if ($trimmed === '' || self::is_split_heading_block($trimmed)) {
+            return [$block];
+        }
+
+        if (preg_match('/^<p\b([^>]*)>(.*)<\/p>$/is', $trimmed, $matches)) {
+            $attributes = $matches[1] ?? '';
+            $inner = trim((string) ($matches[2] ?? ''));
+            $pieces = self::split_paragraph_inner_html($inner, $target_words);
+
+            if (count($pieces) > 1) {
+                return array_map(static function (string $piece) use ($attributes): string {
+                    return '<p' . $attributes . '>' . $piece . '</p>';
+                }, $pieces);
+            }
+        }
+
+        return [$block];
+    }
+
+    private static function split_paragraph_inner_html(string $inner, int $target_words): array
+    {
+        $inner = trim($inner);
+        if ($inner === '') {
+            return [];
+        }
+
+        $br_parts = preg_split('/<br\s*\/?>/i', $inner) ?: [];
+        $br_parts = array_values(array_filter(array_map('trim', $br_parts)));
+        if (count($br_parts) > 1) {
+            return $br_parts;
+        }
+
+        if (preg_match('/<[^>]+>/', $inner)) {
+            return [$inner];
+        }
+
+        return self::sentence_chunks($inner, $target_words);
+    }
+
+    private static function sentence_chunks(string $plain, int $target_words): array
+    {
+        $sentences = preg_split('/(?<=[.!?])\s+/', trim($plain)) ?: [];
+        $sentences = array_values(array_filter(array_map('trim', $sentences)));
+        if (count($sentences) < 2) {
+            return [$plain];
+        }
+
+        $chunks = [];
+        $current = [];
+        $current_words = 0;
+
+        foreach ($sentences as $sentence) {
+            $current[] = $sentence;
+            $current_words += self::word_count($sentence);
+
+            if ($current_words >= $target_words) {
+                $chunks[] = implode(' ', $current);
+                $current = [];
+                $current_words = 0;
+            }
+        }
+
+        if ($current) {
+            $chunks[] = implode(' ', $current);
+        }
+
+        return count($chunks) > 1 ? $chunks : [$plain];
     }
 
     private static function sentence_content_blocks(string $content, int $parts): array
@@ -3300,8 +3400,12 @@ final class Kepoli_Author_Tools
     private static function compute_split_breaks(array $blocks, int $parts, array $preferred): array
     {
         $total = count($blocks);
-        if ($total <= $parts) {
+        if ($total < $parts) {
             return [];
+        }
+
+        if ($total === $parts) {
+            return range(1, $parts - 1);
         }
 
         $weights = array_map([self::class, 'block_word_count'], $blocks);

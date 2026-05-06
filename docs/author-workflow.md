@@ -13,6 +13,7 @@ This repo includes a small `kepoli-author-tools` plugin for writing posts. The p
 - The Text editor tab also gets the same quick buttons.
 - The split buttons now try to break long posts at cleaner section boundaries, especially around `H2` and `H3` headings, instead of cutting only by rough paragraph count.
 - If content is pasted as one large plain-text paragraph, the splitter may fall back to sentence and word chunks. Formatted content keeps its paragraphs, headings, lists, and line breaks; if there is no safe structural split point, the plugin leaves the post unsplit instead of flattening it.
+- If a formatted post has only a few large paragraph blocks, the splitter can break those large paragraphs by word-count sentence groups while keeping them as paragraphs.
 - The setup box also includes `Impartire automata`, so a writer can choose `2 parti` or `3 parti` and let the tool apply the split on save. If the post already has manual `nextpage` breaks, the plugin leaves them alone.
 - Smart split is conservative for Kepoli: about `650+` words becomes 2 parts, and about `1300+` words becomes 3 parts.
 - The `Post setup` box lets the writer choose `Reteta` or `Articol`, write an excerpt, and optionally adjust manual SEO, related links, image metadata, and recipe structured data.

@@ -1519,6 +1519,90 @@
     return canUseSentenceSplitFallback(clean) ? sentenceContentBlocks(clean, 2) : byParagraph;
   }
 
+  function splitParagraphInnerHtml(inner, targetWords) {
+    const clean = String(inner || '').trim();
+    if (!clean) {
+      return [];
+    }
+
+    const brParts = clean.split(/<br\s*\/?>/i).map((part) => part.trim()).filter(Boolean);
+    if (brParts.length > 1) {
+      return brParts;
+    }
+
+    if (/<[^>]+>/.test(clean)) {
+      return [clean];
+    }
+
+    return sentenceChunks(clean, targetWords);
+  }
+
+  function sentenceChunks(plain, targetWords) {
+    const sentences = String(plain || '').trim().split(/(?<=[.!?])\s+/).map((sentence) => sentence.trim()).filter(Boolean);
+    if (sentences.length < 2) {
+      return [plain];
+    }
+
+    const chunks = [];
+    let current = [];
+    let currentWords = 0;
+
+    sentences.forEach((sentence) => {
+      current.push(sentence);
+      currentWords += blockWordCount(sentence);
+
+      if (currentWords >= targetWords) {
+        chunks.push(current.join(' '));
+        current = [];
+        currentWords = 0;
+      }
+    });
+
+    if (current.length) {
+      chunks.push(current.join(' '));
+    }
+
+    return chunks.length > 1 ? chunks : [plain];
+  }
+
+  function splitSingleStructuredBlock(block, targetWords) {
+    const clean = String(block || '').trim();
+    if (!clean || isHeadingBlock(clean)) {
+      return [block];
+    }
+
+    const paragraphMatch = clean.match(/^<p\b([^>]*)>(.*)<\/p>$/is);
+    if (!paragraphMatch) {
+      return [block];
+    }
+
+    const attrs = paragraphMatch[1] || '';
+    const inner = paragraphMatch[2] || '';
+    const pieces = splitParagraphInnerHtml(inner, targetWords);
+
+    return pieces.length > 1 ? pieces.map((piece) => `<p${attrs}>${piece}</p>`) : [block];
+  }
+
+  function structurePreservingSplitBlocks(blocks, parts) {
+    if (!blocks.length) {
+      return [];
+    }
+
+    const totalWords = blocks.map(blockWordCount).reduce((sum, weight) => sum + weight, 0);
+    const targetWords = Math.max(90, Math.ceil(totalWords / Math.max(1, parts * 2)));
+    const output = [];
+
+    blocks.forEach((block) => {
+      splitSingleStructuredBlock(block, targetWords).forEach((piece) => {
+        if (String(piece || '').trim()) {
+          output.push(piece);
+        }
+      });
+    });
+
+    return output.length > blocks.length ? output : blocks;
+  }
+
   function canUseSentenceSplitFallback(content) {
     const clean = String(content || '').replace(/<!--\s*nextpage\s*-->/gi, '').trim();
     if (!clean) {
@@ -1589,8 +1673,13 @@
   }
 
   function expandBlocksForSplit(blocks, content, parts) {
-    if (blocks.length > parts) {
+    if (blocks.length >= parts) {
       return blocks;
+    }
+
+    const structured = structurePreservingSplitBlocks(blocks, parts);
+    if (structured.length >= parts) {
+      return structured;
     }
 
     if (!canUseSentenceSplitFallback(content)) {
@@ -1603,6 +1692,14 @@
 
   function computeSplitBreaks(blocks, parts, preferred) {
     const total = blocks.length;
+    if (total < parts) {
+      return [];
+    }
+
+    if (total === parts) {
+      return Array.from({ length: parts - 1 }, (unused, index) => index + 1);
+    }
+
     const weights = blocks.map(blockWordCount);
     const totalWords = weights.reduce((sum, weight) => sum + weight, 0);
     const preferredSet = new Set(preferred);
@@ -1688,7 +1785,7 @@
     const blocks = expandBlocksForSplit(splitContentBlocks(textarea.value), textarea.value, parts);
     const preferred = preferredTextBreakIndexes(blocks);
 
-    if (blocks.length <= parts) {
+    if (blocks.length < parts) {
       insertAtCursor(textarea, `\n${PAGE_BREAK}\n`);
       return;
     }
