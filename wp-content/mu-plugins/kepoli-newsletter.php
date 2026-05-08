@@ -36,6 +36,17 @@ function kepoli_newsletter_site_name(): string
     return $name !== '' ? $name : (get_bloginfo('name') ?: 'Food Blog');
 }
 
+function kepoli_newsletter_consent_text(): string
+{
+    return sprintf(
+        kepoli_newsletter_text(
+            'Sunt de acord sa primesc emailuri de la %s si am citit politica de confidentialitate.',
+            'I agree to receive email updates from %s and I have read the privacy policy.'
+        ),
+        kepoli_newsletter_site_name()
+    );
+}
+
 function kepoli_newsletter_normalize_email(string $email): string
 {
     $email = sanitize_email(wp_unslash($email));
@@ -249,10 +260,15 @@ add_action('add_meta_boxes', static function (): void {
             $email = trim((string) get_post_meta($post->ID, '_kepoli_newsletter_email', true));
             $source_label = trim((string) get_post_meta($post->ID, '_kepoli_newsletter_source_label', true));
             $source_url = trim((string) get_post_meta($post->ID, '_kepoli_newsletter_source_url', true));
+            $consent_at = trim((string) get_post_meta($post->ID, '_kepoli_newsletter_consent_at', true));
+            $consent_text = trim((string) get_post_meta($post->ID, '_kepoli_newsletter_consent_text', true));
             $subscribed_at = get_post_time('d.m.Y H:i', true, $post);
 
             if ($source_label === '') {
                 $source_label = sprintf(kepoli_newsletter_text('Site %s', '%s site'), kepoli_newsletter_site_name());
+            }
+            if ($consent_text === '') {
+                $consent_text = kepoli_newsletter_consent_text();
             }
             ?>
             <table class="form-table" role="presentation">
@@ -279,6 +295,20 @@ add_action('add_meta_boxes', static function (): void {
                 <tr>
                     <th scope="row"><?php echo esc_html(kepoli_newsletter_text('Data inscrierii', 'Signup date')); ?></th>
                     <td><?php echo esc_html($subscribed_at); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php echo esc_html(kepoli_newsletter_text('Acord newsletter', 'Newsletter consent')); ?></th>
+                    <td>
+                        <?php if ($consent_at !== '') : ?>
+                            <strong><?php echo esc_html(kepoli_newsletter_text('Confirmat', 'Confirmed')); ?></strong>
+                            <br>
+                            <span><?php echo esc_html($consent_at); ?></span>
+                            <br>
+                            <small><?php echo esc_html($consent_text); ?></small>
+                        <?php else : ?>
+                            <span>&mdash;</span>
+                        <?php endif; ?>
+                    </td>
                 </tr>
             </table>
             <p>
@@ -359,7 +389,7 @@ function kepoli_export_newsletter_csv(): void
         exit;
     }
 
-    fputcsv($output, ['email', 'source', 'source_url', 'subscribed_at']);
+    fputcsv($output, ['email', 'source', 'source_url', 'subscribed_at', 'consent_at', 'consent_text']);
 
     foreach ($entries as $entry) {
         fputcsv($output, [
@@ -367,6 +397,8 @@ function kepoli_export_newsletter_csv(): void
             (string) get_post_meta($entry->ID, '_kepoli_newsletter_source_label', true),
             (string) get_post_meta($entry->ID, '_kepoli_newsletter_source_url', true),
             get_post_time('c', true, $entry),
+            (string) get_post_meta($entry->ID, '_kepoli_newsletter_consent_at', true),
+            (string) get_post_meta($entry->ID, '_kepoli_newsletter_consent_text', true),
         ]);
     }
 
@@ -393,6 +425,12 @@ function kepoli_handle_newsletter_signup(): void
 
     if (kepoli_newsletter_is_rate_limited()) {
         kepoli_newsletter_redirect($redirect_to, 'busy');
+    }
+
+    $has_consent = isset($_POST['newsletter_consent']) && (string) wp_unslash($_POST['newsletter_consent']) === '1';
+    if (!$has_consent) {
+        kepoli_newsletter_register_attempt();
+        kepoli_newsletter_redirect($redirect_to, 'consent');
     }
 
     $email = kepoli_newsletter_normalize_email((string) ($_POST['newsletter_email'] ?? ''));
@@ -426,6 +464,9 @@ function kepoli_handle_newsletter_signup(): void
     update_post_meta($signup_id, '_kepoli_newsletter_email', $email);
     update_post_meta($signup_id, '_kepoli_newsletter_source_label', $source_label);
     update_post_meta($signup_id, '_kepoli_newsletter_source_url', $source_url);
+    update_post_meta($signup_id, '_kepoli_newsletter_consent', '1');
+    update_post_meta($signup_id, '_kepoli_newsletter_consent_at', current_time('mysql', true));
+    update_post_meta($signup_id, '_kepoli_newsletter_consent_text', kepoli_newsletter_consent_text());
 
     kepoli_newsletter_clear_attempts();
     kepoli_newsletter_redirect($redirect_to, 'success');

@@ -624,6 +624,7 @@ final class Kepoli_Author_Tools
 
         if ($kind === 'recipe') {
             self::save_recipe_json($post_id, $post);
+            self::maybe_remove_recipe_detail_duplicates($post_id, $post);
             self::maybe_add_recipe_faq($post_id, $post);
         } else {
             delete_post_meta($post_id, '_kepoli_recipe_json');
@@ -1623,6 +1624,159 @@ final class Kepoli_Author_Tools
         }
 
         return implode("\n", $html);
+    }
+
+    private static function recipe_detail_heading_targets(): array
+    {
+        return [
+            self::normalized_heading('Detalii despre reteta'),
+            self::normalized_heading('Recipe details'),
+            self::normalized_heading('Details'),
+        ];
+    }
+
+    private static function is_recipe_detail_heading(string $text): bool
+    {
+        return in_array(self::normalized_heading($text), self::recipe_detail_heading_targets(), true);
+    }
+
+    private static function is_recipe_meta_line(string $text): bool
+    {
+        $text = trim(self::plain_text($text));
+        if ($text === '') {
+            return false;
+        }
+
+        $normalized = self::normalized_heading($text);
+
+        return (bool) preg_match('/^(?:timp|prep|preparation|cook|cooking|bake|baking|total|servings?|serves|makes|yield|portii|portie|persoane|nivel|difficulty)\b/u', $normalized);
+    }
+
+    private static function maybe_remove_recipe_detail_duplicates(int $post_id, WP_Post $post): void
+    {
+        $content = (string) $post->post_content;
+        if ($content === '') {
+            return;
+        }
+
+        $clean = self::remove_recipe_detail_duplicates_from_content($content);
+        if ($clean === '' || $clean === $content) {
+            return;
+        }
+
+        self::update_post_content($post_id, $clean);
+        $post->post_content = $clean;
+    }
+
+    private static function remove_recipe_detail_duplicates_from_content(string $content): string
+    {
+        if ($content === '') {
+            return '';
+        }
+
+        if (!self::content_has_markup($content) || !class_exists('DOMDocument')) {
+            return self::remove_recipe_detail_duplicates_from_lines($content);
+        }
+
+        $document = new DOMDocument('1.0', 'UTF-8');
+        $wrapped = '<div id="kepoli-recipe-detail-cleanup-root">' . $content . '</div>';
+
+        libxml_use_internal_errors(true);
+        $document->loadHTML('<?xml encoding="utf-8" ?>' . $wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+
+        $root = $document->getElementById('kepoli-recipe-detail-cleanup-root');
+        if (!$root) {
+            return $content;
+        }
+
+        $nodes = [];
+        foreach ($root->childNodes as $child) {
+            $nodes[] = $child;
+        }
+
+        $removing_detail_section = false;
+
+        foreach ($nodes as $node) {
+            if ($node->nodeType !== XML_ELEMENT_NODE) {
+                continue;
+            }
+
+            /** @var DOMElement $node */
+            $tag = strtolower((string) $node->nodeName);
+            $plain = self::plain_text($document->saveHTML($node));
+            $heading_like = preg_match('/^h[1-6]$/', $tag) || ($tag === 'p' && self::is_outline_heading($plain));
+
+            if ($heading_like) {
+                if (self::is_recipe_detail_heading($plain)) {
+                    $removing_detail_section = true;
+                    if ($node->parentNode) {
+                        $node->parentNode->removeChild($node);
+                    }
+                    continue;
+                }
+
+                if ($removing_detail_section) {
+                    $removing_detail_section = false;
+                }
+            }
+
+            if ($removing_detail_section) {
+                if ($node->parentNode) {
+                    $node->parentNode->removeChild($node);
+                }
+                continue;
+            }
+
+            if (in_array($tag, ['p', 'li'], true) && self::is_recipe_meta_line($plain) && $node->parentNode) {
+                $node->parentNode->removeChild($node);
+            }
+        }
+
+        $output = [];
+        foreach ($root->childNodes as $child) {
+            $html = trim((string) $document->saveHTML($child));
+            if ($html !== '') {
+                $output[] = $html;
+            }
+        }
+
+        return trim(implode("\n", $output));
+    }
+
+    private static function remove_recipe_detail_duplicates_from_lines(string $content): string
+    {
+        $lines = preg_split('/\r\n|\r|\n/', $content) ?: [];
+        $output = [];
+        $removing_detail_section = false;
+
+        foreach ($lines as $line) {
+            $plain = trim(self::plain_text((string) $line));
+
+            if ($plain === '') {
+                if (!$removing_detail_section) {
+                    $output[] = $line;
+                }
+                continue;
+            }
+
+            if (self::is_outline_heading($plain)) {
+                if (self::is_recipe_detail_heading($plain)) {
+                    $removing_detail_section = true;
+                    continue;
+                }
+
+                $removing_detail_section = false;
+            }
+
+            if ($removing_detail_section || self::is_recipe_meta_line($plain)) {
+                continue;
+            }
+
+            $output[] = $line;
+        }
+
+        return trim((string) preg_replace("/\n{3,}/", "\n\n", implode("\n", $output)));
     }
 
     private static function should_rebuild_simple_recipe_markup(string $content): bool

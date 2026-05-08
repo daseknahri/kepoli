@@ -61,6 +61,7 @@ const themeAssetStats = {
 const failures = [];
 const notes = [];
 const softNotes = [];
+let shortestSeededRecipe = null;
 
 const pageBySlug = new Map(pages.map((page) => [page.slug, page]));
 
@@ -124,6 +125,36 @@ function wordCount(value) {
     .replace(/<[^>]+>/g, ' ')
     .split(/\s+/)
     .filter(Boolean).length;
+}
+
+function estimatedSeededRecipePageWords(post) {
+  const categoryName = String(post.category || 'recipe').replace(/[-_]+/g, ' ');
+  const title = String(post.title || 'recipe');
+  const seededExpansion = [
+    `This recipe belongs to the ${categoryName} category and is written for home cooking, with clear steps, realistic ingredient guidance, and practical notes for adapting the dish to a normal kitchen.`,
+    `The recipe page adds context before the ingredient list so readers understand when the dish makes sense, how the timing works, and what parts of the preparation deserve attention before starting.`,
+    `The quick snapshot explains prep time, cooking time, total time, servings, and the kind of result readers should expect, without relying only on the short title or image caption.`,
+    `The ingredient guidance section explains the role of the main ingredients, what can be adjusted, what should not be rushed, and how to keep the result consistent even when brands or seasonal produce change.`,
+    `Before starting, the page reminds readers to read the method once, prepare the tools, check the ingredient temperatures, and use the timing as a guide rather than a strict promise.`,
+    `The success notes expand the recipe with texture cues, seasoning advice, serving rhythm, and small practical checks that help a home cook decide when the dish is ready.`,
+    `The common mistakes section warns against rushing, overcrowding, skipping tasting, using the wrong heat, or storing the finished food in a way that hurts texture and flavor.`,
+    `The serving and storage sections add original guidance for how to bring the dish to the table, how to use leftovers, how long to keep them, and when it is better to cook a fresh batch.`,
+    `The frequently asked questions answer realistic reader doubts about substitutions, timing, equipment, reheating, and whether the recipe can be prepared ahead without losing quality.`,
+    `Useful next links connect the recipe to nearby recipes and guides so the page remains helpful for readers who want alternatives, side dishes, or a better understanding of the technique.`,
+  ];
+
+  return wordCount(
+    [
+      title,
+      post.excerpt,
+      post.intro,
+      post.notes,
+      ...(post.takeaways || []),
+      ...(post.ingredients || []),
+      ...(post.steps || []),
+      ...seededExpansion,
+    ].join(' ')
+  );
 }
 
 function rejectPublicCopy(label, value, patterns) {
@@ -280,7 +311,10 @@ requireTextIncludes('newsletter anti-spam safeguards', newsletterMuPlugin, [
   /function kepoli_newsletter_is_rate_limited\(\): bool/,
   /set_transient\(\$key,\s*\$attempts \+ 1,\s*15 \* MINUTE_IN_SECONDS\)/,
   /kepoli_newsletter_is_rate_limited\(\)/,
+  /newsletter_consent/,
+  /_kepoli_newsletter_consent_at/,
   /kepoli_newsletter_redirect\(\$redirect_to,\s*'busy'\)/,
+  /kepoli_newsletter_redirect\(\$redirect_to,\s*'consent'\)/,
 ]);
 
 requireTextIncludes('production Apache performance config', `${wordpressDockerfile}\n${apachePerformanceConf}`, [
@@ -386,6 +420,8 @@ requireThemeIncludes('functions', 'inline newsletter CTA markup', [
   /admin-post\.php/,
   /kepoli_newsletter_signup/,
   /newsletter_email/,
+  /newsletter_consent/,
+  /kepoli_privacy_policy_url\(\)/,
   /newsletter-cta__form/,
   /newsletter-cta__input/,
   /kepoli_newsletter_nonce/,
@@ -408,6 +444,7 @@ requireTextIncludes('compact newsletter styling', themeFiles.get('style') ?? fs.
   /width:\s*min\(100%,\s*520px\)/,
   /\.newsletter-cta__form\s*\{/,
   /\.newsletter-cta__input\s*\{/,
+  /\.newsletter-cta__consent\s*\{/,
   /\.newsletter-cta__notice--success/,
 ]);
 
@@ -436,6 +473,7 @@ requireTextIncludes('newsletter storage MU plugin', newsletterMuPlugin, [
   /check_admin_referer\('kepoli_export_newsletter'\)/,
   /_kepoli_newsletter_email/,
   /_kepoli_newsletter_source_label/,
+  /_kepoli_newsletter_consent_text/,
 ]);
 
 requireThemeIncludes('functions', 'structured data image and entity details', [
@@ -778,6 +816,17 @@ for (const post of posts) {
     failures.push(`Recipe source data is too thin: ${post.slug} (${totalWords} words in source data)`);
   }
 
+  if (post.kind === 'recipe') {
+    const seededWords = estimatedSeededRecipePageWords(post);
+    if (!shortestSeededRecipe || seededWords < shortestSeededRecipe.words) {
+      shortestSeededRecipe = { slug: post.slug, words: seededWords };
+    }
+
+    if (seededWords < 400) {
+      failures.push(`Seeded recipe page is below the 400-word floor: ${post.slug} (${seededWords} estimated words)`);
+    }
+  }
+
   if (post.kind === 'article' && totalWords < 500) {
     failures.push(`Article source data is too thin: ${post.slug} (${totalWords} words in source data)`);
   }
@@ -803,6 +852,9 @@ notes.push(`Posts: ${posts.length}`);
 notes.push(`Pages: ${pages.length}`);
 notes.push(`Recipes: ${posts.filter((post) => post.kind === 'recipe').length}`);
 notes.push(`Articles: ${posts.filter((post) => post.kind === 'article').length}`);
+if (shortestSeededRecipe) {
+  notes.push(`Shortest seeded recipe page estimate: ${shortestSeededRecipe.slug} (${shortestSeededRecipe.words} words)`);
+}
 
 if (failures.length) {
   console.error(failures.join('\n'));

@@ -83,6 +83,22 @@
     return textarea ? String(textarea.value || '') : '';
   }
 
+  function setCurrentContentHtml(html) {
+    const editor = activeVisualEditor();
+    const textarea = getTextarea();
+
+    if (editor) {
+      editor.setContent(String(html || ''));
+      editor.nodeChanged();
+    }
+
+    if (textarea) {
+      textarea.value = String(html || '');
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      textarea.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
   function contentHasMarkup(value) {
     return /<[^>]+>/.test(String(value || ''));
   }
@@ -656,6 +672,102 @@
 
   function looksLikeRecipeMetaLine(line) {
     return /^(prep|preparation|rest|cook|cooking|bake|baking|total|servings?|serves|makes|yield|difficulty|timp|portii|nivel)\b/i.test(stripRecipeListMarker(line));
+  }
+
+  function isRecipeDetailHeading(line) {
+    const heading = normalizedHeading(stripRecipeListMarker(line).replace(/:$/, ''));
+    return ['recipe details', 'details', 'detalii despre reteta'].includes(heading);
+  }
+
+  function cleanupRecipeDetailBlockInEditor() {
+    if (currentKind() !== 'recipe') {
+      return false;
+    }
+
+    const html = currentContentHtml();
+    if (!html) {
+      return false;
+    }
+
+    if (!contentHasMarkup(html)) {
+      const output = [];
+      let removingDetails = false;
+
+      String(html).split(/\r\n|\r|\n/).forEach((line) => {
+        const plain = cleanText(line);
+        if (!plain) {
+          if (!removingDetails) {
+            output.push(line);
+          }
+          return;
+        }
+
+        if (isOutlineHeading(plain)) {
+          if (isRecipeDetailHeading(plain)) {
+            removingDetails = true;
+            return;
+          }
+
+          removingDetails = false;
+        }
+
+        if (removingDetails || looksLikeRecipeMetaLine(plain)) {
+          return;
+        }
+
+        output.push(line);
+      });
+
+      const cleanedText = output.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+      if (cleanedText && cleanedText !== html) {
+        setCurrentContentHtml(cleanedText);
+        return true;
+      }
+
+      return false;
+    }
+
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    let removingDetails = false;
+    let changed = false;
+
+    Array.from(container.childNodes).forEach((node) => {
+      if (node.nodeType !== Node.ELEMENT_NODE) {
+        return;
+      }
+
+      const element = node;
+      const tag = element.tagName.toLowerCase();
+      const plain = cleanText(element.textContent || '');
+      const headingLike = /^h[1-6]$/.test(tag) || (tag === 'p' && isOutlineHeading(plain));
+
+      if (headingLike) {
+        if (isRecipeDetailHeading(plain)) {
+          removingDetails = true;
+          element.remove();
+          changed = true;
+          return;
+        }
+
+        if (removingDetails) {
+          removingDetails = false;
+        }
+      }
+
+      if (removingDetails || ((tag === 'p' || tag === 'li') && looksLikeRecipeMetaLine(plain))) {
+        element.remove();
+        changed = true;
+      }
+    });
+
+    const cleanedHtml = container.innerHTML.trim();
+    if (changed && cleanedHtml && cleanedHtml !== html) {
+      setCurrentContentHtml(cleanedHtml);
+      return true;
+    }
+
+    return false;
   }
 
   function extractRecipeSectionFromLines(sectionName) {
@@ -1306,7 +1418,7 @@
     return data;
   }
 
-  function completeSetup() {
+  function completeSetup(cleanRecipeDetails = false) {
     setFieldIfEmpty('input[name="kepoli_seo_title"]', generatedSeoTitle());
     setFieldIfEmpty('textarea[name="kepoli_post_excerpt"]', generatedExcerpt());
     setFieldIfEmpty('textarea[name="kepoli_meta_description"]', generatedMetaDescription());
@@ -1326,6 +1438,9 @@
 
     if (currentKind() === 'recipe') {
       fillRecipeSchema(true);
+      if (cleanRecipeDetails) {
+        cleanupRecipeDetailBlockInEditor();
+      }
     }
   }
 
@@ -1341,7 +1456,7 @@
       return false;
     }
 
-    completeSetup();
+    completeSetup(false);
 
     if (showStatus) {
       setStatus('Empty fields were filled from the current title and content.');
@@ -1362,7 +1477,7 @@
 
     if (setupButton) {
       setupButton.addEventListener('click', () => {
-        completeSetup();
+        completeSetup(true);
         setStatus('Empty fields were filled automatically. Review the result before publishing.');
       });
     }
@@ -1392,10 +1507,11 @@
     if (recipeButton) {
       recipeButton.addEventListener('click', () => {
         const data = fillRecipeSchema(false);
+        const cleanedDetails = cleanupRecipeDetailBlockInEditor();
         const hasData = data.ingredients.length || data.steps.length || data.servings || data.prepMinutes || data.cookMinutes || data.totalMinutes;
         setStatus(
           hasData
-            ? 'Recipe schema was extracted from the content. Review ingredients, steps, and times.'
+            ? (cleanedDetails ? 'Recipe schema was extracted and duplicate recipe details were removed from the content.' : 'Recipe schema was extracted from the content. Review ingredients, steps, and times.')
             : 'Not enough recipe signals were found. Use Ingredients and Method headings, or fill the fields manually.'
         );
       });
@@ -2249,7 +2365,7 @@
     }
 
     button.addEventListener('click', () => {
-      completeSetup();
+      completeSetup(true);
       setStatus('Final empty fields were filled automatically. Review the result before publishing.');
       renderChecklist();
       renderPublishCompanion();

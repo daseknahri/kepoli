@@ -2688,6 +2688,7 @@ function kepoli_newsletter_cta(string $class = ''): string
 {
     $classes = trim('newsletter-cta ' . $class);
     $email_field_id = 'newsletter-email-' . wp_generate_uuid4();
+    $consent_field_id = 'newsletter-consent-' . wp_generate_uuid4();
     $honeypot_id = 'newsletter-website-' . wp_generate_uuid4();
     $current_url = kepoli_current_url();
     $contact_email = trim((string) kepoli_profile_value(['brand', 'site_email'], kepoli_env('SITE_EMAIL', 'contact@example.com')));
@@ -2711,6 +2712,9 @@ function kepoli_newsletter_cta(string $class = ''): string
     } elseif ($status === 'invalid') {
         $notice_message = kepoli_ui_text('Te rog verifica adresa de email si incearca din nou.', 'Please check the email address and try again.');
         $notice_class = 'newsletter-cta__notice newsletter-cta__notice--error';
+    } elseif ($status === 'consent') {
+        $notice_message = kepoli_ui_text('Trebuie sa confirmi acordul pentru a primi newsletterul.', 'Please confirm your consent to receive the newsletter.');
+        $notice_class = 'newsletter-cta__notice newsletter-cta__notice--error';
     } elseif ($status === 'error') {
         $notice_message = kepoli_ui_text('Nu am putut salva inscrierea acum. Mai incearca o data.', 'The signup could not be saved right now. Please try again.');
         $notice_class = 'newsletter-cta__notice newsletter-cta__notice--error';
@@ -2726,8 +2730,21 @@ function kepoli_newsletter_cta(string $class = ''): string
         );
     }
 
+    $consent_markup = sprintf(
+        '<label class="newsletter-cta__consent" for="%1$s"><input id="%1$s" name="newsletter_consent" type="checkbox" value="1" required><span>%2$s</span></label>',
+        esc_attr($consent_field_id),
+        sprintf(
+            kepoli_ui_text(
+                'Sunt de acord sa primesc emailuri de la %1$s si am citit %2$s.',
+                'I agree to receive email updates from %1$s and I have read the %2$s.'
+            ),
+            esc_html(kepoli_site_name()),
+            '<a href="' . esc_url(kepoli_privacy_policy_url()) . '">' . esc_html(kepoli_ui_text('politica de confidentialitate', 'privacy policy')) . '</a>'
+        )
+    );
+
     return sprintf(
-        '<section class="%1$s" aria-labelledby="newsletter-title"><div class="newsletter-cta__inner"><p class="eyebrow">%2$s</p><h2 id="newsletter-title" class="newsletter-cta__title">%3$s</h2><p class="newsletter-cta__copy">%4$s</p>%5$s<form class="newsletter-cta__form" action="%6$s" method="post"><input type="hidden" name="action" value="kepoli_newsletter_signup"><input type="hidden" name="redirect_to" value="%7$s"><input type="hidden" name="source_label" value="%8$s"><input type="hidden" name="source_url" value="%7$s">%9$s<label class="screen-reader-text" for="%10$s">%11$s</label><input class="newsletter-cta__input" id="%10$s" name="newsletter_email" type="email" inputmode="email" autocomplete="email" placeholder="%12$s" maxlength="190" required><button class="newsletter-cta__submit" type="submit">%13$s</button><div class="newsletter-cta__honeypot" aria-hidden="true"><label for="%14$s">%15$s</label><input id="%14$s" name="website" type="text" tabindex="-1" autocomplete="off"></div></form><p class="newsletter-cta__fine-print">%16$s <a href="mailto:%17$s">%17$s</a>.</p></div></section>',
+        '<section class="%1$s" aria-labelledby="newsletter-title"><div class="newsletter-cta__inner"><p class="eyebrow">%2$s</p><h2 id="newsletter-title" class="newsletter-cta__title">%3$s</h2><p class="newsletter-cta__copy">%4$s</p>%5$s<form class="newsletter-cta__form" action="%6$s" method="post"><input type="hidden" name="action" value="kepoli_newsletter_signup"><input type="hidden" name="redirect_to" value="%7$s"><input type="hidden" name="source_label" value="%8$s"><input type="hidden" name="source_url" value="%7$s">%9$s<label class="screen-reader-text" for="%10$s">%11$s</label><input class="newsletter-cta__input" id="%10$s" name="newsletter_email" type="email" inputmode="email" autocomplete="email" placeholder="%12$s" maxlength="190" required><button class="newsletter-cta__submit" type="submit">%13$s</button>%14$s<div class="newsletter-cta__honeypot" aria-hidden="true"><label for="%15$s">%16$s</label><input id="%15$s" name="website" type="text" tabindex="-1" autocomplete="off"></div></form><p class="newsletter-cta__fine-print">%17$s <a href="mailto:%18$s">%18$s</a>.</p></div></section>',
         esc_attr($classes),
         esc_html(kepoli_ui_text('Newsletter', 'Newsletter')),
         esc_html(kepoli_ui_text('Primeste retetele noi pe email', 'Get new recipes by email')),
@@ -2741,6 +2758,7 @@ function kepoli_newsletter_cta(string $class = ''): string
         esc_html(kepoli_ui_text('Adresa de email', 'Email address')),
         esc_attr(kepoli_ui_text('Adresa ta de email', 'Your email address')),
         esc_html(kepoli_ui_text('Aboneaza-ma', 'Subscribe')),
+        $consent_markup,
         esc_attr($honeypot_id),
         esc_html(kepoli_ui_text('Lasa gol acest camp', 'Leave this field empty')),
         esc_html(kepoli_ui_text('Pentru retragere sau corecturi, ne poti scrie la', 'For unsubscribe requests or corrections, write to us at')),

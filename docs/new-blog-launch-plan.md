@@ -4,6 +4,8 @@ Use this checklist every time you want to start a new food blog from this repo.
 
 This is the short operational plan. For deeper detail, see `docs/replicate-food-blog.md`.
 
+If the new site is a Facebook-first trending/lifestyle monetization site instead of a food blog, follow `docs/trending-site-launch-plan.md` and use `docs/codex-trending-site-prompt.md`.
+
 If you want to start a fresh Codex conversation for a new site, use `docs/codex-new-site-prompt.md`.
 
 ## 1. Decide The New Site Profile

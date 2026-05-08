@@ -2703,6 +2703,29 @@ h3 {
   transform: translateY(-1px);
 }
 
+.newsletter-cta__consent {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--muted);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.newsletter-cta__consent input {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 0.2em 0 0;
+  accent-color: var(--olive);
+}
+
+.newsletter-cta__consent a {
+  font-weight: 700;
+}
+
 .newsletter-cta__notice {
   margin: 0;
   padding: 10px 12px;
