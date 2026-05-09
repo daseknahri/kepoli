@@ -77,6 +77,8 @@ Before submitting to AdSense:
 
 The `kepoli-author-tools` plugin switches posts to the classic editor for a simpler title/content workflow. It adds `Pauza`, `2 parti`, and `3 parti` toolbar buttons for native WordPress post pagination, plus a post setup box for post type, excerpt, meta description, related slugs, featured-image metadata, and recipe structured data. The setup box can prefill excerpts, meta descriptions, internal-link slugs, and image metadata from the current post, and empty fields receive sensible defaults on save. The Posts list also shows type/readiness columns for quick editorial checks. See `docs/author-workflow.md` for the exact writing flow.
 
+Optional OpenRouter AI repair can be enabled for messy recipe extraction only. Keep `AI_EXTRACTION_ENABLE=0` unless `AI_EXTRACTION_API_KEY` is set in Coolify; when enabled, the plugin still parses locally first and only asks AI to repair incomplete recipe schema fields.
+
 ## Media
 
 The current repo includes the Kepoli SVG logo assets. If you want to use the bitmap images instead, place them at:

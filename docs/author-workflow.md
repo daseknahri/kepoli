@@ -31,6 +31,7 @@ This repo includes a small `kepoli-author-tools` plugin for writing posts. The p
 - The plugin also checks whether the post language stays coherent across title, content, meta description, and slug. If WordPress is still using the default title slug, it can shorten and clean it automatically on save.
 - When GPT content comes in with messy heading levels, the plugin now normalizes the article structure on save so the content starts with `H2` sections and keeps sub-sections in a simpler `H2/H3` pattern.
 - For recipe posts, if there is no FAQ section yet, the plugin can add a small `Intrebari frecvente` block on save using only recipe data that already exists, such as servings, times, and any storage notes already written in the post.
+- The `Extrage schema reteta` button now runs deterministic parsing first, then can use an optional OpenRouter AI repair pass when the parsed recipe schema is incomplete. This AI pass is disabled by default and never runs unless `AI_EXTRACTION_ENABLE=1` and an API key are set.
 - Seeded launch posts also read prefixed image metadata from `content/image-plan.json`, so the editor can show ready-made alt text, title, caption, and description even before the featured image is uploaded.
 - The `Writing tools` box stays compact and focuses on two quick-start buttons: `Structura reteta` and `Structura articol`.
 - A side box called `Publish helper` stays near Publish with one main action, `Pregateste pentru publicare`, plus optional details for category, tags, and the short review list.
@@ -52,6 +53,30 @@ This repo includes a small `kepoli-author-tools` plugin for writing posts. The p
 12. When you are almost done, use `Pregateste pentru publicare` near Publish for one last automatic pass, then open `Vezi detalii` only if you want the category, tags, or the short review list.
 13. Review the generated fields and inserted page breaks before publishing. If you publish with missing essentials, the plugin will show a final warning.
 14. If the article still has no internal links in the body, saving the post can add a small automatic `Citeste si` paragraph near the most relevant paragraph. Keep it if it fits naturally, or replace it with more specific manual links.
+
+## Optional AI Extraction Repair
+
+The plugin does not need AI for normal posting. AI is only a fallback for messy recipes where the local parser cannot confidently fill ingredients, steps, servings, or timing.
+
+To enable OpenRouter repair in Coolify:
+
+```env
+AI_EXTRACTION_ENABLE=1
+AI_EXTRACTION_PROVIDER=openrouter
+AI_EXTRACTION_API_KEY=your-openrouter-token
+AI_EXTRACTION_MODEL=inclusionai/ling-2.6-1t:free
+AI_EXTRACTION_TIMEOUT_SECONDS=14
+AI_EXTRACTION_MAX_CHARS=9000
+AI_EXTRACTION_MAX_TOKENS=1400
+```
+
+Recommended workflow:
+
+1. Paste only the title and clean recipe content.
+2. Choose `Reteta`.
+3. Click `Extrage schema reteta`.
+4. If local parsing finds gaps, the plugin asks OpenRouter to repair only the schema fields.
+5. Review the boxes before publishing; AI output is a helper, not an automatic publish decision.
 
 ## Image Workflow For Seeded Posts
 

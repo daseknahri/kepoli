@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Food Blog Author Tools
  * Description: Simplifies the post editor with split tools, excerpt and SEO helpers, internal-link suggestions, and featured-image metadata.
- * Version: 1.8.33
+ * Version: 1.8.34
  * Author: Site tools
  * Text Domain: kepoli-author-tools
  */
@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class Kepoli_Author_Tools
 {
-    private const VERSION = '1.8.33';
+    private const VERSION = '1.8.34';
     private const AUTO_INTERNAL_LINKS_START = '<!-- kepoli-auto-internal-links:start -->';
     private const AUTO_INTERNAL_LINKS_END = '<!-- kepoli-auto-internal-links:end -->';
     private const AUTO_FAQ_START = '<!-- kepoli-auto-faq:start -->';
@@ -195,6 +195,46 @@ final class Kepoli_Author_Tools
         return $is_english ? $en : $ro;
     }
 
+    private static function env(string $key, string $default = ''): string
+    {
+        $value = getenv($key);
+        if ($value === false && isset($_ENV[$key])) {
+            $value = $_ENV[$key];
+        }
+        if ($value === false && isset($_SERVER[$key])) {
+            $value = $_SERVER[$key];
+        }
+
+        $value = is_scalar($value) ? trim((string) $value) : '';
+        return $value !== '' ? $value : $default;
+    }
+
+    private static function env_bool(string $key, bool $default = false): bool
+    {
+        $value = strtolower(self::env($key, $default ? '1' : '0'));
+        return in_array($value, ['1', 'true', 'yes', 'on'], true);
+    }
+
+    private static function env_int(string $key, int $default, int $min, int $max): int
+    {
+        $value = (int) self::env($key, (string) $default);
+        return max($min, min($max, $value));
+    }
+
+    private static function ai_extraction_enabled(): bool
+    {
+        if (!self::env_bool('AI_EXTRACTION_ENABLE', false)) {
+            return false;
+        }
+
+        return self::openrouter_api_key() !== '';
+    }
+
+    private static function openrouter_api_key(): string
+    {
+        return self::env('AI_EXTRACTION_API_KEY', self::env('OPENROUTER_API_KEY'));
+    }
+
     private static function site_name(): string
     {
         $name = trim((string) self::profile_value(['brand', 'name'], ''));
@@ -226,6 +266,7 @@ final class Kepoli_Author_Tools
         add_filter('use_block_editor_for_post_type', [self::class, 'use_classic_editor_for_posts'], 10, 2);
         add_filter('mce_external_plugins', [self::class, 'register_tinymce_plugin']);
         add_filter('mce_buttons', [self::class, 'register_tinymce_buttons']);
+        add_action('wp_ajax_kepoli_author_tools_ai_extract', [self::class, 'ajax_ai_extract']);
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin_assets']);
         add_action('add_meta_boxes_post', [self::class, 'add_publish_companion_box']);
         add_action('add_meta_boxes_post', [self::class, 'add_writer_guide_box']);
@@ -293,6 +334,10 @@ final class Kepoli_Author_Tools
 
             wp_localize_script('kepoli-author-tools-admin', 'kepoliAuthorTools', [
                 'currentPostId' => self::current_post_id(),
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'aiNonce' => wp_create_nonce('kepoli_author_tools_ai'),
+                'aiExtractionEnabled' => self::ai_extraction_enabled(),
+                'aiExtractionModel' => self::env('AI_EXTRACTION_MODEL', 'inclusionai/ling-2.6-1t:free'),
                 'siteName' => self::site_name(),
                 'isEnglish' => self::public_is_english(),
                 'adminIsEnglish' => self::admin_is_english(),
@@ -316,6 +361,213 @@ final class Kepoli_Author_Tools
                 ],
             ]);
         }
+    }
+
+    public static function ajax_ai_extract(): void
+    {
+        check_ajax_referer('kepoli_author_tools_ai', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error(['message' => self::ui_text('Nu ai permisiunea pentru aceasta actiune.', 'You do not have permission to use this tool.')], 403);
+        }
+
+        if (!self::ai_extraction_enabled()) {
+            wp_send_json_error(['message' => self::ui_text('Extractia AI nu este activata.', 'AI extraction is not enabled.')], 400);
+        }
+
+        $kind = isset($_POST['kind']) ? sanitize_key(wp_unslash((string) $_POST['kind'])) : 'recipe';
+        if (!in_array($kind, ['recipe', 'article'], true)) {
+            $kind = 'recipe';
+        }
+
+        $title = isset($_POST['title']) ? sanitize_text_field(wp_unslash((string) $_POST['title'])) : '';
+        $html = isset($_POST['content_html']) ? (string) wp_unslash($_POST['content_html']) : '';
+        $text = isset($_POST['content_text']) ? (string) wp_unslash($_POST['content_text']) : '';
+        $source = self::ai_source_text($html !== '' ? $html : $text);
+
+        if ($title === '' && strlen($source) < 80) {
+            wp_send_json_error(['message' => self::ui_text('Adauga mai intai titlul si continutul retetei.', 'Add the recipe title and content first.')], 400);
+        }
+
+        $result = self::openrouter_extract_post($kind, $title, $source);
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()], 502);
+        }
+
+        wp_send_json_success($result);
+    }
+
+    private static function ai_source_text(string $value): string
+    {
+        $value = (string) preg_replace('/<(br|\/p|\/li|\/h[1-6]|\/div|\/section)\b[^>]*>/i', "\n", $value);
+        $value = wp_strip_all_tags($value);
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, get_bloginfo('charset') ?: 'UTF-8');
+        $value = (string) preg_replace("/[ \t]+/", ' ', $value);
+        $value = (string) preg_replace("/\n{3,}/", "\n\n", $value);
+        $value = trim($value);
+
+        return mb_substr($value, 0, self::env_int('AI_EXTRACTION_MAX_CHARS', 9000, 1000, 20000));
+    }
+
+    private static function openrouter_extract_post(string $kind, string $title, string $source)
+    {
+        $model = self::env('AI_EXTRACTION_MODEL', 'inclusionai/ling-2.6-1t:free');
+        $timeout = self::env_int('AI_EXTRACTION_TIMEOUT_SECONDS', 14, 4, 30);
+        $public_locale = self::public_locale();
+        $language = self::public_is_english() ? 'English' : 'Romanian';
+        $schema = $kind === 'recipe'
+            ? '{"servings":"4 servings","prepMinutes":15,"cookMinutes":30,"totalMinutes":45,"ingredients":["one clean ingredient per line"],"steps":["one clean cooking step per line"]}'
+            : '{"summary":"short factual summary","metaDescription":"SEO description under 155 characters","tags":["short tag"]}';
+
+        $prompt = "Extract structured fields from the post below. Return ONLY valid JSON, no markdown.\n"
+            . "Public language: {$language} ({$public_locale}). Keep extracted text in the post language.\n"
+            . "Post type: {$kind}.\n"
+            . "Required JSON shape: {$schema}\n"
+            . "Rules: do not invent ingredients, do not add HTML, keep steps in cooking order, use integer minutes, infer totalMinutes only from prep+cook or explicit total, keep arrays clean and deduplicated.\n\n"
+            . "Title: {$title}\n\nContent:\n{$source}";
+
+        $response = wp_remote_post('https://openrouter.ai/api/v1/chat/completions', [
+            'timeout' => $timeout,
+            'headers' => [
+                'Authorization' => 'Bearer ' . self::openrouter_api_key(),
+                'Content-Type' => 'application/json',
+                'HTTP-Referer' => home_url('/'),
+                'X-Title' => self::site_name(),
+            ],
+            'body' => wp_json_encode([
+                'model' => $model,
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'You are a strict food-blog extraction engine. You never write prose outside JSON.',
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $prompt,
+                    ],
+                ],
+                'temperature' => 0.1,
+                'max_tokens' => self::env_int('AI_EXTRACTION_MAX_TOKENS', 1400, 300, 3000),
+                'response_format' => ['type' => 'json_object'],
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+        ]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $status = (int) wp_remote_retrieve_response_code($response);
+        $body = (string) wp_remote_retrieve_body($response);
+        if ($status < 200 || $status >= 300) {
+            return new WP_Error('openrouter_http_error', sprintf(self::ui_text('OpenRouter a raspuns cu eroarea HTTP %d.', 'OpenRouter returned HTTP error %d.'), $status));
+        }
+
+        $decoded = json_decode($body, true);
+        $content = is_array($decoded) ? (string) ($decoded['choices'][0]['message']['content'] ?? '') : '';
+        $payload = self::decode_ai_json_object($content);
+        if (!is_array($payload)) {
+            return new WP_Error('openrouter_bad_json', self::ui_text('Modelul AI nu a returnat JSON valid.', 'The AI model did not return valid JSON.'));
+        }
+
+        return $kind === 'recipe'
+            ? ['recipe' => self::sanitize_ai_recipe_payload($payload)]
+            : ['article' => self::sanitize_ai_article_payload($payload)];
+    }
+
+    private static function decode_ai_json_object(string $content): ?array
+    {
+        $content = trim($content);
+        $content = (string) preg_replace('/^```(?:json)?\s*/i', '', $content);
+        $content = (string) preg_replace('/\s*```$/', '', $content);
+
+        $decoded = json_decode($content, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        if (preg_match('/\{[\s\S]*\}/', $content, $match)) {
+            $decoded = json_decode($match[0], true);
+            return is_array($decoded) ? $decoded : null;
+        }
+
+        return null;
+    }
+
+    private static function sanitize_ai_recipe_payload(array $payload): array
+    {
+        $prep = self::positive_minutes($payload['prepMinutes'] ?? 0);
+        $cook = self::positive_minutes($payload['cookMinutes'] ?? 0);
+        $total = self::positive_minutes($payload['totalMinutes'] ?? 0);
+        if ($total === 0 && ($prep > 0 || $cook > 0)) {
+            $total = $prep + $cook;
+        }
+
+        return [
+            'servings' => self::clean_ai_text($payload['servings'] ?? ''),
+            'prepMinutes' => $prep > 0 ? (string) $prep : '',
+            'cookMinutes' => $cook > 0 ? (string) $cook : '',
+            'totalMinutes' => $total > 0 ? (string) $total : '',
+            'ingredients' => self::clean_ai_list($payload['ingredients'] ?? [], 50),
+            'steps' => self::clean_ai_list($payload['steps'] ?? [], 35),
+        ];
+    }
+
+    private static function sanitize_ai_article_payload(array $payload): array
+    {
+        return [
+            'summary' => self::clean_ai_text($payload['summary'] ?? ''),
+            'metaDescription' => mb_substr(self::clean_ai_text($payload['metaDescription'] ?? ''), 0, 170),
+            'tags' => self::clean_ai_list($payload['tags'] ?? [], 8),
+        ];
+    }
+
+    private static function positive_minutes($value): int
+    {
+        if (is_string($value) && preg_match('/(\d{1,4})/', $value, $match)) {
+            $value = $match[1];
+        }
+
+        $minutes = (int) $value;
+        return $minutes > 0 && $minutes <= 1440 ? $minutes : 0;
+    }
+
+    private static function clean_ai_list($items, int $limit): array
+    {
+        if (is_string($items)) {
+            $items = preg_split('/\r\n|\r|\n/', $items) ?: [];
+        }
+        if (!is_array($items)) {
+            return [];
+        }
+
+        $clean = [];
+        foreach ($items as $item) {
+            $item = self::clean_ai_text($item);
+            $item = (string) preg_replace('/^\s*(?:[-*]|\d+[.)])\s*/', '', $item);
+            if ($item === '' || in_array($item, $clean, true)) {
+                continue;
+            }
+
+            $clean[] = mb_substr($item, 0, 220);
+            if (count($clean) >= $limit) {
+                break;
+            }
+        }
+
+        return $clean;
+    }
+
+    private static function clean_ai_text($value): string
+    {
+        if (is_array($value) || is_object($value)) {
+            return '';
+        }
+
+        $value = wp_strip_all_tags((string) $value);
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, get_bloginfo('charset') ?: 'UTF-8');
+        $value = (string) preg_replace('/\s+/', ' ', $value);
+
+        return trim(sanitize_text_field($value));
     }
 
     public static function add_publish_companion_box(): void

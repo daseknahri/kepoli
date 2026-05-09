@@ -5,6 +5,7 @@
   const ADMIN_IS_ENGLISH = CONFIG.adminIsEnglish !== undefined ? !!CONFIG.adminIsEnglish : true;
   const PUBLIC_IS_ENGLISH = CONFIG.publicIsEnglish !== undefined ? !!CONFIG.publicIsEnglish : !!CONFIG.isEnglish;
   const GUIDES_SLUG = String(CONFIG.guidesSlug || '').trim().toLowerCase();
+  const AI_EXTRACTION_ENABLED = !!CONFIG.aiExtractionEnabled && !!CONFIG.ajaxUrl && !!CONFIG.aiNonce;
 
   function contentText(ro, en) {
     return PUBLIC_IS_ENGLISH ? en : ro;
@@ -1403,6 +1404,14 @@
 
   function fillRecipeSchema(extractOnlyIfEmpty) {
     const data = extractRecipeMetaFromTextRobust();
+    applyRecipeSchemaData(data, extractOnlyIfEmpty);
+
+    return data;
+  }
+
+  function applyRecipeSchemaData(data, extractOnlyIfEmpty) {
+    data.ingredients = Array.isArray(data.ingredients) ? data.ingredients : [];
+    data.steps = Array.isArray(data.steps) ? data.steps : [];
     const setter = extractOnlyIfEmpty ? setFieldIfEmpty : setField;
     if (!data.totalMinutes && (data.prepMinutes || data.cookMinutes)) {
       data.totalMinutes = String((Number.parseInt(data.prepMinutes || '0', 10) || 0) + (Number.parseInt(data.cookMinutes || '0', 10) || 0));
@@ -1414,8 +1423,74 @@
     setter('input[name="kepoli_recipe_total_minutes"]', data.totalMinutes);
     setter('textarea[name="kepoli_recipe_ingredients"]', data.ingredients.join('\n'));
     setter('textarea[name="kepoli_recipe_steps"]', data.steps.join('\n'));
+  }
 
-    return data;
+  function hasStrongRecipeSchemaData(data) {
+    return !!(
+      data
+      && data.ingredients
+      && data.ingredients.length >= 3
+      && data.steps
+      && data.steps.length >= 2
+      && data.servings
+      && (data.prepMinutes || data.cookMinutes || data.totalMinutes)
+    );
+  }
+
+  function normalizeAiRecipeData(data) {
+    const recipe = data && data.recipe ? data.recipe : data;
+    if (!recipe || typeof recipe !== 'object') {
+      return null;
+    }
+
+    const list = (items) => {
+      if (Array.isArray(items)) {
+        return items.map((item) => cleanText(String(item || ''))).filter(Boolean);
+      }
+
+      return String(items || '')
+        .split(/\r\n|\r|\n/)
+        .map((item) => cleanText(item))
+        .filter(Boolean);
+    };
+
+    return {
+      servings: cleanText(recipe.servings || ''),
+      prepMinutes: String(recipe.prepMinutes || '').replace(/[^0-9]/g, ''),
+      cookMinutes: String(recipe.cookMinutes || '').replace(/[^0-9]/g, ''),
+      totalMinutes: String(recipe.totalMinutes || '').replace(/[^0-9]/g, ''),
+      ingredients: list(recipe.ingredients),
+      steps: list(recipe.steps)
+    };
+  }
+
+  function requestAiRecipeExtraction() {
+    if (!AI_EXTRACTION_ENABLED || currentKind() !== 'recipe') {
+      return Promise.resolve(null);
+    }
+
+    const payload = new window.FormData();
+    payload.append('action', 'kepoli_author_tools_ai_extract');
+    payload.append('nonce', CONFIG.aiNonce);
+    payload.append('kind', 'recipe');
+    payload.append('title', currentTitle());
+    payload.append('content_text', currentContentText());
+    payload.append('content_html', currentContentHtml());
+
+    return window.fetch(CONFIG.ajaxUrl, {
+      method: 'POST',
+      credentials: 'same-origin',
+      body: payload
+    })
+      .then((response) => response.json())
+      .then((response) => {
+        if (!response || !response.success) {
+          const message = response && response.data && response.data.message ? response.data.message : 'AI extraction failed.';
+          throw new Error(message);
+        }
+
+        return normalizeAiRecipeData(response.data);
+      });
   }
 
   function completeSetup(cleanRecipeDetails = false) {
@@ -1505,15 +1580,35 @@
     }
 
     if (recipeButton) {
-      recipeButton.addEventListener('click', () => {
+      recipeButton.addEventListener('click', async () => {
         const data = fillRecipeSchema(false);
         const cleanedDetails = cleanupRecipeDetailBlockInEditor();
         const hasData = data.ingredients.length || data.steps.length || data.servings || data.prepMinutes || data.cookMinutes || data.totalMinutes;
-        setStatus(
-          hasData
-            ? (cleanedDetails ? 'Recipe schema was extracted and duplicate recipe details were removed from the content.' : 'Recipe schema was extracted from the content. Review ingredients, steps, and times.')
-            : 'Not enough recipe signals were found. Use Ingredients and Method headings, or fill the fields manually.'
-        );
+        if (hasStrongRecipeSchemaData(data) || !AI_EXTRACTION_ENABLED) {
+          setStatus(
+            hasData
+              ? (cleanedDetails ? 'Recipe schema was extracted and duplicate recipe details were removed from the content.' : 'Recipe schema was extracted from the content. Review ingredients, steps, and times.')
+              : 'Not enough recipe signals were found. Use Ingredients and Method headings, or fill the fields manually.'
+          );
+          return;
+        }
+
+        setStatus('Basic extraction found gaps. Asking AI to repair the recipe schema...');
+        recipeButton.disabled = true;
+        try {
+          const aiData = await requestAiRecipeExtraction();
+          if (aiData && hasStrongRecipeSchemaData(aiData)) {
+            applyRecipeSchemaData(aiData, false);
+            cleanupRecipeDetailBlockInEditor();
+            setStatus('AI repaired the recipe schema. Review ingredients, steps, and times before publishing.');
+          } else {
+            setStatus('AI answered, but the recipe schema still needs manual review.');
+          }
+        } catch (error) {
+          setStatus(`AI extraction could not run: ${error.message || 'unknown error'}`);
+        } finally {
+          recipeButton.disabled = false;
+        }
       });
     }
 
