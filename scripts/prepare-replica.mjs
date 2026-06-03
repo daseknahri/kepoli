@@ -611,10 +611,17 @@ function updatePublicIdentityFiles() {
   const files = [
     'README.md',
     'docs/adsense-readiness.md',
+    'docs/ai-content-growth-strategy.md',
     'docs/author-workflow.md',
+    'docs/codex-trending-site-prompt.md',
+    'docs/content-machine-extraction-map.md',
     'docs/coolify.md',
+    'docs/future-session-handoff.md',
+    'docs/histats-readiness.md',
     'docs/image-generation.md',
+    'docs/project-status.md',
     'docs/replicate-food-blog.md',
+    'docs/trending-site-launch-plan.md',
     'content/pages.json',
     'seed/bin/bootstrap.sh',
   ];

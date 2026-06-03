@@ -7,7 +7,7 @@ Replace the placeholder values before sending.
 ```text
 We are creating a new trending/lifestyle blog from this repo.
 
-This is not the normal food-blog clone. The goal is a Facebook-first site for useful viral articles and instant ad-network monetization. Kepoli must stay AdSense-clean, and KuchniaTwist remains the existing food monetization test.
+This is not the normal food-blog clone. The goal is a Facebook-first site for useful viral articles and instant ad-network monetization. Keep AdSense-first sites separate from this experiment, and keep any existing monetization test site separate too.
 
 Your job is to follow the repo workflow from start to finish until the new trending site is structurally ready for deployment and first content testing.
 
@@ -38,7 +38,7 @@ Rules:
 - Build a real branded publication, not a fake-news or scammy arbitrage site.
 - Do not add adult/scam/fake-button monetization patterns.
 - Keep AdSense disabled.
-- Use the KuchniaTwist-style environment-gated ad model for instant networks.
+- Use the environment-gated ad model for instant networks.
 - Continue until the site is structurally ready, validated, and the next manual step is clearly identified.
 
 Execution standard:
@@ -56,7 +56,7 @@ Execution standard:
 Definition of done:
 - `site-brief.json` is filled or updated.
 - The site profile is unique.
-- The category/content model is trending/lifestyle, not copied from Kepoli or KuchniaTwist.
+- The category/content model is trending/lifestyle, not copied from an existing food site.
 - Public pages are authentic.
 - AdSense is disabled.
 - Instant-network ad path is documented or configured.
@@ -76,6 +76,5 @@ Writer: [NAME]
 Site email: [EMAIL]
 Project slug: [SLUG]
 
-Read and follow docs/trending-site-launch-plan.md plus the normal duplicate workflow. Keep admin English, keep AdSense disabled, use instant-network monetization like KuchniaTwist, create authentic page copy and trending/lifestyle categories, run validation, and continue until the new site is ready for deployment review or clearly blocked by missing assets/content.
+Read and follow docs/trending-site-launch-plan.md plus the normal duplicate workflow. Keep admin English, keep AdSense disabled, use environment-gated instant-network monetization, create authentic page copy and trending/lifestyle categories, run validation, and continue until the new site is ready for deployment review or clearly blocked by missing assets/content.
 ```
-

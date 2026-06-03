@@ -1,8 +1,8 @@
 # Trending Site Launch Plan
 
-Use this plan when creating a new viral/trending blog from the same engine. This is not the normal food-blog path. The goal is a Facebook-first content site that can use instant ad networks like KuchniaTwist, while still keeping the operation controlled, measurable, and reusable.
+Use this plan when creating a new viral/trending blog from the same engine. This is not the normal food-blog path. The goal is a Facebook-first content site that can use instant ad networks, while still keeping the operation controlled, measurable, and reusable.
 
-Kepoli remains AdSense-clean. KuchniaTwist remains the food monetization test. A trending site should usually be a third repo/site so it can use a broader identity without damaging either existing brand.
+AdSense-first sites should remain clean. Existing monetization test sites should remain separate. A trending site should usually be its own repo/site so it can use a broader identity without damaging another brand.
 
 ## 1. Pick The Site Positioning
 
@@ -160,7 +160,7 @@ Rules:
 
 ## 7. Monetization Strategy
 
-Use the KuchniaTwist ad model, not the Kepoli AdSense model.
+Use the instant-network ad model, not the AdSense-first model.
 
 Default env direction:
 
@@ -204,7 +204,7 @@ Test ladder:
 
 ## 8. Analytics And Measurement
 
-Install Histats from day one, as we did for KuchniaTwist and Kepoli.
+Install Histats from day one, as used on other traffic-test sites.
 
 Track:
 
@@ -365,4 +365,3 @@ If we want the easiest first version, build an English site around:
 `Useful everyday tips for food, home, money, and simple health habits for adults over 40.`
 
 This is broad enough for trending Facebook posts, but still coherent enough to look like a real publication.
-

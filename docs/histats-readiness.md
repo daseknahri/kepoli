@@ -6,13 +6,15 @@ This site can use Histats as a lightweight live-traffic counter while monetizati
 
 Use a hidden or invisible Histats counter. Avoid visible badges because they make the site look older and less polished.
 
-Coolify env:
+Coolify env after the hidden counter code is ready:
 
 ```env
 HISTATS_ENABLE=1
 HISTATS_CODE_BASE64=
 HISTATS_EXCLUDE_ADMINS=1
 ```
+
+Keep `HISTATS_ENABLE=0` until `HISTATS_CODE_BASE64` contains the real encoded snippet.
 
 `HISTATS_EXCLUDE_ADMINS=1` keeps logged-in admins out of the counter, so use a private/incognito browser when testing live hits.
 

@@ -2,7 +2,7 @@
 
 Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and kitchen articles. This repo contains the live site stack, content seed, custom theme, and the clone tooling used to launch future sibling food blogs from the same engine.
 
-For repeatable cloning and launch steps, use `docs/new-blog-launch-plan.md`. For deeper clone details, use `docs/replicate-food-blog.md`. For a fresh Codex handoff prompt, use `docs/codex-new-site-prompt.md`. For current operating status, use `docs/project-status.md`. The most robust path is: create `site-brief.json` with `node scripts/create-site-brief.mjs ... --write`, run `node scripts/start-new-blog.mjs --brief site-brief.json --write`, then run `node scripts/validate-new-blog.mjs --brief site-brief.json`. When changing the shared engine itself, run `node scripts/audit-engine-readiness.mjs` before using it for another clone.
+For repeatable cloning and launch steps, use `docs/new-blog-launch-plan.md`. For deeper clone details, use `docs/replicate-food-blog.md`. For a fresh Codex handoff prompt, use `docs/codex-new-site-prompt.md`. For current operating status, use `docs/project-status.md`; for a future-session continuation guide, use `docs/future-session-handoff.md`; for the authoring extraction pipeline, use `docs/content-machine-extraction-map.md`. The most robust path is: create `site-brief.json` with `node scripts/create-site-brief.mjs ... --write`, run `node scripts/start-new-blog.mjs --brief site-brief.json --write`, then run `node scripts/validate-new-blog.mjs --brief site-brief.json`. When changing the shared engine itself, run `node scripts/audit-engine-readiness.mjs` before using it for another clone.
 
 ## What This Repo Builds
 
