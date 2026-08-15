@@ -1,19 +1,19 @@
 {
   "brand": {
     "name": "Kepoli",
-    "tagline": "Retete romanesti si articole de bucatarie pentru acasa",
-    "description": "Kepoli publica retete romanesti pentru gatit acasa, articole culinare clare si ghiduri practice despre ingrediente, organizare si servire.",
+    "tagline": "Stories, recipes, and practical kitchen tips for home cooks.",
+    "description": "Kepoli shares food stories, tested recipes, and practical kitchen tips for cooking at home with more confidence and less guesswork.",
     "site_email": "contact@kepoli.com"
   },
   "locales": {
-    "public": "ro_RO",
+    "public": "en_US",
     "admin": "en_US",
     "force_admin": true
   },
   "writer": {
     "name": "Isalune Merovik",
     "email": "isalunemerovik@gmail.com",
-    "bio": "Scrie retete si ghiduri practice pentru Kepoli."
+    "bio": "Writes food stories, tested recipes, and practical kitchen guides for Kepoli."
   },
   "assets": {
     "wordmark": "kepoli-wordmark",
@@ -21,16 +21,14 @@
     "social_cover": "kepoli-social-cover"
   },
   "slugs": {
-    "home": "acasa",
-    "recipes": "retete",
-    "guides": "articole",
-    "about": "despre-kepoli",
-    "author": "despre-autor",
-    "privacy": "politica-de-confidentialitate",
-    "cookies": "politica-de-cookies",
-    "advertising": "publicitate-si-consimtamant",
-    "editorial": "politica-editoriala",
-    "terms": "termeni-si-conditii",
-    "disclaimer": "disclaimer-culinar"
+    "home": "home",
+    "about": "about-kepoli",
+    "author": "about-the-author",
+    "privacy": "privacy-policy",
+    "cookies": "cookie-policy",
+    "advertising": "advertising-and-consent",
+    "editorial": "editorial-policy",
+    "terms": "terms-and-conditions",
+    "disclaimer": "disclaimer"
   }
 }

@@ -12,7 +12,7 @@ cd /var/www/html
 : "${WP_ADMIN_EMAIL:?WP_ADMIN_EMAIL is required}"
 
 SITE_URL="${SITE_URL:-https://kepoli.com}"
-WP_LOCALE="${WP_LOCALE:-ro_RO}"
+WP_LOCALE="${WP_LOCALE:-en_US}"
 WP_ADMIN_LOCALE="${WP_ADMIN_LOCALE:-en_US}"
 SITE_EMAIL="${SITE_EMAIL:-contact@kepoli.com}"
 SITE_NAME="${SITE_NAME:-}"
@@ -108,8 +108,8 @@ if [ -n "$admin_id" ]; then
   wp user meta update "$admin_id" locale "$WP_ADMIN_LOCALE" || true
 fi
 
-wp theme activate kepoli
-wp plugin activate kepoli-author-tools || true
+wp theme activate viral-reader
+wp plugin activate automation-hamri || true
 wp plugin install google-site-kit --activate || true
 wp plugin deactivate akismet hello >/dev/null 2>&1 || true
 

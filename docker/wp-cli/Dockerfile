@@ -2,7 +2,7 @@ FROM wordpress:cli-php8.3
 
 USER root
 
-COPY wp-content/themes/kepoli/ /opt/kepoli/wp-content/themes/kepoli/
+COPY wp-content/themes/viral-reader/ /opt/kepoli/wp-content/themes/viral-reader/
 COPY wp-content/mu-plugins/ /opt/kepoli/wp-content/mu-plugins/
 COPY wp-content/plugins/ /opt/kepoli/wp-content/plugins/
 COPY seed/ /seed/

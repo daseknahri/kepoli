@@ -84,7 +84,7 @@ add_action('init', static function (): void {
         return;
     }
 
-    kepoli_autoseed_activate_plugin('kepoli-author-tools/kepoli-author-tools.php');
+    kepoli_autoseed_activate_plugin('automation-hamri/wp-automator-pro.php');
 
     if (!kepoli_autoseed_env_bool('KEPOLI_AUTOSEED_ENABLE', true)) {
         return;
@@ -105,7 +105,7 @@ add_action('init', static function (): void {
         return;
     }
 
-    if ($current_version === $target_version && wp_get_theme()->get_stylesheet() === 'kepoli') {
+    if ($current_version === $target_version && wp_get_theme()->get_stylesheet() === 'viral-reader') {
         return;
     }
 

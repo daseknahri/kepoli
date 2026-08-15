@@ -63,7 +63,7 @@ function kepoli_mu_brand_description(): string
 
 function kepoli_mu_public_locale(): string
 {
-    return kepoli_mu_locale_to_language_tag((string) kepoli_mu_profile_value(['locales', 'public'], get_option('WPLANG') ?: 'ro_RO'));
+    return kepoli_mu_locale_to_language_tag((string) kepoli_mu_profile_value(['locales', 'public'], get_option('WPLANG') ?: 'en_US'));
 }
 
 function kepoli_mu_asset_basename(string $key, string $fallback): string

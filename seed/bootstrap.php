@@ -58,7 +58,7 @@ function kepoli_seed_profile_value(array $profile, array $path, $default = '')
 function kepoli_seed_is_english(): bool
 {
     $profile = kepoli_seed_current_site_profile();
-    $locale = (string) kepoli_seed_profile_value($profile, ['locales', 'public'], kepoli_seed_env('WP_LOCALE', 'ro_RO'));
+    $locale = (string) kepoli_seed_profile_value($profile, ['locales', 'public'], kepoli_seed_env('WP_LOCALE', 'en_US'));
     return str_starts_with(strtolower($locale), 'en');
 }
 
@@ -216,8 +216,8 @@ function kepoli_seed_default_profile_description(string $site_name, bool $is_eng
 
 function kepoli_seed_normalize_site_profile(array $profile, array $pages): array
 {
-    $public_locale = trim((string) kepoli_seed_profile_value($profile, ['locales', 'public'], kepoli_seed_env('WP_LOCALE', 'ro_RO')));
-    $public_locale = $public_locale !== '' ? $public_locale : 'ro_RO';
+    $public_locale = trim((string) kepoli_seed_profile_value($profile, ['locales', 'public'], kepoli_seed_env('WP_LOCALE', 'en_US')));
+    $public_locale = $public_locale !== '' ? $public_locale : 'en_US';
     $is_english = str_starts_with(strtolower($public_locale), 'en');
     $site_name = trim((string) kepoli_seed_profile_value($profile, ['brand', 'name'], kepoli_seed_legacy_site_name($pages)));
     $site_name = $site_name !== '' ? $site_name : 'Food Blog';
@@ -1103,8 +1103,9 @@ function kepoli_seed_article_content(array $post, array $post_ids, array $catego
     $category_link = $category_id ? get_category_link($category_id) : home_url('/');
     $site_name = kepoli_seed_site_name($pages);
     $profile = kepoli_seed_current_site_profile();
-    $recipes_url = home_url('/' . kepoli_seed_profile_slug($profile, 'recipes', kepoli_seed_recipes_page_slug($pages)) . '/');
-    $guides_url = home_url('/' . kepoli_seed_profile_slug($profile, 'guides', kepoli_seed_guides_page_slug($pages)) . '/');
+    // Link to the pillar category archives (no standalone recipes/guides pages).
+    $recipes_url = isset($category_ids['recipes']) ? get_category_link($category_ids['recipes']) : home_url('/');
+    $guides_url = isset($category_ids['tips']) ? get_category_link($category_ids['tips']) : home_url('/');
     $overview_heading = kepoli_seed_ui('Ce gasesti in ghid', 'What this guide helps with');
     $wrapup_heading = kepoli_seed_ui('Ce aplici mai intai', 'What to apply first');
     $related_heading = kepoli_seed_ui('Retete pe acelasi fir', 'Recipes that fit this guide');
@@ -1425,11 +1426,11 @@ function kepoli_seed_delete_placeholder_posts(array $expected_slugs): void
     }
 }
 
-if (wp_get_theme()->get_stylesheet() !== 'kepoli' && wp_get_theme('kepoli')->exists()) {
-    switch_theme('kepoli');
+if (wp_get_theme()->get_stylesheet() !== 'viral-reader' && wp_get_theme('viral-reader')->exists()) {
+    switch_theme('viral-reader');
 }
 
-kepoli_seed_activate_plugin('kepoli-author-tools/kepoli-author-tools.php');
+kepoli_seed_activate_plugin('automation-hamri/wp-automator-pro.php');
 
 $categories = kepoli_seed_json('/content/categories.json');
 $pages = kepoli_seed_json('/content/pages.json');
@@ -1451,7 +1452,7 @@ $terms_page_slug = kepoli_seed_profile_slug($site_profile, 'terms', kepoli_seed_
 $disclaimer_page_slug = kepoli_seed_profile_slug($site_profile, 'disclaimer', kepoli_seed_find_page_slug($pages, ['disclaimer-culinar', 'culinary-disclaimer']));
 
 update_option('kepoli_site_profile', $site_profile);
-update_option('WPLANG', (string) kepoli_seed_profile_value($site_profile, ['locales', 'public'], kepoli_seed_env('WP_LOCALE', 'ro_RO')));
+update_option('WPLANG', (string) kepoli_seed_profile_value($site_profile, ['locales', 'public'], kepoli_seed_env('WP_LOCALE', 'en_US')));
 update_option('blogname', $site_name);
 update_option('blogdescription', kepoli_seed_default_tagline($site_name));
 update_option('admin_email', (string) kepoli_seed_profile_value($site_profile, ['brand', 'site_email'], kepoli_seed_env('SITE_EMAIL', 'contact@example.com')));
@@ -1556,6 +1557,16 @@ foreach ($posts as $post) {
             'ingredients' => $post['ingredients'],
             'steps' => $post['steps'],
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+        // Also write the Author Tools recipe meta the active theme reads for its
+        // recipe card + Recipe JSON-LD (viral-reader functions.php / automation-hamri).
+        update_post_meta($post_id, '_wpap_recipe_on', '1');
+        update_post_meta($post_id, '_wpap_recipe_servings', (string) $post['servings']);
+        update_post_meta($post_id, '_wpap_recipe_prep', $prep_minutes);
+        update_post_meta($post_id, '_wpap_recipe_cook', $cook_minutes);
+        update_post_meta($post_id, '_wpap_recipe_total', $prep_minutes + $cook_minutes);
+        update_post_meta($post_id, '_wpap_recipe_ingredients', implode("\n", (array) $post['ingredients']));
+        update_post_meta($post_id, '_wpap_recipe_steps', implode("\n", (array) $post['steps']));
     } else {
         $content = kepoli_seed_article_content($post, $post_ids, $category_ids, $posts, $pages);
         update_post_meta($post_id, '_kepoli_article_snapshot', wp_json_encode(
