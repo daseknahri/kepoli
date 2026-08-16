@@ -14,16 +14,16 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 const KEPOLI_EN_FLAG      = 'kepoli_en_migrated';   // stores the version once done
-const KEPOLI_EN_VERSION   = '1';
+const KEPOLI_EN_VERSION   = '2';
 const KEPOLI_EN_CAT_REDIR = 'kepoli_en_cat_redir';  // old cat slug => new cat slug
 const KEPOLI_EN_PG_REDIR  = 'kepoli_en_pg_redir';   // old page slug => new page slug
 
-/* Category slug (old Romanian) => [new English name, new English slug]. */
+/* Category slug (old Romanian) => [new English name, new English slug, English description]. */
 function kepoli_en_categories() {
 	return array(
-		'ciorbe-si-supe'         => array( 'Soups & Stews', 'soups' ),
-		'feluri-principale'      => array( 'Main Dishes', 'main-dishes' ),
-		'patiserie-si-deserturi' => array( 'Pastry & Desserts', 'desserts' ),
+		'ciorbe-si-supe'         => array( 'Soups & Stews', 'soups', 'Comforting soups and stews — clear broths, hearty pots, and the warming bowls that anchor a home-cooked meal.' ),
+		'feluri-principale'      => array( 'Main Dishes', 'main-dishes', 'Satisfying main courses for everyday dinners — the centerpiece dishes that bring everyone to the table.' ),
+		'patiserie-si-deserturi' => array( 'Pastry & Desserts', 'desserts', 'Cakes, pastries, and sweet bakes — home-friendly desserts worth turning the oven on for.' ),
 	);
 }
 
@@ -109,24 +109,29 @@ function kepoli_en_run_migration() {
 		update_option( 'WPLANG', '' );
 	}
 
-	/* 2) Categories — rename name + slug, keep the term (posts stay assigned). */
-	$cat_redir = array();
+	/* 2) Categories — rename name + slug + English description, keep the term
+	   (posts stay assigned). Idempotent: finds the term by old OR new slug, and
+	   merges into the existing redirect map so re-runs never drop redirects. */
+	$cat_redir = (array) get_option( KEPOLI_EN_CAT_REDIR, array() );
 	foreach ( kepoli_en_categories() as $old_slug => $info ) {
+		list( $new_name, $new_slug, $new_desc ) = $info;
 		$term = get_term_by( 'slug', $old_slug, 'category' );
+		if ( ! $term || is_wp_error( $term ) ) { $term = get_term_by( 'slug', $new_slug, 'category' ); }
 		if ( ! $term || is_wp_error( $term ) ) { continue; }
-		list( $new_name, $new_slug ) = $info;
-		if ( $new_slug !== $old_slug && get_term_by( 'slug', $new_slug, 'category' ) ) {
-			$new_slug = $old_slug; // avoid colliding with an existing English term
+		$slug_to = $new_slug;
+		$holder  = get_term_by( 'slug', $new_slug, 'category' );
+		if ( $holder && (int) $holder->term_id !== (int) $term->term_id ) {
+			$slug_to = $term->slug; // another term already owns the English slug; keep current
 		}
-		wp_update_term( (int) $term->term_id, 'category', array( 'name' => $new_name, 'slug' => $new_slug ) );
-		if ( $new_slug !== $old_slug ) { $cat_redir[ $old_slug ] = $new_slug; }
+		wp_update_term( (int) $term->term_id, 'category', array( 'name' => $new_name, 'slug' => $slug_to, 'description' => $new_desc ) );
+		if ( $slug_to !== $old_slug ) { $cat_redir[ $old_slug ] = $slug_to; }
 	}
 	update_option( KEPOLI_EN_CAT_REDIR, $cat_redir, false );
 
 	/* 3) Pages — English content + English slug (301 old->new). */
 	$authored = kepoli_en_load_page_content();
 	$extra    = kepoli_en_extra_pages();
-	$pg_redir = array();
+	$pg_redir = (array) get_option( KEPOLI_EN_PG_REDIR, array() );
 	foreach ( kepoli_en_pages() as $old_slug => $new_slug ) {
 		$page = get_page_by_path( $old_slug, OBJECT, 'page' );
 		if ( ! $page ) { $page = get_page_by_path( $new_slug, OBJECT, 'page' ); }
@@ -163,6 +168,21 @@ function kepoli_en_run_migration() {
 	if ( $sample ) { wp_delete_post( (int) $sample->ID, true ); }
 	$hello = get_page_by_path( 'hello-world', OBJECT, 'post' );
 	if ( $hello && 'post' === $hello->post_type ) { wp_delete_post( (int) $hello->ID, true ); }
+
+	/* 3b) Static front page — replace the Romanian welcome with an English intro
+	   that points at the live English categories. */
+	if ( 'page' === get_option( 'show_on_front' ) ) {
+		$front_id = (int) get_option( 'page_on_front' );
+		$fp       = $front_id ? get_post( $front_id ) : null;
+		if ( $fp && 'page' === $fp->post_type ) {
+			if ( '' === (string) get_post_meta( $front_id, '_kepoli_pre_en', true ) ) {
+				update_post_meta( $front_id, '_kepoli_pre_en', wp_json_encode( array( 'title' => $fp->post_title, 'name' => $fp->post_name, 'content' => $fp->post_content ) ) );
+			}
+			$home_html = '<p>Welcome to Kepoli — recipes and kitchen know-how for cooking at home with more confidence and less guesswork.</p>'
+				. '<p>Browse by course — <a href="/category/soups/">Soups &amp; Stews</a>, <a href="/category/main-dishes/">Main Dishes</a>, and <a href="/category/desserts/">Pastry &amp; Desserts</a> — or scroll down for the latest recipes and kitchen tips.</p>';
+			wp_update_post( wp_slash( array( 'ID' => $front_id, 'post_content' => $home_html ) ) );
+		}
+	}
 
 	/* 4) Primary nav — rebuild in English (Home, the three categories, About). */
 	kepoli_en_build_menu();
