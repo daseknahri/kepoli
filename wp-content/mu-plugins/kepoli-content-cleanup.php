@@ -87,17 +87,20 @@ function kepoli_cleanup_filter_content( $content ) {
 }
 
 function kepoli_cleanup_strip( $html ) {
-	// Delimiter is ~ (patterns contain literal '#' from entities like &#8217;).
+	// Delimiter ~; `u` flag so a smart-quote apostrophe (’) counts as one char.
+	// The <p> patterns are "tempered" — (?:(?!</p>).)*? — so they match a whole
+	// paragraph that contains the phrase even when it has nested <strong>/<a>,
+	// without ever crossing a </p> boundary.
 	$patterns = array(
-		// engagement-bait paragraphs
-		'~<p>[^<]*(?:For\s+Complete\s+Cooking\s+STEPS|open\s+button|SHARE\s+with\s+your\s+Facebook|check\s+the\s+first\s+comment|continue\s+(?:reading\s+)?on\s+the\s+next\s+page)[^<]*</p>~is',
-		// loose bait sentences not wrapped in <p>
-		'~For\s+Complete\s+Cooking\s+STEPS[\s\S]{0,220}?(?:Facebook\s+friends|next\s+page)[.!\)]*~is',
-		'~(?:and\s+)?don.?t\s+forget\s+to\s+SHARE\s+with\s+your\s+Facebook\s+friends[.!]*~is',
-		// "Option 2/3" scaffolding blocks
-		'~<p>\s*Option\s*[23]\s*[:.\)]?[^<]*</p>~i',
-		// leaked AI scaffolding at the very start (tight: must be "Sure! Here's ... article/version ...:")
-		'~\A\s*(?:<p>\s*)?Sure[!,.]\s+Here.{0,3}s\s+[^<]{0,150}?(?:article|presentation|version|blog\s+post)[^<]{0,40}?[:.]\s*(?:</p>)?~i',
+		// engagement-bait paragraph (nested tags allowed)
+		'~<p\b[^>]*>(?:(?!</p>).)*?(?:For\s+Complete\s+Cooking\s+STEPS|Open\s+button|SHARE\s+with\s+your\s+Facebook|check\s+the\s+first\s+comment|continue\s+(?:reading\s+)?on\s+the\s+next\s+page)(?:(?!</p>).)*?</p>~isu',
+		// loose bait sentences not wrapped in a matchable <p>
+		'~For\s+Complete\s+Cooking\s+STEPS[\s\S]{0,220}?(?:Facebook\s+friends|next\s+page)[.!\)]*~isu',
+		'~(?:and\s+)?don.?t\s+forget\s+to\s+SHARE\s+with\s+your\s+Facebook\s+friends[.!]*~isu',
+		// "Option 2/3" scaffolding paragraph (nested tags allowed)
+		'~<p\b[^>]*>(?:(?!</p>).)*?Option\s*[23]\b(?:(?!</p>).)*?</p>~isu',
+		// leaked AI scaffolding at the very start (tight: "Sure! Here's ... article/version ...:")
+		'~\A\s*(?:<p\b[^>]*>\s*)?Sure[!,.]\s+Here.{0,3}s\s+[^<]{0,150}?(?:article|presentation|version|blog\s+post)[^<]{0,40}?[:.]\s*(?:</p>)?~iu',
 	);
 	$out = (string) $html;
 	foreach ( $patterns as $re ) {
