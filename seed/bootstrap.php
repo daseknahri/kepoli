@@ -1536,6 +1536,10 @@ foreach ($posts as $index => $post) {
     update_post_meta($post_id, '_kepoli_related_slugs', array_values(array_unique(array_merge($post['related'] ?? [], $post['related_articles'] ?? []))));
     update_post_meta($post_id, '_kepoli_meta_description', $post['meta_description'] ?? $post['excerpt']);
     update_post_meta($post_id, '_kepoli_seo_title', $post['seo_title'] ?? $post['title']);
+    // Mark as plugin-managed so WP Automator Pro emits SEO (meta description,
+    // Open Graph, Article + Breadcrumb JSON-LD) and in-content ads for it. The
+    // plugin self-heals the stored link to the pretty permalink on render.
+    update_post_meta($post_id, '_wpap_smart_link', get_permalink($post_id));
 
     if (isset($image_plan[$post['slug']])) {
         kepoli_seed_import_featured_image((int) $post_id, $image_plan[$post['slug']]);
@@ -1545,7 +1549,11 @@ foreach ($posts as $index => $post) {
 foreach ($posts as $post) {
     $post_id = $post_ids[$post['slug']];
     if ($post['kind'] === 'recipe') {
-        $content = kepoli_seed_recipe_content($post, $post_ids, $category_ids, $posts, $pages);
+        // Prefer the hand-authored article body when provided; fall back to the
+        // generated template only for posts that ship without a `content` field.
+        $content = (isset($post['content']) && trim((string) $post['content']) !== '')
+            ? (string) $post['content']
+            : kepoli_seed_recipe_content($post, $post_ids, $category_ids, $posts, $pages);
         $prep_minutes = kepoli_seed_duration_minutes($post['prep']);
         $cook_minutes = kepoli_seed_duration_minutes($post['cook']);
         update_post_meta($post_id, '_kepoli_recipe_json', wp_json_encode([
@@ -1568,7 +1576,9 @@ foreach ($posts as $post) {
         update_post_meta($post_id, '_wpap_recipe_ingredients', implode("\n", (array) $post['ingredients']));
         update_post_meta($post_id, '_wpap_recipe_steps', implode("\n", (array) $post['steps']));
     } else {
-        $content = kepoli_seed_article_content($post, $post_ids, $category_ids, $posts, $pages);
+        $content = (isset($post['content']) && trim((string) $post['content']) !== '')
+            ? (string) $post['content']
+            : kepoli_seed_article_content($post, $post_ids, $category_ids, $posts, $pages);
         update_post_meta($post_id, '_kepoli_article_snapshot', wp_json_encode(
             kepoli_seed_article_snapshot_meta($post),
             JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
