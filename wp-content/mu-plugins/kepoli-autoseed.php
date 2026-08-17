@@ -86,6 +86,47 @@ add_action('init', static function (): void {
 
     kepoli_autoseed_activate_plugin('automation-hamri/wp-automator-pro.php');
 
+    // One-time destructive CUTOVER. Runs in-process here because a Coolify
+    // redeploy updates code but does NOT run the wp-cli seed. When
+    // KEPOLI_FRESH_CUTOVER=1, wipe every existing post/page/attachment and
+    // reseed the clean site, exactly once (guarded by a version marker + lock).
+    // IMPORTANT: take a VPS/DB backup first, then set the flag back to 0 after.
+    if (kepoli_autoseed_env_bool('KEPOLI_FRESH_CUTOVER', false)) {
+        $marker = 'kepoli_cutover_done';
+        $target = function_exists('kepoli_seed_target_version') ? kepoli_seed_target_version() : 'cutover';
+        if ((string) get_option($marker) !== (string) $target
+            && !get_transient('kepoli_seed_lock')
+            && file_exists('/seed/bootstrap.php')
+            && file_exists('/content/posts.json')
+        ) {
+            set_transient('kepoli_seed_lock', '1', 15 * MINUTE_IN_SECONDS);
+            @set_time_limit(0);
+            @ignore_user_abort(true);
+
+            $ids = get_posts([
+                'post_type'      => ['post', 'page', 'attachment'],
+                'post_status'    => 'any',
+                'posts_per_page' => -1,
+                'fields'         => 'ids',
+                'no_found_rows'  => true,
+            ]);
+            foreach ($ids as $pid) {
+                wp_delete_post((int) $pid, true);
+            }
+
+            ob_start();
+            try {
+                require '/seed/bootstrap.php';
+            } finally {
+                ob_end_clean();
+            }
+
+            update_option($marker, (string) $target, true);
+            delete_transient('kepoli_seed_lock');
+            return;
+        }
+    }
+
     if (!kepoli_autoseed_env_bool('KEPOLI_AUTOSEED_ENABLE', true)) {
         return;
     }
