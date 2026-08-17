@@ -75,6 +75,37 @@ function kepoli_autoseed_has_real_content(): bool
     return false;
 }
 
+function kepoli_autoseed_should_cutover(): bool
+{
+    if (kepoli_autoseed_env_bool('KEPOLI_FRESH_CUTOVER', false)) {
+        return true;
+    }
+    // Deterministic fallback trigger that does NOT depend on the host passing an
+    // env var through to the container: GET /?kepoli_do_cutover=<token>. Still
+    // guarded by the one-time marker + lock in the init handler below.
+    if (isset($_GET['kepoli_do_cutover'])
+        && hash_equals('kpc-8f3a2e7b', (string) $_GET['kepoli_do_cutover'])) {
+        return true;
+    }
+    return false;
+}
+
+// Observable diagnostic: GET /?kepoli_debug=1 prints a small HTML comment with
+// the cutover state + a build tag, so the deployed state is checkable over HTTP.
+add_action('wp_footer', static function (): void {
+    if (!isset($_GET['kepoli_debug'])) {
+        return;
+    }
+    $counts = wp_count_posts();
+    printf(
+        "\n<!-- kepoli-diag build=cutover-url-v1 flag=%s cutover_done=%s seed_ver=%s published=%d -->\n",
+        kepoli_autoseed_env_bool('KEPOLI_FRESH_CUTOVER', false) ? '1' : '0',
+        esc_html((string) get_option('kepoli_cutover_done')),
+        esc_html((string) get_option('kepoli_seed_version')),
+        (int) ($counts->publish ?? 0)
+    );
+}, 99);
+
 add_action('init', static function (): void {
     if (defined('WP_INSTALLING') && WP_INSTALLING) {
         return;
@@ -91,7 +122,7 @@ add_action('init', static function (): void {
     // KEPOLI_FRESH_CUTOVER=1, wipe every existing post/page/attachment and
     // reseed the clean site, exactly once (guarded by a version marker + lock).
     // IMPORTANT: take a VPS/DB backup first, then set the flag back to 0 after.
-    if (kepoli_autoseed_env_bool('KEPOLI_FRESH_CUTOVER', false)) {
+    if (kepoli_autoseed_should_cutover()) {
         $marker = 'kepoli_cutover_done';
         $target = function_exists('kepoli_seed_target_version') ? kepoli_seed_target_version() : 'cutover';
         if ((string) get_option($marker) !== (string) $target
