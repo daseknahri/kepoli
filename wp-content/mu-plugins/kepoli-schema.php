@@ -73,3 +73,66 @@ function kepoli_schema_jsonld(): void
         . wp_json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
         . '</script>' . "\n";
 }
+
+/**
+ * Meta description + Open Graph + Twitter Card for the FRONT PAGE and static
+ * PAGES. The automation-hamri plugin already emits these on managed posts
+ * (_wpap_smart_link); pages and the home page are not managed, so without this
+ * they ship with no description/OG. Defers to a real SEO plugin if present, and
+ * skips plugin-managed posts to avoid duplicate tags.
+ */
+add_action('wp_head', 'kepoli_seo_meta_head', 4);
+function kepoli_seo_meta_head(): void
+{
+    if (defined('WPSEO_VERSION') || defined('RANK_MATH_VERSION') || function_exists('seopress_init') || defined('AIOSEO_VERSION')) {
+        return;
+    }
+    if (is_admin() || is_feed()) {
+        return;
+    }
+    // Only home + static pages here; posts are handled by the plugin.
+    if (!is_front_page() && !is_page()) {
+        return;
+    }
+    $qid = get_queried_object_id();
+    if ($qid && get_post_meta($qid, '_wpap_smart_link', true)) {
+        return; // a managed post standing in as the front page — let the plugin own it
+    }
+
+    $desc = '';
+    if ($qid) {
+        $desc = (string) get_post_meta($qid, '_kepoli_meta_description', true);
+        if ($desc === '') {
+            $desc = wp_strip_all_tags((string) get_the_excerpt($qid));
+        }
+        if ($desc === '') {
+            $p = get_post($qid);
+            $desc = $p ? wp_trim_words(wp_strip_all_tags($p->post_content), 30, '') : '';
+        }
+    }
+    if (trim($desc) === '') {
+        $desc = (string) get_bloginfo('description');
+    }
+    $desc = trim(preg_replace('/\s+/', ' ', $desc));
+
+    $title = wp_get_document_title();
+    $url   = is_front_page() ? home_url('/') : get_permalink($qid);
+    $img   = function_exists('get_site_icon_url') ? get_site_icon_url(512) : '';
+    if (!$img) {
+        $img = get_template_directory_uri() . '/assets/img/kepoli-icon.png';
+    }
+
+    $out  = "\n";
+    $out .= '<meta name="description" content="' . esc_attr($desc) . '">' . "\n";
+    $out .= '<meta property="og:type" content="website">' . "\n";
+    $out .= '<meta property="og:site_name" content="' . esc_attr(get_bloginfo('name')) . '">' . "\n";
+    $out .= '<meta property="og:title" content="' . esc_attr($title) . '">' . "\n";
+    $out .= '<meta property="og:description" content="' . esc_attr($desc) . '">' . "\n";
+    $out .= '<meta property="og:url" content="' . esc_url($url) . '">' . "\n";
+    $out .= '<meta property="og:image" content="' . esc_url($img) . '">' . "\n";
+    $out .= '<meta name="twitter:card" content="summary_large_image">' . "\n";
+    $out .= '<meta name="twitter:title" content="' . esc_attr($title) . '">' . "\n";
+    $out .= '<meta name="twitter:description" content="' . esc_attr($desc) . '">' . "\n";
+    $out .= '<meta name="twitter:image" content="' . esc_url($img) . '">' . "\n";
+    echo $out;
+}

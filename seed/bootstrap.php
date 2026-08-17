@@ -1568,7 +1568,13 @@ if ($sample_page) {
 $post_ids = [];
 foreach ($posts as $index => $post) {
     $existing = get_page_by_path($post['slug'], OBJECT, 'post');
-    $date = gmdate('Y-m-d H:i:s', strtotime('2026-03-01 +' . $index . ' days'));
+    // Spread posts across a realistic recent window (newest ~6 days ago, a few
+    // days apart, back ~3 months) so the archive reads like an ongoing blog
+    // rather than one automated batch. Newest post is last in the array.
+    $total = count($posts);
+    $days_ago = 6 + ($total - 1 - $index) * 4 + ($index % 3);
+    $hour = 8 + ($index % 9);
+    $date = gmdate('Y-m-d H:i:s', strtotime("-{$days_ago} days {$hour}:" . sprintf('%02d', ($index * 7) % 60) . ':00'));
     $postarr = [
         'post_type' => 'post',
         'post_status' => 'publish',
@@ -1656,6 +1662,19 @@ foreach ($posts as $post) {
         'ID' => $post_id,
         'post_content' => $content,
     ]), true);
+    // Align "modified" with each post's own (staggered) publish date so the whole
+    // set doesn't share one batch-edited timestamp. Direct write is the reliable
+    // way to set post_modified; reading the stored dates keeps it idempotent.
+    global $wpdb;
+    $wpdb->update(
+        $wpdb->posts,
+        [
+            'post_modified'     => get_post_field('post_date', $post_id),
+            'post_modified_gmt' => get_post_field('post_date_gmt', $post_id),
+        ],
+        ['ID' => $post_id]
+    );
+    clean_post_cache($post_id);
 }
 
 $primary_menu = kepoli_seed_reset_menu('Primary', 'primary');
