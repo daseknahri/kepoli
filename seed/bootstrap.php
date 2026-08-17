@@ -1383,6 +1383,72 @@ function kepoli_seed_import_featured_image(int $post_id, array $image): void
     }
 }
 
+/**
+ * Import the brand icon as a media attachment and set it as the WordPress Site Icon
+ * (favicon + apple-touch-icon). Instantiating WP_Site_Icon first registers the
+ * site-icon intermediate sizes so wp_generate_attachment_metadata() creates them,
+ * which means the favicon <link> tags WP outputs never point at missing files.
+ */
+function kepoli_seed_set_site_icon(): void
+{
+    $source = '';
+    foreach (['/content/images/kepoli-icon.png', ABSPATH . '../content/images/kepoli-icon.png'] as $candidate) {
+        if (is_readable($candidate)) {
+            $source = $candidate;
+            break;
+        }
+    }
+    if ($source === '') {
+        return;
+    }
+
+    $existing = (int) get_option('site_icon');
+    if ($existing && get_post($existing)) {
+        return; // already set — idempotent
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/class-wp-site-icon.php';
+    new WP_Site_Icon(); // registers the site-icon crop sizes via intermediate_image_sizes_advanced
+
+    $found = get_posts([
+        'post_type'      => 'attachment',
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+        'meta_key'       => '_kepoli_seed_image_filename',
+        'meta_value'     => 'kepoli-icon.png',
+    ]);
+    $attachment_id = $found ? (int) $found[0] : 0;
+
+    if (!$attachment_id) {
+        $bits = file_get_contents($source);
+        if ($bits === false) {
+            return;
+        }
+        $upload = wp_upload_bits('kepoli-icon.png', null, $bits);
+        if (!empty($upload['error'])) {
+            return;
+        }
+        $filetype = wp_check_filetype($upload['file'], null);
+        $attachment_id = wp_insert_attachment(wp_slash([
+            'post_mime_type' => $filetype['type'] ?: 'image/png',
+            'post_title'     => 'Kepoli site icon',
+            'post_status'    => 'inherit',
+        ]), $upload['file']);
+        if (is_wp_error($attachment_id)) {
+            return;
+        }
+        $metadata = wp_generate_attachment_metadata((int) $attachment_id, $upload['file']);
+        if (!is_wp_error($metadata) && !empty($metadata)) {
+            wp_update_attachment_metadata((int) $attachment_id, $metadata);
+        }
+        update_post_meta((int) $attachment_id, '_kepoli_seed_image_filename', 'kepoli-icon.png');
+    }
+
+    update_option('site_icon', (int) $attachment_id);
+}
+
 function kepoli_seed_delete_placeholder_posts(array $expected_slugs): void
 {
     $expected = array_flip(array_map('sanitize_title', $expected_slugs));
@@ -1467,6 +1533,7 @@ update_option('default_ping_status', 'closed');
 update_option('require_name_email', '1');
 update_option('close_comments_for_old_posts', '1');
 update_option('close_comments_days_old', '14');
+kepoli_seed_set_site_icon();
 
 global $wp_rewrite;
 if ($wp_rewrite instanceof WP_Rewrite) {

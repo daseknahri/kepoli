@@ -79,5 +79,93 @@
     "caption": "Master a few basics and most bakes get easier.",
     "description": "Working dough by hand on a floured surface, the foundation of many bakes.",
     "prompt": "Hands kneading dough on a floured wooden surface, warm light, food photography."
+  },
+  {
+    "slug": "hearty-bean-soup",
+    "filename": "hearty-bean-soup.webp",
+    "alt": "A bowl of hearty bean soup with smoked meat and vegetables",
+    "title": "Hearty bean soup with smoked meat",
+    "caption": "A thick, smoky bean soup that's even better the next day.",
+    "description": "A steaming bowl of white bean soup simmered with smoked pork and root vegetables."
+  },
+  {
+    "slug": "sour-meatball-soup",
+    "filename": "sour-meatball-soup.webp",
+    "alt": "A bowl of sour meatball soup with vegetables and fresh herbs",
+    "title": "Sour meatball soup",
+    "caption": "Tender rice-studded meatballs in a bright, tangy broth.",
+    "description": "A bowl of tangy meatball soup with delicate meatballs, vegetables, and herbs."
+  },
+  {
+    "slug": "chicken-soup-with-dumplings",
+    "filename": "chicken-soup-with-dumplings.webp",
+    "alt": "A bowl of golden chicken soup with fluffy semolina dumplings",
+    "title": "Chicken soup with semolina dumplings",
+    "caption": "Clear golden broth with light, airy semolina dumplings.",
+    "description": "A bowl of clear chicken soup topped with soft, fluffy semolina dumplings and vegetables."
+  },
+  {
+    "slug": "chicken-stew-with-polenta",
+    "filename": "chicken-stew-with-polenta.webp",
+    "alt": "Chicken stew in tomato sauce served over creamy polenta",
+    "title": "Chicken stew with creamy polenta",
+    "caption": "Garlicky braised chicken over soft, creamy polenta.",
+    "description": "Bone-in chicken braised in a paprika tomato sauce, spooned over creamy polenta."
+  },
+  {
+    "slug": "braised-cabbage-with-sausage",
+    "filename": "braised-cabbage-with-sausage.webp",
+    "alt": "Braised cabbage with smoked sausage in a pan",
+    "title": "Braised cabbage with sausage",
+    "caption": "Cabbage cooked low and slow until silky and sweet.",
+    "description": "Shredded cabbage braised with smoked sausage, onion, and paprika until soft and sweet."
+  },
+  {
+    "slug": "white-bean-stew",
+    "filename": "white-bean-stew.webp",
+    "alt": "A bowl of creamy white bean stew with herbs",
+    "title": "White bean stew",
+    "caption": "A humble, creamy bean stew that makes a satisfying meatless main.",
+    "description": "A thick, creamy white bean stew with onion, tomato, and paprika, finished with herbs."
+  },
+  {
+    "slug": "crepes-with-jam",
+    "filename": "crepes-with-jam.webp",
+    "alt": "Thin crepes rolled and filled with fruit jam",
+    "title": "Thin crepes with jam",
+    "caption": "Thin, tender crepes rolled around fruit jam.",
+    "description": "A plate of thin crepes rolled up and filled with fruit jam."
+  },
+  {
+    "slug": "no-bake-chocolate-biscuit-salami",
+    "filename": "no-bake-chocolate-biscuit-salami.webp",
+    "alt": "Sliced no-bake chocolate biscuit salami on a board",
+    "title": "No-bake chocolate biscuit salami",
+    "caption": "A no-oven chocolate log sliced into rounds like salami.",
+    "description": "Slices of no-bake chocolate biscuit salami showing the mosaic of biscuit pieces."
+  },
+  {
+    "slug": "choose-fresh-ingredients",
+    "filename": "choose-fresh-ingredients.webp",
+    "alt": "Fresh vegetables and ingredients arranged on a kitchen counter",
+    "title": "Choosing fresh ingredients",
+    "caption": "Knowing what to look for makes every meal better.",
+    "description": "An assortment of fresh vegetables and ingredients laid out on a counter."
+  },
+  {
+    "slug": "cooking-with-the-seasons",
+    "filename": "cooking-with-the-seasons.webp",
+    "alt": "Seasonal produce arranged to show a range of fruits and vegetables",
+    "title": "Cooking with the seasons",
+    "caption": "Produce tastes best when it's in season.",
+    "description": "A spread of seasonal fruits and vegetables representing cooking through the year."
+  },
+  {
+    "slug": "home-pickling-basics",
+    "filename": "home-pickling-basics.webp",
+    "alt": "Jars of assorted homemade pickles",
+    "title": "Simple home pickling",
+    "caption": "A few jars, a simple brine, and you're pickling.",
+    "description": "Glass jars filled with assorted homemade pickled vegetables."
   }
 ]

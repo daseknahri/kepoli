@@ -165,6 +165,40 @@ add_action('template_redirect', static function (): void {
     exit;
 });
 
+/**
+ * Standard Google AdSense loader (single publisher id, no host= mode).
+ * Gated by ADSENSE_ENABLE so the ad code only goes live when we intend it to.
+ * The client id is derived from the SAME ADSENSE_PUB_ID that feeds /ads.txt,
+ * so the on-page publisher id and ads.txt can never drift apart.
+ */
+add_action('wp_head', 'kepoli_mu_adsense_head', 9);
+function kepoli_mu_adsense_head(): void
+{
+    $enable = strtolower(kepoli_mu_env('ADSENSE_ENABLE'));
+    if ($enable === '' || in_array($enable, ['0', 'false', 'off', 'no'], true)) {
+        return;
+    }
+
+    // Resolve a well-formed standard client id (ca-pub-XXXX). One id only.
+    $client = kepoli_mu_env('ADSENSE_CLIENT_ID');
+    if ($client === '') {
+        $pub = kepoli_mu_env('ADSENSE_PUB_ID');
+        if ($pub !== '') {
+            $client = 'ca-' . (str_starts_with($pub, 'pub-') ? $pub : 'pub-' . $pub);
+        }
+    } elseif (str_starts_with($client, 'pub-')) {
+        $client = 'ca-' . $client;
+    }
+    if (!str_starts_with($client, 'ca-pub-')) {
+        return; // never emit a malformed or host-mode client
+    }
+
+    echo "\n" . '<meta name="google-adsense-account" content="' . esc_attr($client) . '">' . "\n";
+    echo '<link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin>' . "\n";
+    echo '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='
+        . esc_attr($client) . '" crossorigin="anonymous"></script>' . "\n";
+}
+
 add_action('template_redirect', static function (): void {
     $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
     if ($path !== '/.well-known/security.txt') {

@@ -113,6 +113,19 @@ wp plugin activate automation-hamri || true
 wp plugin install google-site-kit --activate || true
 wp plugin deactivate akismet hello >/dev/null 2>&1 || true
 
+# One-time fresh cutover: back up the DB, then wipe existing content so the seed
+# rebuilds a clean site instead of layering the clean posts on top of the old ones.
+# Guarded by an explicit env flag — set KEPOLI_FRESH_CUTOVER=1 ONLY for the go-live
+# cutover, then set it back to 0 so later redeploys never wipe again.
+if [ "${KEPOLI_FRESH_CUTOVER:-0}" = "1" ]; then
+  ts=$(date +%Y%m%d-%H%M%S)
+  backup="/var/www/html/wp-content/uploads/pre-cutover-${ts}.sql"
+  echo "FRESH CUTOVER: exporting DB backup to ${backup}"
+  wp db export "$backup" || echo "WARNING: DB export failed; continuing"
+  echo "FRESH CUTOVER: emptying existing site content (posts, pages, terms)"
+  wp site empty --yes
+fi
+
 wp eval-file /seed/bootstrap.php
 wp rewrite flush --hard
 
