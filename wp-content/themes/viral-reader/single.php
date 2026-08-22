@@ -111,6 +111,7 @@ while ( have_posts() ) :
 						<p class="author-box__eyebrow"><?php esc_html_e( 'Written by', 'viral-reader' ); ?></p>
 						<p class="author-box__name"><?php echo esc_html( get_the_author() ); ?></p>
 						<p class="author-box__bio"><?php echo esc_html( $vr_bio ); ?></p>
+						<?php echo vr_author_social_html( $vr_author_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in helper ?>
 						<a class="author-box__link" href="<?php echo esc_url( get_author_posts_url( $vr_author_id ) ); ?>"><?php esc_html_e( 'More stories by this author →', 'viral-reader' ); ?></a>
 					</div>
 				</aside>

@@ -13,7 +13,16 @@
   "writer": {
     "name": "Isalune Merovik",
     "email": "isalunemerovik@gmail.com",
-    "bio": "Isalune Merovik is the home cook and writer behind Kepoli. She learned to cook the way most people do — out of necessity and stubborn curiosity — and has spent years making the same dishes over and over until she understood why they work. She writes tested recipes, honest kitchen guides, and short essays on the meals worth slowing down for, and cooks every recipe in an ordinary home kitchen before it goes on the site."
+    "bio": "Isalune Merovik is the home cook and writer behind Kepoli. She learned to cook the way most people do — out of necessity and stubborn curiosity — and has spent years making the same dishes over and over until she understood why they work. She writes tested recipes, honest kitchen guides, and short essays on the meals worth slowing down for, and cooks every recipe in an ordinary home kitchen before it goes on the site.",
+    "social": {
+      "x": "",
+      "instagram": "",
+      "facebook": "",
+      "youtube": "",
+      "pinterest": "",
+      "website": ""
+    },
+    "photo": "isalune-merovik.jpg"
   },
   "assets": {
     "wordmark": "kepoli-wordmark",

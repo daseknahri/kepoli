@@ -447,6 +447,38 @@ function kepoli_seed_ensure_author(array $pages, string $site_name, array $profi
     ]);
     update_user_meta((int) $user->ID, 'locale', kepoli_seed_admin_locale());
 
+    // E-E-A-T: populate the author's social profile links. The theme reads these
+    // as user contact-method meta and renders visible rel="me" links + Person
+    // `sameAs`. Empty values are skipped, and they stay editable in wp-admin.
+    $social = kepoli_seed_profile_value($profile, ['writer', 'social'], []);
+    if (is_array($social)) {
+        $social_map = [
+            'x' => 'vr_social_x', 'twitter' => 'vr_social_x',
+            'instagram' => 'vr_social_instagram', 'facebook' => 'vr_social_facebook',
+            'youtube' => 'vr_social_youtube', 'pinterest' => 'vr_social_pinterest',
+            'linkedin' => 'vr_social_linkedin', 'tiktok' => 'vr_social_tiktok',
+            'mastodon' => 'vr_social_mastodon', 'website' => 'vr_social_website',
+        ];
+        foreach ($social as $network => $url) {
+            $key = $social_map[strtolower((string) $network)] ?? '';
+            $url = trim((string) $url);
+            if ($key !== '' && $url !== '') {
+                update_user_meta((int) $user->ID, $key, esc_url_raw($url));
+            }
+        }
+    }
+
+    // E-E-A-T: a real author headshot. Import writer.photo (a filename in
+    // content/images/) as an attachment and set it as the author's photo, which
+    // the theme uses for the byline, author box, author archive, and Person image.
+    $photo = trim((string) kepoli_seed_profile_value($profile, ['writer', 'photo'], ''));
+    if ($photo !== '') {
+        $photo_id = kepoli_seed_import_author_photo($photo, $display_name);
+        if ($photo_id > 0) {
+            update_user_meta((int) $user->ID, 'vr_author_avatar', $photo_id);
+        }
+    }
+
     return (int) $user->ID;
 }
 
@@ -1381,6 +1413,68 @@ function kepoli_seed_import_featured_image(int $post_id, array $image): void
     if (!set_post_thumbnail($post_id, (int) $attachment_id)) {
         update_post_meta($post_id, '_thumbnail_id', (int) $attachment_id);
     }
+}
+
+/**
+ * Import an author headshot (from /content/images/<filename>) as a media
+ * attachment and return its ID, so it can be set as the author's photo. Idempotent
+ * via the same _kepoli_seed_image_filename marker used for featured images.
+ */
+function kepoli_seed_import_author_photo(string $filename, string $title): int
+{
+    $filename = sanitize_file_name($filename);
+    if ($filename === '') {
+        return 0;
+    }
+    $source = '';
+    foreach (['/content/images/' . $filename, ABSPATH . '../content/images/' . $filename] as $candidate) {
+        if (is_readable($candidate)) {
+            $source = $candidate;
+            break;
+        }
+    }
+    if ($source === '') {
+        return 0;
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+
+    $found = get_posts([
+        'post_type'      => 'attachment',
+        'posts_per_page' => 1,
+        'fields'         => 'ids',
+        'meta_key'       => '_kepoli_seed_image_filename',
+        'meta_value'     => $filename,
+    ]);
+    $attachment_id = $found ? (int) $found[0] : 0;
+
+    if (!$attachment_id) {
+        $bits = file_get_contents($source);
+        if ($bits === false) {
+            return 0;
+        }
+        $upload = wp_upload_bits($filename, null, $bits);
+        if (!empty($upload['error'])) {
+            return 0;
+        }
+        $filetype = wp_check_filetype($upload['file'], null);
+        $attachment_id = wp_insert_attachment(wp_slash([
+            'post_mime_type' => $filetype['type'] ?: 'image/jpeg',
+            'post_title'     => $title !== '' ? $title : pathinfo($filename, PATHINFO_FILENAME),
+            'post_status'    => 'inherit',
+        ]), $upload['file']);
+        if (is_wp_error($attachment_id)) {
+            return 0;
+        }
+        $metadata = wp_generate_attachment_metadata((int) $attachment_id, $upload['file']);
+        if (!is_wp_error($metadata) && !empty($metadata)) {
+            wp_update_attachment_metadata((int) $attachment_id, $metadata);
+        }
+        update_post_meta((int) $attachment_id, '_kepoli_seed_image_filename', $filename);
+    }
+
+    return (int) $attachment_id;
 }
 
 /**

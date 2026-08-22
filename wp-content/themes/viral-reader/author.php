@@ -31,6 +31,7 @@ $vr_count     = count_user_posts( $vr_author_id, 'post', true );
 			<p class="author-header__eyebrow"><?php esc_html_e( 'Author', 'viral-reader' ); ?></p>
 			<h1 class="author-header__name"><?php echo esc_html( $vr_name ); ?></h1>
 			<?php if ( $vr_bio ) : ?><p class="author-header__bio"><?php echo esc_html( $vr_bio ); ?></p><?php endif; ?>
+			<?php echo vr_author_social_html( $vr_author_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in helper ?>
 			<p class="author-header__count"><?php echo esc_html( sprintf( _n( '%s story', '%s stories', $vr_count, 'viral-reader' ), number_format_i18n( $vr_count ) ) ); ?></p>
 		</div>
 	</div>

@@ -470,7 +470,7 @@ function vr_recipe_jsonld() {
 		'@context'      => 'https://schema.org/',
 		'@type'         => 'Recipe',
 		'name'          => wp_strip_all_tags( get_the_title( $id ) ),
-		'author'        => array( '@type' => 'Person', 'name' => get_the_author_meta( 'display_name', (int) get_post_field( 'post_author', $id ) ) ),
+		'author'        => vr_author_person_node( (int) get_post_field( 'post_author', $id ) ),
 		'datePublished' => get_the_date( 'c', $id ),
 	);
 	$mod = get_the_modified_date( 'c', $id );
@@ -509,6 +509,161 @@ function vr_recipe_jsonld() {
 	echo "\n" . '<script type="application/ld+json">' . wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
 }
 add_action( 'wp_head', 'vr_recipe_jsonld', 20 );
+
+/* ─────────────────────────────────────────────
+   Author identity / E-E-A-T: social profile links.
+   Stored as standard user contact-method meta (editable on the user's profile
+   screen); rendered as visible rel="me" links + emitted as Person `sameAs` in
+   the Recipe schema and a ProfilePage on the author archive. A named author
+   whose byline leads to verifiable off-site profiles is a core E-E-A-T signal.
+───────────────────────────────────────────── */
+function vr_author_social_labels() {
+	return array(
+		'vr_social_x'         => 'X',
+		'vr_social_instagram' => 'Instagram',
+		'vr_social_facebook'  => 'Facebook',
+		'vr_social_youtube'   => 'YouTube',
+		'vr_social_pinterest' => 'Pinterest',
+		'vr_social_linkedin'  => 'LinkedIn',
+		'vr_social_tiktok'    => 'TikTok',
+		'vr_social_mastodon'  => 'Mastodon',
+		'vr_social_website'   => 'Website',
+	);
+}
+
+add_filter( 'user_contactmethods', function ( $methods ) {
+	foreach ( vr_author_social_labels() as $key => $label ) {
+		$methods[ $key ] = sprintf( '%s URL', $label );
+	}
+	return $methods;
+} );
+
+function vr_author_social_links( $user_id ) {
+	$out = array();
+	foreach ( vr_author_social_labels() as $key => $name ) {
+		$url = trim( (string) get_the_author_meta( $key, (int) $user_id ) );
+		if ( '' !== $url ) {
+			$out[] = array( 'name' => $name, 'url' => $url );
+		}
+	}
+	return $out;
+}
+
+function vr_author_social_html( $user_id ) {
+	$links = vr_author_social_links( $user_id );
+	if ( empty( $links ) ) { return ''; }
+	$items = '';
+	foreach ( $links as $l ) {
+		$items .= '<li><a class="vr-author-social__link" href="' . esc_url( $l['url'] ) . '" rel="me noopener nofollow" target="_blank">' . esc_html( $l['name'] ) . '</a></li>';
+	}
+	return '<ul class="vr-author-social" aria-label="' . esc_attr__( 'Author profiles', 'viral-reader' ) . '">' . $items . '</ul>';
+}
+
+function vr_author_person_node( $user_id ) {
+	$user_id = (int) $user_id;
+	$node    = array(
+		'@type' => 'Person',
+		'name'  => get_the_author_meta( 'display_name', $user_id ),
+		'url'   => get_author_posts_url( $user_id ),
+	);
+	$avatar = get_avatar_url( $user_id, array( 'size' => 512 ) );
+	if ( $avatar ) { $node['image'] = $avatar; }
+	$same = array();
+	foreach ( vr_author_social_links( $user_id ) as $l ) { $same[] = $l['url']; }
+	if ( ! empty( $same ) ) { $node['sameAs'] = $same; }
+	return $node;
+}
+
+function vr_author_profile_jsonld() {
+	if ( ! is_author() ) { return; }
+	if ( defined( 'WPSEO_VERSION' ) || defined( 'RANK_MATH_VERSION' ) || function_exists( 'seopress_init' ) || defined( 'AIOSEO_VERSION' ) ) { return; }
+	$uid = (int) get_queried_object_id();
+	if ( ! $uid ) { return; }
+	$person = vr_author_person_node( $uid );
+	$bio    = trim( (string) get_the_author_meta( 'description', $uid ) );
+	if ( '' !== $bio ) { $person['description'] = $bio; }
+	$avatar = get_avatar_url( $uid, array( 'size' => 256 ) );
+	if ( $avatar ) { $person['image'] = $avatar; }
+	$data = array(
+		'@context'   => 'https://schema.org',
+		'@type'      => 'ProfilePage',
+		'mainEntity' => $person,
+	);
+	echo "\n" . '<script type="application/ld+json">' . wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
+}
+add_action( 'wp_head', 'vr_author_profile_jsonld', 22 );
+
+/* ─────────────────────────────────────────────
+   Author identity / E-E-A-T: custom author photo. Overrides the Gravatar so a
+   real headshot flows into the byline, author box, author archive, and the
+   Person `image` schema. Stored in user meta `vr_author_avatar` (a media
+   attachment ID or an image URL); editable on the profile screen and populated
+   by the seed from the site profile.
+───────────────────────────────────────────── */
+function vr_resolve_user_id( $id_or_email ) {
+	if ( is_numeric( $id_or_email ) ) { return (int) $id_or_email; }
+	if ( $id_or_email instanceof WP_User ) { return (int) $id_or_email->ID; }
+	if ( $id_or_email instanceof WP_Post ) { return (int) $id_or_email->post_author; }
+	if ( $id_or_email instanceof WP_Comment ) { return (int) ( $id_or_email->user_id ?? 0 ); }
+	if ( is_string( $id_or_email ) && is_email( $id_or_email ) ) {
+		$u = get_user_by( 'email', $id_or_email );
+		return $u ? (int) $u->ID : 0;
+	}
+	return 0;
+}
+
+function vr_author_avatar_url( $user_id ) {
+	$meta = get_user_meta( (int) $user_id, 'vr_author_avatar', true );
+	if ( ! $meta ) { return ''; }
+	if ( is_numeric( $meta ) ) {
+		$url = wp_get_attachment_image_url( (int) $meta, 'medium' );
+		if ( ! $url ) { $url = wp_get_attachment_image_url( (int) $meta, 'full' ); }
+		return $url ? $url : '';
+	}
+	return esc_url_raw( (string) $meta );
+}
+
+add_filter( 'pre_get_avatar_data', function ( $args, $id_or_email ) {
+	$user_id = vr_resolve_user_id( $id_or_email );
+	if ( ! $user_id ) { return $args; }
+	$url = vr_author_avatar_url( $user_id );
+	if ( '' !== $url ) {
+		$args['url']          = $url;
+		$args['found_avatar'] = true;
+	}
+	return $args;
+}, 10, 2 );
+
+function vr_author_avatar_field( $user ) {
+	$val = (string) get_user_meta( $user->ID, 'vr_author_avatar', true );
+	?>
+	<h2><?php esc_html_e( 'Author photo', 'viral-reader' ); ?></h2>
+	<table class="form-table" role="presentation"><tr>
+		<th><label for="vr_author_avatar"><?php esc_html_e( 'Photo (image URL or media ID)', 'viral-reader' ); ?></label></th>
+		<td>
+			<input type="text" name="vr_author_avatar" id="vr_author_avatar" value="<?php echo esc_attr( $val ); ?>" class="regular-text" />
+			<p class="description"><?php esc_html_e( 'Overrides the Gravatar. Paste an image URL or a Media Library attachment ID; leave blank for the default.', 'viral-reader' ); ?></p>
+		</td>
+	</tr></table>
+	<?php
+}
+add_action( 'show_user_profile', 'vr_author_avatar_field' );
+add_action( 'edit_user_profile', 'vr_author_avatar_field' );
+
+function vr_author_avatar_save( $user_id ) {
+	if ( ! current_user_can( 'edit_user', $user_id ) ) { return; }
+	if ( ! isset( $_POST['vr_author_avatar'] ) ) { return; }
+	$raw = trim( wp_unslash( (string) $_POST['vr_author_avatar'] ) );
+	if ( '' === $raw ) {
+		delete_user_meta( $user_id, 'vr_author_avatar' );
+	} elseif ( is_numeric( $raw ) ) {
+		update_user_meta( $user_id, 'vr_author_avatar', (int) $raw );
+	} else {
+		update_user_meta( $user_id, 'vr_author_avatar', esc_url_raw( $raw ) );
+	}
+}
+add_action( 'personal_options_update', 'vr_author_avatar_save' );
+add_action( 'edit_user_profile_update', 'vr_author_avatar_save' );
 
 function vr_recipe_card( $content ) {
 	if ( ! is_singular( 'post' ) || ! in_the_loop() || ! is_main_query() ) {
