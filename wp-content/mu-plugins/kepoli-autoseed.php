@@ -98,7 +98,7 @@ add_action('wp_footer', static function (): void {
     }
     $counts = wp_count_posts();
     printf(
-        "\n<!-- kepoli-diag build=media-v1 flag=%s cutover_done=%s seed_ver=%s published=%d -->\n",
+        "\n<!-- kepoli-diag build=media-v2 flag=%s cutover_done=%s seed_ver=%s published=%d -->\n",
         kepoli_autoseed_env_bool('KEPOLI_FRESH_CUTOVER', false) ? '1' : '0',
         esc_html((string) get_option('kepoli_cutover_done')),
         esc_html((string) get_option('kepoli_seed_version')),
@@ -126,7 +126,13 @@ add_action('init', static function (): void {
     if (kepoli_autoseed_should_cutover()) {
         $marker = 'kepoli_cutover_done';
         $target = function_exists('kepoli_seed_target_version') ? kepoli_seed_target_version() : 'cutover';
-        if ((string) get_option($marker) !== (string) $target
+        // The token URL is a deliberate manual "reseed now" trigger, so it FORCES
+        // a reseed even when the version marker already matches (needed to pick up
+        // new content/images without bumping the seed version). The env flag still
+        // respects the marker so it never loops on ordinary requests.
+        $via_token = isset($_GET['kepoli_do_cutover'])
+            && hash_equals('kpc-8f3a2e7b', (string) $_GET['kepoli_do_cutover']);
+        if (((string) get_option($marker) !== (string) $target || $via_token)
             && !get_transient('kepoli_seed_lock')
             && file_exists('/seed/bootstrap.php')
             && file_exists('/content/posts.json')
