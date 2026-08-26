@@ -75,25 +75,56 @@ function kepoli_autoseed_has_real_content(): bool
     return false;
 }
 
+function kepoli_autoseed_cutover_token(): string
+{
+    // Per-deploy secret, NEVER a committed default: a hardcoded fallback in source is public,
+    // so it defeats the guard entirely. An EMPTY secret DISABLES the URL trigger — the
+    // env-flag KEPOLI_FRESH_CUTOVER deploy trigger (server-config, not web-reachable) remains
+    // the safe way to fire a destructive reseed. Set KEPOLI_CUTOVER_SECRET in Coolify to a
+    // long random value to (re-)enable the URL trigger.
+    return kepoli_autoseed_env('KEPOLI_CUTOVER_SECRET', '');
+}
+
+/**
+ * Is the URL-based destructive-cutover trigger authorized for THIS request? All of:
+ *   1. a real per-deploy secret is configured (fail closed when unset),
+ *   2. it matches (constant-time),
+ *   3. the caller is a logged-in administrator,
+ *   4. a valid WP nonce is present.
+ * (4) is the anti-CSRF factor: a state-changing, destructive GET must carry a nonce a stray
+ * link / <img> / cross-site request can't forge, even if the secret ever leaked via
+ * Referer/history/logs. Admins get the ready-to-click nonce'd URL via ?kepoli_debug=1.
+ */
+function kepoli_autoseed_url_trigger_ok(): bool
+{
+    $token = kepoli_autoseed_cutover_token();
+    if ('' === $token) {
+        return false;                                             // no secret set → trigger disabled
+    }
+    if (!current_user_can('manage_options') || !isset($_GET['kepoli_do_cutover'])) {
+        return false;
+    }
+    if (!hash_equals($token, (string) $_GET['kepoli_do_cutover'])) {
+        return false;
+    }
+    return (bool) wp_verify_nonce((string) ($_GET['_wpnonce'] ?? ''), 'kepoli_cutover');
+}
+
 function kepoli_autoseed_should_cutover(): bool
 {
+    // Server-config trigger (trusted): env flag set at deploy time.
     if (kepoli_autoseed_env_bool('KEPOLI_FRESH_CUTOVER', false)) {
         return true;
     }
-    // Deterministic fallback trigger that does NOT depend on the host passing an
-    // env var through to the container: GET /?kepoli_do_cutover=<token>. Still
-    // guarded by the one-time marker + lock in the init handler below.
-    if (isset($_GET['kepoli_do_cutover'])
-        && hash_equals('kpc-8f3a2e7b', (string) $_GET['kepoli_do_cutover'])) {
-        return true;
-    }
-    return false;
+    // Manual URL trigger — nonce + secret + admin (see kepoli_autoseed_url_trigger_ok).
+    return kepoli_autoseed_url_trigger_ok();
 }
 
 // Observable diagnostic: GET /?kepoli_debug=1 prints a small HTML comment with
 // the cutover state + a build tag, so the deployed state is checkable over HTTP.
 add_action('wp_footer', static function (): void {
-    if (!isset($_GET['kepoli_debug'])) {
+    // Admin-only diagnostic — never expose build/seed internals to anonymous visitors.
+    if (!isset($_GET['kepoli_debug']) || !current_user_can('manage_options')) {
         return;
     }
     $counts = wp_count_posts();
@@ -104,6 +135,18 @@ add_action('wp_footer', static function (): void {
         esc_html((string) get_option('kepoli_seed_version')),
         (int) ($counts->publish ?? 0)
     );
+    // Surface the ready-to-click, nonce-protected cutover URL to the admin (only when a real
+    // KEPOLI_CUTOVER_SECRET is configured). The nonce is per-user/per-action/time-bound, so
+    // this URL can't be reused cross-site as a CSRF payload.
+    if ('' !== kepoli_autoseed_cutover_token()) {
+        printf(
+            "\n<!-- kepoli-cutover-url (admin only, single-use nonce): %s -->\n",
+            esc_html(add_query_arg([
+                'kepoli_do_cutover' => kepoli_autoseed_cutover_token(),
+                '_wpnonce'          => wp_create_nonce('kepoli_cutover'),
+            ], home_url('/')))
+        );
+    }
 }, 99);
 
 add_action('init', static function (): void {
@@ -126,41 +169,65 @@ add_action('init', static function (): void {
     if (kepoli_autoseed_should_cutover()) {
         $marker = 'kepoli_cutover_done';
         $target = function_exists('kepoli_seed_target_version') ? kepoli_seed_target_version() : 'cutover';
-        // The token URL is a deliberate manual "reseed now" trigger, so it FORCES
-        // a reseed even when the version marker already matches (needed to pick up
-        // new content/images without bumping the seed version). The env flag still
-        // respects the marker so it never loops on ordinary requests.
-        $via_token = isset($_GET['kepoli_do_cutover'])
-            && hash_equals('kpc-8f3a2e7b', (string) $_GET['kepoli_do_cutover']);
+        // An admin using the (nonce-protected) URL trigger may force a reseed past the marker
+        // (to pick up new content/images); the env flag stays marker-guarded so it runs once.
+        $via_token = kepoli_autoseed_url_trigger_ok();
+
+        // Steal a stale lock left by a prior run that hard-crashed before releasing.
+        $lock = get_option('kepoli_cutover_lock');
+        if (false !== $lock && (int) $lock < time() - 20 * MINUTE_IN_SECONDS) {
+            delete_option('kepoli_cutover_lock');
+        }
+
         if (((string) get_option($marker) !== (string) $target || $via_token)
-            && !get_transient('kepoli_seed_lock')
             && file_exists('/seed/bootstrap.php')
             && file_exists('/content/posts.json')
+            // Atomic claim: add_option returns false if the row already exists, so
+            // only ONE concurrent request can enter this destructive path.
+            && add_option('kepoli_cutover_lock', (string) time(), '', 'no')
         ) {
-            set_transient('kepoli_seed_lock', '1', 15 * MINUTE_IN_SECONDS);
             @set_time_limit(0);
             @ignore_user_abort(true);
-
-            $ids = get_posts([
-                'post_type'      => ['post', 'page', 'attachment'],
-                'post_status'    => 'any',
-                'posts_per_page' => -1,
-                'fields'         => 'ids',
-                'no_found_rows'  => true,
-            ]);
-            foreach ($ids as $pid) {
-                wp_delete_post((int) $pid, true);
-            }
-
-            ob_start();
-            try {
-                require '/seed/bootstrap.php';
-            } finally {
-                ob_end_clean();
-            }
-
+            // Record the attempt up-front: a hard seed failure then can't loop the
+            // env-flag trigger into repeatedly wiping content (an admin can still
+            // force a fresh attempt via the token).
             update_option($marker, (string) $target, true);
-            delete_transient('kepoli_seed_lock');
+            try {
+                $ids = get_posts([
+                    'post_type'      => ['post', 'page', 'attachment'],
+                    'post_status'    => 'any',
+                    'posts_per_page' => -1,
+                    'fields'         => 'ids',
+                    'no_found_rows'  => true,
+                ]);
+                foreach ($ids as $pid) {
+                    wp_delete_post((int) $pid, true);
+                }
+
+                ob_start();
+                try {
+                    require '/seed/bootstrap.php';
+                } finally {
+                    ob_end_clean();
+                }
+                delete_option('kepoli_cutover_fails');   // clean run — reset the retry counter
+            } catch (\Throwable $e) {
+                error_log('kepoli cutover failed: ' . $e->getMessage());
+                // The content was already wiped above but the seed did not finish. Leaving the
+                // marker set would strand the site PERMANENTLY EMPTY (neither the cutover nor the
+                // normal autoseed path would re-run). Instead, roll back the recovery state so the
+                // next request re-attempts — re-wiping an already-empty site is a no-op, so this
+                // only re-runs the seed. Bounded so a permanently-failing seed can't loop forever.
+                $fails = (int) get_option('kepoli_cutover_fails', 0) + 1;
+                update_option('kepoli_cutover_fails', (string) $fails, false);
+                if ($fails < 5) {
+                    delete_option($marker);                 // let should_cutover re-enter, OR
+                    delete_option('kepoli_seed_version');   // let the normal autoseed path recover
+                }
+            } finally {
+                // Always release the atomic lock, even if the seed threw.
+                delete_option('kepoli_cutover_lock');
+            }
             return;
         }
     }
@@ -201,6 +268,11 @@ add_action('init', static function (): void {
     ob_start();
     try {
         require '/seed/bootstrap.php';
+    } catch (\Throwable $e) {
+        // Match the cutover path: a seed failure (e.g. one unreadable content image) must
+        // degrade to an unseeded-but-serving site, NOT a PHP fatal / HTTP 500 on the public
+        // front-end request that happened to trigger the self-heal.
+        error_log('kepoli autoseed failed: ' . $e->getMessage());
     } finally {
         ob_end_clean();
         delete_transient('kepoli_seed_lock');

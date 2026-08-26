@@ -31,7 +31,7 @@ if ( $vr_recent->have_posts() ) : ?>
 			<?php while ( $vr_recent->have_posts() ) : $vr_recent->the_post(); ?>
 				<li>
 					<a class="sidebar__recent" href="<?php the_permalink(); ?>">
-						<?php if ( has_post_thumbnail() ) { the_post_thumbnail( 'thumbnail', array( 'loading' => 'lazy', 'alt' => '' ) ); } ?>
+						<?php if ( vr_has_post_image() ) { vr_the_post_image( 'thumbnail', array( 'loading' => 'lazy', 'alt' => '' ) ); } ?>
 						<span class="t"><?php echo esc_html( get_the_title() ); ?></span>
 					</a>
 				</li>
@@ -43,7 +43,7 @@ endif;
 wp_reset_postdata();
 
 /* Categories. */
-$vr_cats = get_categories( array( 'orderby' => 'count', 'order' => 'DESC', 'number' => 6, 'hide_empty' => true ) );
+$vr_cats = vr_top_categories( 6 );
 if ( ! empty( $vr_cats ) ) : ?>
 	<div class="sidebar__block">
 		<h2 class="sidebar__title"><?php esc_html_e( 'Topics', 'viral-reader' ); ?></h2>

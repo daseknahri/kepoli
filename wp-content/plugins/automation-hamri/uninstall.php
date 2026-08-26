@@ -14,8 +14,9 @@
  * Therefore this uninstall keeps:
  *   • the wpap_generated_posts table (the Distribution Hub listing),
  *   • all settings/ad/automation/UTM/IndexNow options.
- * It only clears the recurring automation cron event (so a deleted plugin
- * can't leave a dangling scheduled hook) and disposable license transients.
+ * It clears only disposable license transients. The recurring automation cron is
+ * intentionally left to the deactivation hook (see wpap_deactivate in the main
+ * file) and deliberately NOT touched here (see the note below).
  *
  * Published posts and their scheduled publish events are — and always were —
  * left completely intact. Deleting the plugin never touches your content.

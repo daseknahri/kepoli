@@ -21,7 +21,10 @@
 		}
 		var $c = $('#content');
 		if ($c.length) {
-			return $('<div>').html($c.val() || '').text();
+			/* Inert parse: a DOMParser document has no browsing context, so an
+			   <img onerror=…> smuggled into post content (e.g. a bulk import that
+			   bypassed kses) can't load/execute while we read its text. */
+			return (new DOMParser().parseFromString($c.val() || '', 'text/html').body.textContent) || '';
 		}
 		return '';
 	}
@@ -85,8 +88,8 @@
 	function extractRecipe(html) {
 		var res = { ingredients: [], steps: [] };
 		if (!html) { return res; }
-		var root = document.createElement('div');
-		root.innerHTML = html;
+		/* Inert parse (no browsing context) so smuggled <img onerror> can't fire. */
+		var root = new DOMParser().parseFromString(html, 'text/html').body;
 		var kids = Array.prototype.filter.call(root.childNodes, function (n) { return n.nodeType === 1; });
 		var target = null;
 		for (var i = 0; i < kids.length; i++) {

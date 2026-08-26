@@ -15,7 +15,7 @@ get_header();
 		<h1>
 			<?php
 			/* translators: %s: search query */
-			printf( esc_html__( 'Search results for: %s', 'viral-reader' ), '<span>' . esc_html( get_search_query() ) . '</span>' );
+			printf( esc_html__( 'Search results for: %s', 'viral-reader' ), '<span>' . esc_html( get_search_query( false ) ) . '</span>' );
 			?>
 		</h1>
 		<?php if ( have_posts() ) : ?>

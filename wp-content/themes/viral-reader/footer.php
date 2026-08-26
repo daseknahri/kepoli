@@ -32,7 +32,7 @@ if ( function_exists( 'wpap_zone_html' ) ) {
 			<h2><?php esc_html_e( 'Explore', 'viral-reader' ); ?></h2>
 			<ul>
 				<?php
-				foreach ( get_categories( array( 'orderby' => 'count', 'order' => 'DESC', 'number' => 5, 'hide_empty' => true ) ) as $cat ) {
+				foreach ( vr_top_categories( 5 ) as $cat ) {
 					$link = get_category_link( $cat->term_id );
 					if ( is_wp_error( $link ) ) { continue; }
 					echo '<li><a href="' . esc_url( $link ) . '">' . esc_html( $cat->name ) . '</a></li>';

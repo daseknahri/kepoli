@@ -53,15 +53,25 @@ while ( have_posts() ) :
 						</div>
 					</div>
 
-					<?php if ( has_post_thumbnail() ) : ?>
+					<?php if ( vr_has_post_image() ) : ?>
 						<?php
 						$vr_thumb_id  = get_post_thumbnail_id();
 						$vr_thumb_alt = trim( (string) get_post_meta( $vr_thumb_id, '_wp_attachment_image_alt', true ) );
 						if ( '' === $vr_thumb_alt ) { $vr_thumb_alt = wp_strip_all_tags( get_the_title() ); }
 						?>
 						<figure class="entry-featured-media">
-							<?php the_post_thumbnail( 'large', array( 'alt' => $vr_thumb_alt, 'sizes' => '(max-width:720px) 100vw, 680px' ) ); ?>
-							<?php $vr_cap = wp_get_attachment_caption( get_post_thumbnail_id() ); ?>
+							<?php
+							/* The single-post LCP element — eager + high priority to match the
+							   preload in vr_preload_lcp(). Renders the local thumbnail or the
+							   external (_wpap_image_url) fallback, so the preload is never wasted. */
+							vr_the_post_image( 'large', array(
+								'alt'           => $vr_thumb_alt,
+								'sizes'         => '(max-width:720px) 100vw, 680px',
+								'loading'       => 'eager',
+								'fetchpriority' => 'high',
+							) );
+							?>
+							<?php $vr_cap = $vr_thumb_id ? wp_get_attachment_caption( $vr_thumb_id ) : ''; ?>
 							<?php if ( $vr_cap ) : ?><figcaption><?php echo esc_html( $vr_cap ); ?></figcaption><?php endif; ?>
 						</figure>
 					<?php endif; ?>
@@ -126,8 +136,8 @@ while ( have_posts() ) :
 					<div class="related-grid">
 						<?php foreach ( $vr_related as $vr_r ) : ?>
 							<article class="related-card">
-								<?php if ( has_post_thumbnail( $vr_r->ID ) ) : ?>
-									<a class="related-card__media" href="<?php echo esc_url( get_permalink( $vr_r ) ); ?>" tabindex="-1" aria-hidden="true"><?php echo get_the_post_thumbnail( $vr_r->ID, 'medium', array( 'loading' => 'lazy', 'alt' => '' ) ); ?></a>
+								<?php if ( vr_has_post_image( $vr_r->ID ) ) : ?>
+									<a class="related-card__media" href="<?php echo esc_url( get_permalink( $vr_r ) ); ?>" tabindex="-1" aria-hidden="true"><?php vr_the_post_image( 'medium', array( 'loading' => 'lazy', 'alt' => '' ), $vr_r->ID ); ?></a>
 								<?php endif; ?>
 								<div class="related-card__body">
 									<h3><a href="<?php echo esc_url( get_permalink( $vr_r ) ); ?>"><?php echo esc_html( get_the_title( $vr_r ) ); ?></a></h3>

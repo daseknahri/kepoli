@@ -376,6 +376,13 @@ function kepoli_seed_upsert_page(array $page, int $author_id): int
         throw new RuntimeException($id->get_error_message());
     }
 
+    // Mirror the post loop: store the curated meta description so kepoli-schema's
+    // meta/OG path uses it directly and never falls back to the expensive
+    // get_the_excerpt()/the_content pipeline in <head>.
+    if (!empty($page['meta_description'])) {
+        update_post_meta((int) $id, '_kepoli_meta_description', sanitize_text_field((string) $page['meta_description']));
+    }
+
     return (int) $id;
 }
 
@@ -443,7 +450,11 @@ function kepoli_seed_ensure_author(array $pages, string $site_name, array $profi
         'last_name' => $last_name,
         'user_url' => home_url('/' . $author_slug . '/'),
         'description' => $description,
-        'role' => 'administrator',
+        // Least privilege: the public byline author's login/slug is enumerable (author archive,
+        // REST, bylines), so it must NOT be an administrator — otherwise enumeration hands an
+        // attacker the admin username for free. 'editor' gives full content control with no
+        // admin/plugin/user surface. The real admin is the separate WP_ADMIN_USER account.
+        'role' => 'editor',
     ]);
     update_user_meta((int) $user->ID, 'locale', kepoli_seed_admin_locale());
 
@@ -1177,6 +1188,20 @@ function kepoli_seed_article_content(array $post, array $post_ids, array $catego
         $post_ids,
         $posts
     );
+    // Article-to-article internal links (topical cluster / link equity). Recipes
+    // already render both related recipes AND related_articles; articles only
+    // rendered their recipes, so sibling guides/stories were never linked. The
+    // helper no-ops on an empty list, so posts without related_articles are unaffected.
+    $html .= kepoli_seed_render_related_links(
+        kepoli_seed_ui('Continua lectura', 'Keep reading'),
+        kepoli_seed_ui(
+            'Alte ghiduri si povesti pe acelasi subiect, daca vrei sa mergi mai departe.',
+            'More guides and stories on the same theme, if you want to go further.'
+        ),
+        $post['related_articles'] ?? [],
+        $post_ids,
+        $posts
+    );
 
     return $html;
 }
@@ -1546,10 +1571,12 @@ function kepoli_seed_set_site_icon(): void
 function kepoli_seed_delete_placeholder_posts(array $expected_slugs): void
 {
     $expected = array_flip(array_map('sanitize_title', $expected_slugs));
+    // Only SPECIFIC scaffold sentences — never a generic substring. 'Ingredient 1' was dropped:
+    // a real recipe/tutorial/comparison post can legitimately contain that literal, and this
+    // routine would otherwise destroy hand-written editorial content on a FORCE_RESEED.
     $placeholder_markers = [
         'Scrie aici de ce merita pregatita reteta',
         'Write here why the recipe is worth making',
-        'Ingredient 1',
         'Descrie primul pas clar',
         'Describe the first step clearly',
         'Continua cu pasii in ordinea fireasca',
@@ -1579,7 +1606,7 @@ function kepoli_seed_delete_placeholder_posts(array $expected_slugs): void
         $content = (string) get_post_field('post_content', $post_id);
         foreach ($placeholder_markers as $marker) {
             if (str_contains($content, $marker)) {
-                wp_delete_post((int) $post_id, true);
+                wp_delete_post((int) $post_id, false);   /* Trash (recoverable), not a permanent force-delete, in case a real post ever matches */
                 break;
             }
         }

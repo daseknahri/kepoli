@@ -15,16 +15,17 @@ $vr_alt  = wp_strip_all_tags( get_the_title() );
 $vr_htag = ( isset( $args['heading'] ) && in_array( $args['heading'], array( 'h2', 'h3' ), true ) ) ? $args['heading'] : 'h3';
 ?>
 <article <?php post_class( $vr_lead ? 'post-card is-lead' : 'post-card' ); ?>>
-	<?php if ( has_post_thumbnail() ) : ?>
+	<?php if ( vr_has_post_image() ) : ?>
 		<a class="post-card__media" href="<?php the_permalink(); ?>" tabindex="-1" aria-hidden="true">
 			<?php
 			/* The lead (full-width) card is the LCP element on archives/index/search,
 			   where the singular-only vr_lcp_priority() hint never runs — so load it
-			   eagerly with high fetchpriority instead of lazy. Non-lead cards stay lazy. */
+			   eagerly with high fetchpriority instead of lazy. Non-lead cards stay lazy.
+			   vr_the_post_image() renders the local thumbnail or the external fallback. */
 			$vr_img_attr = $vr_lead
 				? array( 'loading' => 'eager', 'fetchpriority' => 'high', 'alt' => $vr_alt )
 				: array( 'loading' => 'lazy', 'alt' => $vr_alt );
-			the_post_thumbnail( $vr_lead ? 'large' : 'medium_large', $vr_img_attr );
+			vr_the_post_image( $vr_lead ? 'large' : 'medium_large', $vr_img_attr );
 			?>
 		</a>
 	<?php endif; ?>

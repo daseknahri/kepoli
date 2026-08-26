@@ -10,6 +10,11 @@ COPY docker/wordpress/entrypoint.sh /usr/local/bin/kepoli-wordpress-entrypoint
 
 RUN a2enmod headers expires deflate \
     && a2enconf kepoli-performance \
+    # Suppress version disclosure at the source that wins: Debian's security.conf (loaded after
+    # our conf) sets ServerTokens OS, and PHP defaults expose_php On (X-Powered-By header).
+    && sed -ri 's/^ServerTokens\s+.*/ServerTokens Prod/' /etc/apache2/conf-available/security.conf \
+    && sed -ri 's/^ServerSignature\s+.*/ServerSignature Off/' /etc/apache2/conf-available/security.conf \
+    && printf 'expose_php = Off\n' > /usr/local/etc/php/conf.d/zz-kepoli-hardening.ini \
     && chmod +x /usr/local/bin/kepoli-wordpress-entrypoint /seed/bin/bootstrap.sh
 
 ENTRYPOINT ["kepoli-wordpress-entrypoint"]

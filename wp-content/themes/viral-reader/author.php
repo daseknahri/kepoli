@@ -18,7 +18,11 @@ get_header();
 $vr_author_id = (int) get_queried_object_id();
 $vr_bio       = get_the_author_meta( 'description', $vr_author_id );
 $vr_name      = get_the_author_meta( 'display_name', $vr_author_id );
-$vr_count     = count_user_posts( $vr_author_id, 'post', true );
+/* Reuse the main author query's total (already computed for pagination) instead of
+   a separate uncached COUNT; fall back to count_user_posts if it's unavailable. */
+$vr_count     = isset( $GLOBALS['wp_query']->found_posts )
+	? (int) $GLOBALS['wp_query']->found_posts
+	: (int) count_user_posts( $vr_author_id, 'post', true );
 ?>
 <div class="vr-container">
 	<header class="archive-header">
@@ -32,7 +36,7 @@ $vr_count     = count_user_posts( $vr_author_id, 'post', true );
 			<h1 class="author-header__name"><?php echo esc_html( $vr_name ); ?></h1>
 			<?php if ( $vr_bio ) : ?><p class="author-header__bio"><?php echo esc_html( $vr_bio ); ?></p><?php endif; ?>
 			<?php echo vr_author_social_html( $vr_author_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in helper ?>
-			<p class="author-header__count"><?php echo esc_html( sprintf( _n( '%s story', '%s stories', $vr_count, 'viral-reader' ), number_format_i18n( $vr_count ) ) ); ?></p>
+			<p class="author-header__count"><?php /* translators: %s: number of stories */ echo esc_html( sprintf( _n( '%s story', '%s stories', $vr_count, 'viral-reader' ), number_format_i18n( $vr_count ) ) ); ?></p>
 		</div>
 	</div>
 

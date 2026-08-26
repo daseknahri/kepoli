@@ -8,6 +8,18 @@
   var WPAP_DATA = window.WPAP || {};
   var AJAX  = WPAP_DATA.ajax_url || window.ajaxurl || "";
   var NONCE = WPAP_DATA.nonce || "";
+  var FB_COMMENT_TPL = WPAP_DATA.fb_comment_template || "";   /* global default first-comment template */
+
+  /* Compose a first-comment from a template + a link — mirrors wpap_compose_fb_comment() in PHP:
+     empty template → the bare link; a template without {{link}} → link appended on its own line
+     (only when the link is non-empty); otherwise every {{link}} is replaced. */
+  function wpapComposeComment(tpl, link) {
+    tpl = (tpl == null ? "" : String(tpl));
+    link = (link == null ? "" : String(link));
+    if (!tpl.trim()) { return link; }
+    if (tpl.indexOf("{{link}}") === -1) { return link.trim() ? tpl.replace(/\s+$/, "") + "\n" + link : tpl; }
+    return tpl.replace(/\{\{link\}\}/g, link);
+  }
 
   /* Keep the AJAX nonce fresh so long overnight batches don't 403 when the
      original wpap_nonce ages out mid-run. The server returns a new nonce on
@@ -29,8 +41,11 @@
   var currentPage    = 1;
   var currentSearch  = "";
   var currentStatus  = "all";   /* Distribution Hub status filter */
+  var currentFb      = "all";   /* Distribution Hub Facebook posted filter: all | posted | unposted */
   var currentPerPage = 10;      /* Distribution Hub rows per page */
   var lastRows       = [];   /* the exact rows currently rendered in the Distribution Hub table */
+  var fbCommentStore = {};   /* per-row {tpl, link, pid} for the ✏️ Comment editor */
+  var lastExportedPostIds = [];   /* post ids from the most recent JSON export → "mark this batch posted" */
 
   /* BOOT */
   $(function () {
@@ -289,6 +304,13 @@
                     '<option value="draft">Draft</option>' +
                   '</select>' +
                 '</div>' +
+                '<div class="wpap-ctrl-wrap"><span class="wpap-ctrl-label">Facebook:</span>' +
+                  '<select id="wpap-fb-filter" class="wpap-ctrl-select" title="Filter by Facebook posted status">' +
+                    '<option value="all">All</option>' +
+                    '<option value="unposted">Not posted yet</option>' +
+                    '<option value="posted">Posted ✓</option>' +
+                  '</select>' +
+                '</div>' +
                 '<div class="wpap-ctrl-wrap"><span class="wpap-ctrl-label">Show:</span>' +
                   '<select id="wpap-perpage" class="wpap-ctrl-select" title="Rows per page — show more to flip fewer pages">' +
                     '<option value="10">10 / page</option>' +
@@ -298,7 +320,9 @@
                   '</select>' +
                 '</div>' +
                 '<button id="wpap-bulk-import-btn" class="wpap-btn wpap-btn-primary wpap-btn-sm">📥 Bulk Import JSON</button>' +
-                '<button id="wpap-export-json-btn" class="wpap-btn wpap-btn-outline wpap-btn-sm">📤 Export JSON</button>' +
+                '<button id="wpap-export-json-btn" class="wpap-btn wpap-btn-outline wpap-btn-sm" title="Export the CURRENT page with the active filters">📤 Export page</button>' +
+                '<button id="wpap-export-all-btn" class="wpap-btn wpap-btn-outline wpap-btn-sm" title="Export EVERY matching row across all pages (with the active filters) as one JSON">📦 Export all</button>' +
+                '<button id="wpap-import-all-btn" class="wpap-btn wpap-btn-outline wpap-btn-sm" title="Backfill a Hub row for every published post not already tracked (manual + pre-existing posts). Future publishes are auto-added.">🗂 Import Blog Posts</button>' +
                 '<button id="wpap-cleanup-btn" class="wpap-btn wpap-btn-outline wpap-btn-sm" title="Remove Hub entries whose post was deleted or trashed">🧹 Clean Deleted</button>' +
                 '<button id="wpap-delete-selected-btn" class="wpap-btn wpap-btn-danger wpap-btn-sm" style="display:none">🗑 Delete Selected (<span id="wpap-sel-count">0</span>)</button>' +
                 '<button id="wpap-refresh-btn" class="wpap-btn wpap-btn-outline">↻ Refresh</button>' +
@@ -337,10 +361,11 @@
         '<div id="wpap-json-modal" class="wpap-modal-overlay" style="display:none">' +
           '<div class="wpap-modal-box">' +
             '<h3>📄 Distribution JSON</h3>' +
-            '<p>Copy the <strong>current page</strong> (up to 10 posts) as JSON with <code>caption</code>, <code>comment</code>, and <code>imageUrl</code>.</p>' +
+            '<p id="wpap-json-summary">Copy as JSON with <code>caption</code> (the hook), <code>comment</code> (the first comment — template + link), <code>link</code>, <code>template</code> (this post\'s raw override), and <code>imageUrl</code>.</p>' +
             '<textarea id="wpap-json-area" rows="14" class="wpap-modal-ta" readonly></textarea>' +
             '<div class="wpap-modal-actions">' +
               '<button id="btn-json-copy" class="wpap-btn wpap-btn-primary">📋 Copy JSON</button>' +
+              '<button id="btn-json-mark-posted" class="wpap-btn wpap-btn-outline" style="display:none">✓ Mark these as posted</button>' +
               '<button id="btn-json-close" class="wpap-btn wpap-btn-ghost">Close</button>' +
             '</div>' +
           '</div>' +
@@ -474,10 +499,28 @@
     document.getElementById("wpap-export-json-btn").addEventListener("click", function () {
       loadDistributionJson();
     });
+    var exportAllBtn = document.getElementById("wpap-export-all-btn");
+    if (exportAllBtn) exportAllBtn.addEventListener("click", function () { loadDistributionJsonAll(); });
     var cleanupBtn = document.getElementById("wpap-cleanup-btn");
     if (cleanupBtn) cleanupBtn.addEventListener("click", cleanupDeletedRows);
+    var importAllBtn = document.getElementById("wpap-import-all-btn");
+    if (importAllBtn) importAllBtn.addEventListener("click", function () {
+      if (!confirm("Add a Hub row for every published post not already tracked? Future publishes are auto-added too.")) { return; }
+      var b = this; b.disabled = true; var t = b.textContent; b.textContent = "⏳ Importing…";
+      $.post(AJAX, { action: "wpap_import_all_posts", nonce: NONCE }, function (res) {
+        b.disabled = false; b.textContent = t;
+        if (res && res.success) {
+          toast("Imported " + (res.data.imported || 0) + " post(s) into the Hub. Total: " + (res.data.total || 0) + ".", "success");
+          loadTable(1, currentSearch || "");
+        } else {
+          toast((res && res.data) ? res.data : "Import failed.", "error");
+        }
+      }).fail(function () { b.disabled = false; b.textContent = t; toast("Network error.", "error"); });
+    });
     var statusFilter = document.getElementById("wpap-status-filter");
     if (statusFilter) statusFilter.addEventListener("change", function () { currentStatus = this.value; loadTable(1, currentSearch || ""); });
+    var fbFilter = document.getElementById("wpap-fb-filter");
+    if (fbFilter) fbFilter.addEventListener("change", function () { currentFb = this.value; loadTable(1, currentSearch || ""); });
     var perPageSel = document.getElementById("wpap-perpage");
     if (perPageSel) perPageSel.addEventListener("change", function () { currentPerPage = parseInt(this.value, 10) || 10; loadTable(1, currentSearch || ""); });
     var selectAll = document.getElementById("wpap-select-all");
@@ -498,6 +541,8 @@
     document.getElementById("btn-json-copy").addEventListener("click", function () {
       copyJsonToClipboard();
     });
+    var jsonMarkBtn = document.getElementById("btn-json-mark-posted");
+    if (jsonMarkBtn) jsonMarkBtn.addEventListener("click", markExportedPosted);
     document.getElementById("wpap-json-modal").addEventListener("click", function (e) {
       if (e.target === this) closeJsonModal();
     });
@@ -789,10 +834,24 @@
     if (modal) modal.style.display = "none";
   }
 
-  function openJsonModal(jsonText) {
+  function openJsonModal(jsonText, summary, postIds) {
     var modal = document.getElementById("wpap-json-modal");
     var textarea = document.getElementById("wpap-json-area");
     if (!modal || !textarea) return;
+    var sum = document.getElementById("wpap-json-summary");
+    if (sum && summary) { sum.textContent = summary; }
+    /* Remember which posts this JSON covers so "Mark these as posted" flags exactly them. */
+    lastExportedPostIds = Array.isArray(postIds) ? postIds.slice() : [];
+    var markBtn = document.getElementById("btn-json-mark-posted");
+    if (markBtn) {
+      if (lastExportedPostIds.length) {
+        markBtn.style.display = "";
+        markBtn.textContent = "✓ Mark these " + lastExportedPostIds.length + " as posted";
+        markBtn.disabled = false;
+      } else {
+        markBtn.style.display = "none";
+      }
+    }
     textarea.value = jsonText || "[]";
     modal.style.display = "flex";
     textarea.focus();
@@ -802,6 +861,24 @@
   function closeJsonModal() {
     var modal = document.getElementById("wpap-json-modal");
     if (modal) modal.style.display = "none";
+  }
+
+  /* Flag the just-exported batch as posted to Facebook, then refresh so an active
+     "Not posted yet" filter drops them. */
+  function markExportedPosted() {
+    var ids = lastExportedPostIds || [];
+    if (!ids.length) { toast("No exported posts to mark.", "warn"); return; }
+    if (!confirm("Mark these " + ids.length + " post(s) as posted to Facebook?\n\nThey'll drop out of the \"Not posted yet\" filter.")) return;
+    var btn = document.getElementById("btn-json-mark-posted");
+    var orig = btn ? btn.textContent : "";
+    if (btn) { btn.disabled = true; btn.textContent = "Marking…"; }
+    $.post(AJAX, { action: "wpap_mark_posted_bulk", nonce: NONCE, post_ids: ids.join(","), posted: 1 }, function (res) {
+      if (!res || !res.success) { if (btn) { btn.disabled = false; btn.textContent = orig; } toast((res && res.data) ? String(res.data) : "Could not mark posted.", "error"); return; }
+      var n = (res.data && res.data.marked) || 0;
+      toast("Marked " + n + " post(s) as posted.", "success");
+      closeJsonModal();
+      loadTable(currentPage, currentSearch || "");
+    }).fail(function () { if (btn) { btn.disabled = false; btn.textContent = orig; } toast("Network error.", "error"); });
   }
 
   async function copyPlainText(text) {
@@ -1088,20 +1165,77 @@
 
   function loadDistributionJson() {
     /* Export EXACTLY the rows currently shown in the table below (the current
-       page — up to 10), built from the same data that rendered them. */
+       page), built from the same data that rendered them. */
     if (!lastRows || !lastRows.length) {
       toast("Nothing to export on this page.", "warn");
-      openJsonModal("[]");
+      openJsonModal("[]", "No rows on this page.", []);
       return;
     }
     var items = lastRows.map(function (r) {
       return {
-        caption:  r.fb_text || "",                       /* caption  = the hook */
-        comment:  r.smart_link || r.post_url || "",      /* comment  = the post link */
-        imageUrl: r.image_url || ""                      /* imageUrl = the original image */
+        caption:  r.fb_text || "",                                              /* caption  = the hook */
+        comment:  (r.fb_comment != null ? r.fb_comment : (r.smart_link || "")), /* comment  = first comment (template + link) */
+        link:     (r.smart_link || ""),                                         /* link     = the clean post link */
+        template: (r.fb_comment_tpl || ""),                                     /* template = this post's raw override ('' = global) */
+        imageUrl: (r.image_url || "")                                           /* imageUrl = the original image */
       };
     });
-    openJsonModal(JSON.stringify(items));
+    /* Client-side "Export page" → derive the batch's post ids so "Mark posted" flags exactly them. */
+    var postIds = [];
+    lastRows.forEach(function (r) { var pid = parseInt(r.post_id, 10) || 0; if (pid) postIds.push(pid); });
+    var summary = "Current page — " + items.length + " row(s)";
+    var filters = [];
+    if (currentStatus && currentStatus !== "all") filters.push("status: " + currentStatus);
+    if (currentFb && currentFb !== "all") filters.push("Facebook: " + currentFb);
+    if (currentSearch) filters.push('search: "' + currentSearch + '"');
+    if (filters.length) summary += " · " + filters.join(", ");
+    openJsonModal(JSON.stringify(items), summary, postIds);
+  }
+
+  /* Export EVERY matching row across all pages via the hardened server endpoint
+     (wpap_export_distribution_json with all=1). The server applies the same
+     search + status + Facebook filters and skips not-live / link-less rows. */
+  function loadDistributionJsonAll() {
+    if (!AJAX) { toast("AJAX configuration missing.", "error"); return; }
+    var btn = document.getElementById("wpap-export-all-btn");
+    var orig = btn ? btn.innerHTML : "";
+    if (btn) { btn.disabled = true; btn.innerHTML = "📦 Exporting…"; }
+    $.get(AJAX, {
+      action: "wpap_export_distribution_json", nonce: NONCE,
+      page: currentPage, search: currentSearch,
+      status: currentStatus, fb: currentFb, per_page: currentPerPage, all: 1
+    }, function (res) {
+      if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+      if (!res || !res.success) { toast((res && res.data) ? String(res.data) : "Export failed.", "error"); return; }
+      var data  = res.data || {};
+      var items = (data.items || []).map(function (it) {
+        return {
+          caption:  it.caption || "",
+          comment:  (it.comment != null ? it.comment : wpapComposeComment(it.template || "", it.link || "")),
+          link:     it.link || "",
+          template: it.template || "",
+          imageUrl: it.imageUrl || ""
+        };
+      });
+      var summary = "ALL matching rows — " + items.length + " exportable of " + (parseInt(data.total, 10) || 0) + " total";
+      var filters = [];
+      if (currentStatus && currentStatus !== "all") filters.push("status: " + currentStatus);
+      if (currentFb && currentFb !== "all") filters.push("Facebook: " + currentFb);
+      if (currentSearch) filters.push('search: "' + currentSearch + '"');
+      if (filters.length) summary += " · " + filters.join(", ");
+      var extra = [];
+      if (data.skipped) extra.push(data.skipped + " not-live withheld");
+      if (data.no_link) extra.push(data.no_link + " link-less skipped");
+      if (extra.length) summary += " · " + extra.join(", ");
+      if (data.capped) { summary += " · ⚠ capped — narrow the filter to export the rest"; toast("Export hit the row cap — narrow the filter to export the rest.", "warn"); }
+      if (data.skipped) toast(data.skipped + " scheduled/draft row(s) withheld — not live yet.", "warn");
+      if (data.no_link) toast(data.no_link + " published row(s) had no link and were skipped.", "warn");
+      if (!items.length) toast("Nothing to export.", "warn");
+      openJsonModal(JSON.stringify(items), summary, data.post_ids || []);
+    }).fail(function () {
+      if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+      toast("Network error during export.", "error");
+    });
   }
 
   async function copyJsonToClipboard() {
@@ -1220,7 +1354,7 @@
           logLine((isScheduled ? "🕒 " : "✅ ") + "<strong>" + escHtml(item.title) + "</strong>" + schedInfo + " — <a href='" + escHtml(res.data.post_url || "#") + "' target='_blank'>View ↗</a>  " + imgI + " | " + fbI + " | 🌐" + escHtml(res.data.lang || ""), "success");
           var nid = "live_" + Date.now();
           fbTextsStore[nid] = res.data.fb_text || "";
-          injectNewRow({ id: nid, title: res.data.title || item.title, post_url: res.data.post_url, image_url: res.data.image_url, fb_text: res.data.fb_text, smart_link: res.data.smart_link || res.data.post_url, created_at: new Date().toISOString().split("T")[0] });
+          injectNewRow({ id: nid, title: res.data.title || item.title, post_url: res.data.post_url, image_url: res.data.image_url, fb_text: res.data.fb_text, smart_link: res.data.smart_link || res.data.post_url, wp_status: res.data.post_status, created_at: new Date().toISOString().split("T")[0] });
           setTimeout(function () { loadTable(1, ""); }, 600);
         } else {
           results.push({ status: "error" });
@@ -1361,6 +1495,7 @@
     });
   }
 
+  var loadTableSeq = 0;   /* monotonic token: drop out-of-order responses so the last-issued request always wins (keeps the table + lastRows/Export JSON consistent) */
   function loadTable(page, search) {
     currentPage   = page || 1;
     currentSearch = search !== undefined ? search : currentSearch;
@@ -1370,10 +1505,12 @@
       renderTableError("AJAX configuration missing.");
       return;
     }
-    $.get(AJAX, { action: "wpap_get_posts", nonce: NONCE, page: currentPage, search: currentSearch, status: currentStatus, per_page: currentPerPage }, function (res) {
+    var mySeq = ++loadTableSeq;
+    $.get(AJAX, { action: "wpap_get_posts", nonce: NONCE, page: currentPage, search: currentSearch, status: currentStatus, fb: currentFb, per_page: currentPerPage }, function (res) {
+      if (mySeq !== loadTableSeq) { return; }   /* a newer request superseded this one — ignore the stale response */
       if (!res.success) { renderTableError(res.data); return; }
       renderTable(res.data);
-    }).fail(function () { renderTableError("Network error."); });
+    }).fail(function () { if (mySeq === loadTableSeq) { renderTableError("Network error."); } });
   }
 
   function renderTable(data) {
@@ -1402,16 +1539,42 @@
     var iu   = escHtml(row.image_url || "");
     var sl   = escHtml(row.smart_link || row.post_url || "");
     var dt   = (row.created_at || "").split(" ")[0];
+    /* Publish status (from the wp_posts join). "" = unknown (very old row / deleted post) → treat as live so a real
+       post is never hidden. A NON-published post is scheduled/draft — its link 404s until it goes live, so badge it
+       and DISABLE the Link-copy button so it can't be copied by accident. */
+    var st   = String(row.wp_status || "");
+    var live = (st === "" || st === "publish");
     fbTextsStore[id] = row.fb_text || "";
     var thumb = iu ? '<img src="' + iu + '" class="wpap-thumb" loading="lazy" decoding="async" width="56" height="56" alt="" />' : '<span class="wpap-no-img">No image</span>';
     var cimg  = iu ? '<button class="wpap-action-btn" data-url="' + iu + '" onclick="wpapCopyImage(this)">📋 Copy</button>' : '<button class="wpap-action-btn" disabled>—</button>';
     var dl    = iu ? '<a class="wpap-action-btn wpap-dl-btn" href="' + iu + '" download>⬇ Save</a>' : '<span class="wpap-action-btn" style="opacity:.4">—</span>';
-    return '<tr>' +
+    var badge = live ? "" : '<span class="wpap-date" style="color:#d29922;font-weight:600">' + (st === "future" ? "⏳ Scheduled — not live yet" : ("📝 " + escHtml(st))) + '</span>';
+    var linkBtn = live
+      ? '<button class="wpap-action-btn" data-url="' + sl + '" onclick="wpapCopyText(this,this.dataset.url,\'Link copied!\')">🔗 Link</button>'
+      : '<button class="wpap-action-btn" disabled title="Not published yet — this link 404s until the post goes live" style="opacity:.45;cursor:not-allowed">🔗 Not live</button>';
+    /* Per-post first-comment override editor. A • on the button flags a row that carries its own text. */
+    var _pid    = parseInt(row.post_id, 10) || 0;
+    var _hasTpl = String(row.fb_comment_tpl || "").trim().length > 0;
+    fbCommentStore[id] = { tpl: (row.fb_comment_tpl || ""), link: (row.smart_link || row.post_url || ""), pid: _pid, caption: (row.fb_text || ""), image: (row.image_url || "") };
+    var commentBtn = _pid
+      ? '<button class="wpap-action-btn wpap-fbcomment-btn" data-rowid="' + id + '" data-postid="' + _pid + '" onclick="wpapEditFbComment(this)" title="Set this post&#39;s first-comment text (overrides the global default)" style="' + (_hasTpl ? 'color:#8957e5;border-color:#8957e5;font-weight:700' : '') + '">✏️ Comment' + (_hasTpl ? ' •' : '') + '</button>'
+      : '';
+    /* Copy the whole ready-to-post FB post (caption + first-comment + image) as JSON. Live posts only —
+       a scheduled/draft link 404s until it goes live. */
+    var fbPostBtn = ( live && _pid )
+      ? '<button class="wpap-action-btn" data-rowid="' + id + '" onclick="wpapCopyFbPost(this)" title="Copy this article as a ready-to-post Facebook post (caption + first-comment text + image), as JSON">📘 FB post</button>'
+      : '';
+    /* Per-row Facebook "posted" toggle (1:1 tracking) — flips _wpap_fb_posted; drives the "Not posted yet" filter. */
+    var _posted = parseInt(row.fb_posted, 10) ? 1 : 0;
+    var postedBtn = _pid
+      ? '<button class="wpap-action-btn" data-rowid="' + id + '" data-postid="' + _pid + '" data-posted="' + _posted + '" onclick="wpapTogglePosted(this)" title="' + (_posted ? "Posted to Facebook — click to unmark" : "Not posted yet — click to mark as posted") + '" style="' + (_posted ? "color:#1a7f37;border-color:#1a7f37;font-weight:700" : "") + '">' + (_posted ? "✅ Posted" : "☐ Posted") + '</button>'
+      : '';
+    return '<tr' + (live ? '' : ' style="opacity:.6"') + '>' +
       '<td class="wpap-cb-cell"><input type="checkbox" class="wpap-row-cb" value="' + escHtml(String(row.id || "")) + '" /></td>' +
-      '<td class="wpap-title-cell"><a href="' + pu + '" target="_blank" class="wpap-post-link" title="' + t + '">' + t + '</a><span class="wpap-date">' + dt + '</span></td>' +
+      '<td class="wpap-title-cell"><a href="' + pu + '" target="_blank" class="wpap-post-link" title="' + t + '">' + t + '</a><span class="wpap-date">' + dt + '</span>' + badge + '</td>' +
       '<td class="wpap-img-cell">' + thumb + '</td><td>' + cimg + '</td><td>' + dl + '</td>' +
       '<td><button class="wpap-action-btn" data-rowid="' + id + '" onclick="wpapCopyHook(this)">💬 Hook</button></td>' +
-      '<td><button class="wpap-action-btn" data-url="' + sl + '" onclick="wpapCopyText(this,this.dataset.url,\'Link copied!\')">🔗 Link</button>' +
+      '<td>' + linkBtn + ' ' + fbPostBtn + ' ' + postedBtn + ' ' + commentBtn +
       ' <button class="wpap-action-btn wpap-del-btn" style="color:#e5534b" data-id="' + escHtml(String(row.id || "")) + '" data-postid="' + (parseInt(row.post_id, 10) || 0) + '" onclick="wpapDeleteRow(this)" title="Remove this entry from the Hub">🗑</button></td>' +
       '</tr>';
   }
@@ -1514,6 +1677,98 @@
     } catch (e) { flashBtn(btn, "❌ Error", "error"); toast("Could not fetch image: " + e.message, "error"); }
   };
 
+  /* Copy this article as a ready-to-post Facebook post: caption = the hook, comment = the
+     first-comment template (this post's override, else the global default) with {{link}} → the
+     link (no template → the bare link), imageUrl = the image. Paste straight into your poster. */
+  /* Flip ONE row's Facebook "posted" state (persists _wpap_fb_posted), and keep lastRows + the
+     button in sync so the "Not posted yet" filter and the export reflect it without a reload. */
+  window.wpapTogglePosted = function (btn) {
+    var pid = parseInt(btn.dataset.postid, 10) || 0;
+    if (!pid) return;
+    var next = parseInt(btn.dataset.posted, 10) ? 0 : 1;
+    btn.disabled = true;
+    $.post(AJAX, { action: "wpap_toggle_fb_posted", nonce: NONCE, post_id: pid, posted: next }, function (res) {
+      btn.disabled = false;
+      if (res && res.success) {
+        var p = res.data.posted ? 1 : 0;
+        btn.dataset.posted = p;
+        btn.textContent = p ? "✅ Posted" : "☐ Posted";
+        btn.style.color = p ? "#1a7f37" : "";
+        btn.style.borderColor = p ? "#1a7f37" : "";
+        btn.title = p ? "Posted to Facebook — click to unmark" : "Not posted yet — click to mark as posted";
+        btn.style.fontWeight = p ? "700" : "";
+        (lastRows || []).forEach(function (r) { if (String(r.id) === String(btn.dataset.rowid)) { r.fb_posted = p; } });
+      } else { toast((res && res.data) ? res.data : "Failed.", "error"); }
+    }).fail(function () { btn.disabled = false; toast("Network error.", "error"); });
+  };
+
+  window.wpapCopyFbPost = function (btn) {
+    var d = fbCommentStore[btn.dataset.rowid] || {};
+    var caption = (d.caption || "").trim();
+    var link = (d.link || "");
+    var comment = wpapComposeComment(d.tpl || FB_COMMENT_TPL, link);
+    var image = d.image || "";
+    if (!caption && !comment && !image) { return; }
+    var json = JSON.stringify([{ caption: caption, comment: comment, imageUrl: image }]);
+    wpapCopyText(btn, json, "Copied this article as JSON — paste it into your poster.");
+  };
+
+  /* Edit ONE post's first-comment override. Empty save = clear it (the row falls back to the global
+     default). A live preview shows exactly what the first comment becomes with this post's real link. */
+  window.wpapEditFbComment = function (btn) {
+    var rowid = btn.dataset.rowid;
+    var pid = parseInt(btn.dataset.postid, 10) || 0;
+    if (!pid) return;
+    var d = fbCommentStore[rowid] || { tpl: "", link: "" };
+    var link = d.link || "";
+    var ov = document.createElement("div");
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;";
+    var box = document.createElement("div");
+    box.style.cssText = "background:#fff;color:#1e293b;max-width:620px;width:100%;border-radius:12px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.4);font-family:sans-serif;";
+    box.innerHTML =
+      '<h3 style="margin:0 0 6px;font-size:17px;">✏️ First-comment text for this post</h3>' +
+      '<p style="margin:0 0 10px;font-size:12px;color:#64748b;">Put <code>{{link}}</code> where the link goes. Leave blank to use the global default. Overrides the default for <strong>this post only</strong>.</p>' +
+      '<textarea id="wpap-fbc-ta" rows="5" class="large-text code" style="width:100%;box-sizing:border-box;" placeholder="' + escHtml(FB_COMMENT_TPL || "👉 Full article:\n{{link}}") + '">' + escHtml(d.tpl || "") + '</textarea>' +
+      '<p style="margin:10px 0 4px;font-size:12px;font-weight:600;color:#334155;">Preview (first comment):</p>' +
+      '<pre id="wpap-fbc-prev" style="white-space:pre-wrap;background:#f1f5f9;border-radius:8px;padding:10px;font-size:12px;max-height:140px;overflow:auto;margin:0 0 14px;"></pre>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
+        '<button id="wpap-fbc-clear" class="wpap-btn wpap-btn-outline wpap-btn-sm">Clear (use global)</button>' +
+        '<button id="wpap-fbc-cancel" class="wpap-btn wpap-btn-outline wpap-btn-sm">Cancel</button>' +
+        '<button id="wpap-fbc-save" class="wpap-btn wpap-btn-primary wpap-btn-sm">Save</button>' +
+      '</div>';
+    ov.appendChild(box);
+    document.body.appendChild(ov);
+    var ta = box.querySelector("#wpap-fbc-ta");
+    var prev = box.querySelector("#wpap-fbc-prev");
+    function refresh() { prev.textContent = wpapComposeComment(ta.value || FB_COMMENT_TPL, link); }
+    refresh();
+    ta.addEventListener("input", refresh);
+    function close() { if (ov.parentNode) ov.parentNode.removeChild(ov); }
+    ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
+    box.querySelector("#wpap-fbc-cancel").addEventListener("click", close);
+    box.querySelector("#wpap-fbc-clear").addEventListener("click", function () { ta.value = ""; refresh(); ta.focus(); });
+    box.querySelector("#wpap-fbc-save").addEventListener("click", function () {
+      var save = box.querySelector("#wpap-fbc-save");
+      save.disabled = true; save.textContent = "Saving…";
+      $.post(AJAX, { action: "wpap_save_fb_comment", nonce: NONCE, post_id: pid, template: ta.value }, function (res) {
+        if (!res || !res.success) { save.disabled = false; save.textContent = "Save"; toast((res && res.data) ? String(res.data) : "Could not save.", "error"); return; }
+        var tpl = (res.data && res.data.template) || "";
+        var comment = (res.data && res.data.fb_comment != null) ? res.data.fb_comment : "";
+        d.tpl = tpl;   /* keep the store in sync so the editor + export reflect it immediately */
+        /* Keep lastRows (the export source) in sync without a full reload. */
+        (lastRows || []).forEach(function (r) {
+          if (String(r.id) === String(rowid)) { r.fb_comment_tpl = tpl; r.fb_comment = comment; }
+        });
+        var hasTpl = tpl.trim().length > 0;
+        btn.style.cssText = hasTpl ? "color:#8957e5;border-color:#8957e5;font-weight:700" : "";
+        btn.innerHTML = "✏️ Comment" + (hasTpl ? " •" : "");
+        toast(hasTpl ? "Saved this post's first-comment text." : "Cleared — this post now uses the global default.", "success");
+        close();
+      }).fail(function () { save.disabled = false; save.textContent = "Save"; toast("Network error.", "error"); });
+    });
+    ta.focus();
+  };
+
   function logLine(html, type) {
     var body = document.getElementById("wpap-log-body"); if (!body) return;
     var cls  = type ? ("wpap-log-" + type) : "";
@@ -1557,8 +1812,9 @@
     /* Hub-only: never send delete_post. */
     $.post(AJAX, { action: "wpap_delete_distribution", nonce: NONCE, id: id, post_id: pid }, function (res) {
       if (res && res.success) {
-        if (tr) { tr.style.transition = "opacity .3s"; tr.style.opacity = "0"; setTimeout(function () { tr.remove(); }, 300); }
+        if (tr) { tr.style.transition = "opacity .3s"; tr.style.opacity = "0"; setTimeout(function () { tr.remove(); updateSelectedCount(); }, 300); }
         lastRows = (lastRows || []).filter(function (r) { return String(r.id) !== String(id); });
+        updateSelectedCount();   /* keep the 'Delete Selected (N)' badge + select-all tri-state accurate after removal */
         toast("Removed from Hub (post untouched).", "success");
       } else {
         btn.disabled = false;

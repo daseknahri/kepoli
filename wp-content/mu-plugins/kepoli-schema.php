@@ -69,8 +69,10 @@ function kepoli_schema_jsonld(): void
 
     $data = ['@context' => 'https://schema.org', '@graph' => $graph];
 
+    // JSON_HEX_TAG|JSON_HEX_AMP neutralize a literal </script> (or &) in any value,
+    // matching the theme's own JSON-LD emitters and preventing a script-block breakout.
     echo "\n" . '<script type="application/ld+json">'
-        . wp_json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+        . wp_json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE)
         . '</script>' . "\n";
 }
 
@@ -102,7 +104,11 @@ function kepoli_seo_meta_head(): void
     $desc = '';
     if ($qid) {
         $desc = (string) get_post_meta($qid, '_kepoli_meta_description', true);
-        if ($desc === '') {
+        if ($desc === '' && has_excerpt($qid)) {
+            // Only call get_the_excerpt when a real manual excerpt exists — otherwise
+            // WP core boots the full the_content filter pipeline just to derive one,
+            // duplicating the body render inside <head>. The raw-content trim below
+            // covers the no-excerpt case cheaply.
             $desc = wp_strip_all_tags((string) get_the_excerpt($qid));
         }
         if ($desc === '') {
@@ -117,9 +123,19 @@ function kepoli_seo_meta_head(): void
 
     $title = wp_get_document_title();
     $url   = is_front_page() ? home_url('/') : get_permalink($qid);
-    $img   = function_exists('get_site_icon_url') ? get_site_icon_url(512) : '';
-    if (!$img) {
-        $img = get_template_directory_uri() . '/assets/img/kepoli-icon.png';
+    // Social share image: prefer a real landscape cover (>=1200x630) for a proper
+    // summary_large_image card; otherwise fall back to the square site icon with a
+    // summary card (a square image on a large card gets cropped/downgraded).
+    $cover_rel = '/assets/img/kepoli-social-cover.jpg';
+    if (file_exists(get_template_directory() . $cover_rel)) {
+        $img  = get_template_directory_uri() . $cover_rel;
+        $card = 'summary_large_image';
+    } else {
+        $img = function_exists('get_site_icon_url') ? get_site_icon_url(512) : '';
+        if (!$img) {
+            $img = get_template_directory_uri() . '/assets/img/kepoli-icon.png';
+        }
+        $card = 'summary';
     }
 
     $out  = "\n";
@@ -130,7 +146,7 @@ function kepoli_seo_meta_head(): void
     $out .= '<meta property="og:description" content="' . esc_attr($desc) . '">' . "\n";
     $out .= '<meta property="og:url" content="' . esc_url($url) . '">' . "\n";
     $out .= '<meta property="og:image" content="' . esc_url($img) . '">' . "\n";
-    $out .= '<meta name="twitter:card" content="summary_large_image">' . "\n";
+    $out .= '<meta name="twitter:card" content="' . esc_attr($card) . '">' . "\n";
     $out .= '<meta name="twitter:title" content="' . esc_attr($title) . '">' . "\n";
     $out .= '<meta name="twitter:description" content="' . esc_attr($desc) . '">' . "\n";
     $out .= '<meta name="twitter:image" content="' . esc_url($img) . '">' . "\n";

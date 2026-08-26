@@ -93,6 +93,7 @@
 		if (copyBtn) {
 			var url = copyBtn.getAttribute('data-copy-url');
 			var done = function () {
+				copyBtn.setAttribute('data-copied', L.copiedShort || 'Copied'); /* localized tooltip text */
 				copyBtn.classList.add('is-copied');
 				announce(L.copied || 'Link copied');
 				setTimeout(function () { copyBtn.classList.remove('is-copied'); }, 1500);

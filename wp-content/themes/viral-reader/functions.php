@@ -2,10 +2,12 @@
 /**
  * Viral Reader — theme functions.
  *
- * A warm editorial blog theme for viral story / health content. Standalone and
- * self-contained: no external services, no custom post meta, no mu-plugin
- * dependencies. Pairs with the WP Automator Pro plugin for ads (header/sidebar/
- * footer zones via wpap_zone_html(); in-content ads are the plugin's job).
+ * A warm, editorial, mobile-first blog/recipe theme. Standalone: no external
+ * services and no hard plugin dependency — it degrades gracefully with no plugin
+ * active. It OPTIONALLY integrates with the WP Automator Pro plugin (recipe fields
+ * via _wpap_recipe_* meta, external featured images via _wpap_image_url, and ad
+ * zones via wpap_zone_html()); every integration point is filterable
+ * (vr_pre_recipe_data, vr_external_image_url) so other content sources can drive it.
  *
  * @package Viral_Reader
  */
@@ -13,7 +15,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 if ( ! defined( 'VR_VERSION' ) ) {
-	define( 'VR_VERSION', '1.9.1' );
+	define( 'VR_VERSION', '1.9.4' );
 }
 
 /* ─────────────────────────────────────────────
@@ -28,6 +30,10 @@ function vr_setup() {
 	add_theme_support( 'html5', array( 'search-form', 'comment-form', 'comment-list', 'gallery', 'caption', 'style', 'script' ) );
 	add_theme_support( 'responsive-embeds' );
 	add_theme_support( 'align-wide' );
+	/* Style the block editor to match the front end (serif reading column, palette,
+	   spacing) so authors edit against what they publish. */
+	add_theme_support( 'editor-styles' );
+	add_editor_style( 'assets/css/editor.css' );
 	register_nav_menus( array(
 		'primary' => __( 'Primary Menu', 'viral-reader' ),
 		'footer'  => __( 'Footer Menu', 'viral-reader' ),
@@ -41,6 +47,89 @@ function vr_content_width() {
 add_action( 'after_setup_theme', 'vr_content_width', 0 );
 
 /* ─────────────────────────────────────────────
+   Featured image (plugin-decoupled)
+   Render the local thumbnail when present, else a filterable external URL (default:
+   the automation plugin's _wpap_image_url meta). Keeps the theme showing images on
+   external-image sites, and lets ANY content source supply one via the
+   'vr_external_image_url' filter — the recipe/card/single/related/sidebar surfaces
+   all flow through here so they behave identically.
+───────────────────────────────────────────── */
+function vr_external_image_url( $post_id = 0 ) {
+	$post_id = $post_id ? (int) $post_id : (int) get_the_ID();
+	$ext = apply_filters( 'vr_external_image_url', get_post_meta( $post_id, '_wpap_image_url', true ), $post_id );
+	return ( is_string( $ext ) && preg_match( '#^https?://#i', $ext ) ) ? $ext : '';
+}
+function vr_has_post_image( $post_id = 0 ) {
+	$post_id = $post_id ? (int) $post_id : (int) get_the_ID();
+	return has_post_thumbnail( $post_id ) || '' !== vr_external_image_url( $post_id );
+}
+/* Echo the post's featured <img>: local thumbnail (srcset-aware, via core) when
+   present, else the external fallback as a plain <img>. $attr mirrors
+   the_post_thumbnail()'s attributes (class, alt, loading, fetchpriority, sizes). */
+function vr_the_post_image( $size = 'large', $attr = array(), $post_id = 0 ) {
+	$post_id = $post_id ? (int) $post_id : (int) get_the_ID();
+	if ( has_post_thumbnail( $post_id ) ) {
+		echo get_the_post_thumbnail( $post_id, $size, $attr ); // phpcs:ignore WordPress.Security.EscapeOutput -- core-escaped markup
+		return;
+	}
+	$ext = vr_external_image_url( $post_id );
+	if ( '' === $ext ) { return; }
+	/* array_key_exists (not isset) so a caller-supplied alt="" (decorative) is
+	   respected rather than replaced with the title. */
+	if ( ! array_key_exists( 'alt', $attr ) ) { $attr['alt'] = wp_strip_all_tags( get_the_title( $post_id ) ); }
+	if ( empty( $attr['loading'] ) )          { $attr['loading'] = 'lazy'; }
+	/* alt is ALWAYS emitted (even empty): a decorative image needs alt="" present so
+	   assistive tech skips it — a missing alt makes it announce the URL instead. */
+	$html = '<img src="' . esc_url( $ext ) . '" alt="' . esc_attr( (string) $attr['alt'] ) . '" decoding="async"';
+	foreach ( array( 'class', 'loading', 'fetchpriority', 'sizes' ) as $k ) {
+		if ( isset( $attr[ $k ] ) && '' !== $attr[ $k ] ) {
+			$html .= ' ' . $k . '="' . esc_attr( $attr[ $k ] ) . '"';
+		}
+	}
+	$html .= '>';
+	echo $html; // phpcs:ignore WordPress.Security.EscapeOutput -- attributes escaped above
+}
+
+/* The front page's latest-posts query, memoized so wp_head's LCP preloader and the
+   front-page template share ONE query (was two). Page-aware + counts rows so the
+   posts-on-homepage config can paginate past the first 9 posts. */
+function vr_front_query() {
+	static $q = null;
+	if ( null === $q ) {
+		if ( is_page() ) {
+			/* Static front page: a supplementary latest-posts query for the grid
+			   (no pagination here — the "See all stories" link covers it). */
+			$q = new WP_Query( array(
+				'post_type'           => 'post',
+				'post_status'         => 'publish',
+				'posts_per_page'      => 9,
+				'ignore_sticky_posts' => 1,
+				'no_found_rows'       => true,
+			) );
+		} else {
+			/* Posts-on-homepage: REUSE WP's main query — correct posts_per_page,
+			   correct pagination, and no /page/N 404 mismatch — instead of a second
+			   query that the preloader and the template would each run separately. */
+			$q = $GLOBALS['wp_query'];
+		}
+	}
+	return $q;
+}
+
+/* Top categories by post count, memoized so the front-page band, footer, sidebar,
+   and header fallback menu share ONE term query (each was a separate query because
+   only 'number' differed). Returns the first $n of the cached top-8 (every caller's
+   list is a prefix of the same count-DESC order, so output is identical). */
+function vr_top_categories( $n = 8 ) {
+	static $all = null;
+	if ( null === $all ) {
+		$all = get_categories( array( 'orderby' => 'count', 'order' => 'DESC', 'number' => 8, 'hide_empty' => true ) );
+		if ( ! is_array( $all ) ) { $all = array(); }
+	}
+	return array_slice( $all, 0, max( 0, (int) $n ) );
+}
+
+/* ─────────────────────────────────────────────
    Assets (fast: system fonts, tiny deferred JS, no block CSS)
 ───────────────────────────────────────────── */
 function vr_scripts() {
@@ -51,6 +140,7 @@ function vr_scripts() {
 	   no src) so any wp_add_inline_style() from child themes/plugins keeps
 	   working. Falls back to the normal <link> if the file can't be read. */
 	$css_path = get_stylesheet_directory() . '/style.css';
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading a bundled, size-capped theme file to inline critical CSS; WP_Filesystem is heavier on the front-end hot path and unnecessary for a local read.
 	$css      = ( ! is_admin() && is_readable( $css_path ) ) ? file_get_contents( $css_path ) : false;
 
 	if ( false !== $css && strlen( $css ) > 0 && strlen( $css ) < 100000 ) {
@@ -63,8 +153,9 @@ function vr_scripts() {
 
 	wp_enqueue_script( 'viral-reader', get_template_directory_uri() . '/assets/js/site.js', array(), VR_VERSION, true );
 	wp_localize_script( 'viral-reader', 'vrL10n', array(
-		'copied'     => __( 'Link copied', 'viral-reader' ),
-		'copyPrompt' => __( 'Copy this link:', 'viral-reader' ),
+		'copied'      => __( 'Link copied', 'viral-reader' ),
+		'copiedShort' => __( 'Copied', 'viral-reader' ),
+		'copyPrompt'  => __( 'Copy this link:', 'viral-reader' ),
 	) );
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
 		wp_enqueue_script( 'comment-reply' );
@@ -80,11 +171,30 @@ function vr_defer_js( $tag, $handle ) {
 }
 add_filter( 'script_loader_tag', 'vr_defer_js', 10, 2 );
 
-/* Drop block-editor front-end CSS for a lighter page. */
+/* Drop the heavy core block-library CSS for a lighter page — but ONLY where no
+   block content appears. 'global-styles' is kept always: it carries this theme's
+   theme.json presets (palette / font sizes / spacing + the .has-* utility classes
+   authors pick), so dropping it would render those choices unstyled on the front
+   end. Block-authored posts and any active (possibly block-)widget area keep the
+   core block CSS; plain plugin/HTML posts + archives shed it. */
 function vr_dequeue_block_css() {
+	if ( is_singular() && has_blocks( get_queried_object_id() ) ) {
+		return; // block content present — leave core block CSS enqueued
+	}
+	/* Any active widget area that RENDERS on the current view may hold block widgets
+	   needing the core block CSS. is_active_sidebar() is query-independent, so it must be
+	   paired with a "does this view actually render it" gate: 'header-ad' renders only on
+	   non-front views (header.php), and 'sidebar-1' only on singular views (single.php /
+	   page.php pull template-parts/sidebar). Without the is_singular() gate, one widget in
+	   the Sidebar area would keep the ~28KB render-blocking core block CSS on the front
+	   page, archives and search — exactly the listing views the theme optimizes hardest. */
+	foreach ( array( 'sidebar-1', 'header-ad' ) as $vr_area ) {
+		if ( 'header-ad' === $vr_area && is_front_page() ) { continue; }
+		if ( 'sidebar-1' === $vr_area && ! is_singular() ) { continue; }
+		if ( is_active_sidebar( $vr_area ) ) { return; }
+	}
 	wp_dequeue_style( 'wp-block-library' );
 	wp_dequeue_style( 'wp-block-library-theme' );
-	wp_dequeue_style( 'global-styles' );
 	wp_dequeue_style( 'classic-theme-styles' );
 }
 add_action( 'wp_enqueue_scripts', 'vr_dequeue_block_css', 100 );
@@ -95,7 +205,12 @@ add_action( 'wp_enqueue_scripts', 'vr_dequeue_block_css', 100 );
 function vr_lcp_priority( $attr, $attachment, $size ) {
 	if ( ! is_admin() && is_singular() && in_the_loop() && is_main_query() ) {
 		static $done = false;
-		if ( ! $done && $attachment && (int) get_post_thumbnail_id( get_the_ID() ) === (int) $attachment->ID ) {
+		// Pin to the QUERIED post's thumbnail, not get_the_ID(): the sidebar/related
+		// sub-loops reassign the global $post, so get_the_ID() would let an inner
+		// (off-screen) thumbnail steal the high-priority hint when the queried post
+		// itself has no featured image. get_queried_object_id() is immune to sub-loops.
+		$qid = get_queried_object_id();
+		if ( ! $done && $attachment && $qid && (int) get_post_thumbnail_id( $qid ) === (int) $attachment->ID ) {
 			$attr['fetchpriority'] = 'high';
 			$attr['loading']       = 'eager';
 			$done                  = true;
@@ -112,8 +227,8 @@ add_filter( 'wp_get_attachment_image_attributes', 'vr_lcp_priority', 10, 3 );
 function vr_preload_lcp() {
 	$pid = 0;
 	if ( is_front_page() && ! is_paged() ) {
-		$q   = new WP_Query( array( 'post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => 1, 'ignore_sticky_posts' => 1, 'no_found_rows' => true, 'fields' => 'ids' ) );
-		$pid = ! empty( $q->posts ) ? (int) $q->posts[0] : 0;
+		$fp  = vr_front_query();   /* shared with front-page.php — one query, not two */
+		$pid = ! empty( $fp->posts ) ? (int) $fp->posts[0]->ID : 0;
 	} elseif ( is_singular( 'post' ) ) {
 		$pid = get_queried_object_id();
 	}
@@ -132,8 +247,8 @@ function vr_preload_lcp() {
 			echo ' fetchpriority="high">' . "\n";
 		}
 	} else {
-		$ext = get_post_meta( $pid, '_wpap_image_url', true );
-		if ( is_string( $ext ) && preg_match( '#^https?://#i', $ext ) ) {
+		$ext = vr_external_image_url( $pid );
+		if ( '' !== $ext ) {
 			$host = wp_parse_url( $ext, PHP_URL_HOST );
 			if ( $host ) {
 				echo '<link rel="preconnect" href="' . esc_url( 'https://' . $host ) . '" crossorigin>' . "\n";
@@ -172,7 +287,18 @@ add_action( 'manage_post_posts_custom_column', 'vr_posts_column_content', 10, 2 
 function vr_posts_column_style() {
 	$screen = get_current_screen();
 	if ( $screen && 'edit-post' === $screen->id ) {
-		echo '<style>.column-vr_thumb{width:72px}.vr-admin-thumb{display:block;width:56px;height:56px;object-fit:cover;border-radius:4px}.vr-admin-thumb--empty{background:#f0e9dc;border:1px solid #e6d9c8}</style>';
+		echo '<style>'
+			. '.column-vr_thumb{width:72px}'
+			. '.vr-admin-thumb{display:block;width:56px;height:56px;object-fit:cover;border-radius:4px}'
+			. '.vr-admin-thumb--empty{background:#f0e9dc;border:1px solid #e6d9c8}'
+			/* Defensive: keep the Posts list readable no matter what extra columns other
+			   plugins add. A too-narrow column was rendering the title/meta one character
+			   per line (vertical text). Give the table + the title/primary column a floor,
+			   and wrap at word boundaries instead of shattering long strings per-character. */
+			. '.wp-list-table.posts{min-width:900px;table-layout:auto}'
+			. '.wp-list-table.posts .column-title,.wp-list-table.posts .column-title .row-title{min-width:220px;white-space:normal;word-break:normal;overflow-wrap:anywhere}'
+			. '.wp-list-table.posts td{word-break:normal;overflow-wrap:anywhere}'
+			. '</style>';
 	}
 }
 add_action( 'admin_head', 'vr_posts_column_style' );
@@ -188,7 +314,7 @@ function vr_widgets_init() {
 		'after_title'   => '</h2>',
 	);
 	register_sidebar( array_merge( $d, array( 'name' => __( 'Sidebar', 'viral-reader' ), 'id' => 'sidebar-1', 'description' => __( 'Shown beside single posts (sticky on desktop).', 'viral-reader' ) ) ) );
-	register_sidebar( array_merge( $d, array( 'name' => __( 'Header Ad', 'viral-reader' ), 'id' => 'header-ad', 'description' => __( 'Full-width strip under the header. Fallback if the plugin Header zone is empty.', 'viral-reader' ) ) ) );
+	register_sidebar( array_merge( $d, array( 'name' => __( 'Header Ad', 'viral-reader' ), 'id' => 'header-ad', 'description' => __( 'Full-width strip under the header, shown on posts, pages, and archives (not the front page, where the hero occupies that space). Fallback if the plugin Header zone is empty.', 'viral-reader' ) ) ) );
 	/* No 'footer-1' area: the footer columns are theme-rendered (categories +
 	   menu), so a widget area there would never render — kept out to avoid a dead
 	   admin surface. */
@@ -217,12 +343,22 @@ function vr_ad_strip( $plugin_zone, $sidebar_id ) {
    on save (_vr_words); only falls back to a live count on legacy posts, so list
    pages don't regex every card's full body on each cache-miss regeneration. */
 function vr_reading_time( $post_id = null ) {
-	$post_id = $post_id ? $post_id : get_the_ID();
-	$words   = (int) get_post_meta( $post_id, '_vr_words', true );
-	if ( $words < 1 ) {
-		$text  = wp_strip_all_tags( (string) get_post_field( 'post_content', $post_id ) );
-		$words = preg_match_all( '/[\p{L}\p{N}]+/u', $text, $m );
-		if ( false === $words || $words < 1 ) { $words = str_word_count( $text ); }
+	$post_id = $post_id ? (int) $post_id : (int) get_the_ID();
+	/* Per-request memo: the full-body regex runs at most once per post per request,
+	   and we do NOT write to the DB during a front-end GET (a read-only replica would
+	   error, and writes don't belong on a render path). save_post persists _vr_words
+	   for subsequent requests; cold seed/wp-cli posts just recompute cheaply here. */
+	static $memo = array();
+	if ( isset( $memo[ $post_id ] ) ) {
+		$words = $memo[ $post_id ];
+	} else {
+		$words = (int) get_post_meta( $post_id, '_vr_words', true );
+		if ( $words < 1 ) {
+			$text  = wp_strip_all_tags( (string) get_post_field( 'post_content', $post_id ) );
+			$words = preg_match_all( '/[\p{L}\p{N}]+/u', $text, $m );
+			if ( false === $words || $words < 1 ) { $words = str_word_count( $text ); }
+		}
+		$memo[ $post_id ] = $words;
 	}
 	$mins = max( 1, (int) ceil( $words / 220 ) );
 	/* translators: %d: minutes */
@@ -275,7 +411,7 @@ function vr_breadcrumbs() {
 /* BreadcrumbList JSON-LD mirroring the visible trail (for breadcrumb rich results).
    Emitted only where a visible trail renders; skip if an SEO plugin already owns it. */
 function vr_breadcrumb_jsonld() {
-	if ( defined( 'WPSEO_VERSION' ) || defined( 'RANK_MATH_VERSION' ) || function_exists( 'seopress_init' ) ) {
+	if ( defined( 'WPSEO_VERSION' ) || defined( 'RANK_MATH_VERSION' ) || function_exists( 'seopress_init' ) || defined( 'AIOSEO_VERSION' ) || function_exists( 'the_seo_framework' ) ) {
 		return;
 	}
 	/* WP Automator Pro's wpap_seo_head() emits its own BreadcrumbList on the posts
@@ -366,7 +502,7 @@ function vr_icon( $name ) {
 function vr_fallback_menu() {
 	echo '<ul>';
 	echo '<li class="menu-item"><a href="' . esc_url( home_url( '/' ) ) . '">' . esc_html__( 'Home', 'viral-reader' ) . '</a></li>';
-	foreach ( get_categories( array( 'orderby' => 'count', 'order' => 'DESC', 'number' => 6, 'hide_empty' => true ) ) as $cat ) {
+	foreach ( vr_top_categories( 6 ) as $cat ) {
 		$link = get_category_link( $cat->term_id );
 		if ( is_wp_error( $link ) ) { continue; }
 		echo '<li class="menu-item"><a href="' . esc_url( $link ) . '">' . esc_html( $cat->name ) . '</a></li>';
@@ -407,6 +543,25 @@ add_filter( 'body_class', 'vr_body_classes' );
    that isn't flagged as a recipe or has no ingredients/steps.
 ───────────────────────────────────────────── */
 function vr_recipe_data( $post_id ) {
+	// Memoize per request: called twice per recipe single (head JSON-LD + the_content
+	// card), each reading ~8 post-meta rows + regexes. Cache both hits and misses.
+	static $cache = array();
+	$post_id = (int) $post_id;
+	if ( ! array_key_exists( $post_id, $cache ) ) {
+		$cache[ $post_id ] = vr_recipe_data_uncached( $post_id );
+	}
+	return $cache[ $post_id ];
+}
+
+function vr_recipe_data_uncached( $post_id ) {
+	/* Decoupling hook: a site WITHOUT the automation plugin (or with another recipe
+	   source) can supply recipe data here — return an array with keys
+	   servings/prep/cook/total + ingredients[]/steps[] to use it, or leave it null to
+	   fall through to the default _wpap_recipe_* reader below. */
+	$pre = apply_filters( 'vr_pre_recipe_data', null, $post_id );
+	if ( null !== $pre ) {
+		return is_array( $pre ) ? $pre : null;
+	}
 	if ( '1' !== (string) get_post_meta( $post_id, '_wpap_recipe_on', true ) ) {
 		return null;
 	}
@@ -455,7 +610,9 @@ function vr_human_minutes( $min ) {
 	$h = intdiv( $min, 60 );
 	$m = $min % 60;
 	$out = array();
+	/* translators: %d: number of hours */
 	if ( $h ) { $out[] = sprintf( _n( '%d hr', '%d hr', $h, 'viral-reader' ), $h ); }
+	/* translators: %d: number of minutes */
 	if ( $m ) { $out[] = sprintf( _n( '%d min', '%d min', $m, 'viral-reader' ), $m ); }
 	return implode( ' ', $out );
 }
@@ -479,6 +636,12 @@ function vr_recipe_jsonld() {
 	if ( '' !== trim( (string) $desc ) ) { $data['description'] = $desc; }
 	$thumb_id = get_post_thumbnail_id( $id );
 	$img      = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'large' ) : '';
+	if ( ! $img ) {
+		/* External-image posts (no local attachment) keep the URL in _wpap_image_url.
+		   `image` is REQUIRED on Recipe, so fall back to it (bare-URL form) or the
+		   recipe loses rich-result eligibility. */
+		$img = vr_external_image_url( $id );
+	}
 	if ( $img ) {
 		/* Carry the featured image's alt text into the schema as an ImageObject
 		   caption (falls back to a bare URL when there's no alt). */
@@ -503,6 +666,13 @@ function vr_recipe_jsonld() {
 			function ( $s ) { return array( '@type' => 'HowToStep', 'text' => $s ); },
 			$r['steps']
 		);
+	}
+	/* Recipe keywords from the post's tags — a supported Google Recipe field that
+	   strengthens topical relevance (comma-separated, per schema.org guidance). */
+	$tags = get_the_tags( $id );
+	if ( $tags && ! is_wp_error( $tags ) ) {
+		$names = array_filter( array_map( 'wp_strip_all_tags', wp_list_pluck( $tags, 'name' ) ) );
+		if ( $names ) { $data['keywords'] = implode( ', ', $names ); }
 	}
 	/* JSON_HEX_TAG|JSON_HEX_AMP so a stray </script> in any field can't break out of
 	   the JSON-LD block; dropped JSON_UNESCAPED_SLASHES (its /-escaping also helps). */
@@ -533,7 +703,8 @@ function vr_author_social_labels() {
 
 add_filter( 'user_contactmethods', function ( $methods ) {
 	foreach ( vr_author_social_labels() as $key => $label ) {
-		$methods[ $key ] = sprintf( '%s URL', $label );
+		/* translators: %s: social network name (e.g. "Instagram") */
+		$methods[ $key ] = sprintf( __( '%s URL', 'viral-reader' ), $label );
 	}
 	return $methods;
 } );
@@ -576,7 +747,7 @@ function vr_author_person_node( $user_id ) {
 
 function vr_author_profile_jsonld() {
 	if ( ! is_author() ) { return; }
-	if ( defined( 'WPSEO_VERSION' ) || defined( 'RANK_MATH_VERSION' ) || function_exists( 'seopress_init' ) || defined( 'AIOSEO_VERSION' ) ) { return; }
+	if ( defined( 'WPSEO_VERSION' ) || defined( 'RANK_MATH_VERSION' ) || function_exists( 'seopress_init' ) || defined( 'AIOSEO_VERSION' ) || function_exists( 'the_seo_framework' ) ) { return; }
 	$uid = (int) get_queried_object_id();
 	if ( ! $uid ) { return; }
 	$person = vr_author_person_node( $uid );

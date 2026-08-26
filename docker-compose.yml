@@ -61,6 +61,21 @@ services:
       AI_EXTRACTION_TIMEOUT_SECONDS: ${AI_EXTRACTION_TIMEOUT_SECONDS:-14}
       AI_EXTRACTION_MAX_CHARS: ${AI_EXTRACTION_MAX_CHARS:-9000}
       AI_EXTRACTION_MAX_TOKENS: ${AI_EXTRACTION_MAX_TOKENS:-1400}
+      # Security hardening baked into wp-config.php at container start (the base image appends
+      # this). DISALLOW_FILE_EDIT blocks the dashboard Theme/Plugin CODE editor — the usual
+      # "admin session compromise -> persistent PHP RCE" path — while leaving plugin install/
+      # update enabled so you can still add Site Kit etc. The X-Forwarded-Proto shim runs BEFORE
+      # FORCE_SSL_ADMIN so admin-over-HTTPS never redirect-loops behind the TLS-terminating
+      # reverse proxy. Guards avoid "already defined" notices.
+      WORDPRESS_CONFIG_EXTRA: |
+        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $_SERVER['HTTPS'] = 'on'; }
+        if (!defined('DISALLOW_FILE_EDIT')) { define('DISALLOW_FILE_EDIT', true); }
+        if (!defined('FORCE_SSL_ADMIN')) { define('FORCE_SSL_ADMIN', true); }
+        if (!defined('WP_POST_REVISIONS')) { define('WP_POST_REVISIONS', 10); }
+      # Per-deploy secret for the manual URL cutover trigger. Unset = the URL trigger stays
+      # DISABLED (the KEPOLI_FRESH_CUTOVER env flag remains the safe reseed path). Set a long
+      # random value in Coolify to enable it.
+      KEPOLI_CUTOVER_SECRET: ${KEPOLI_CUTOVER_SECRET:-}
     volumes:
       - kepoli_wordpress:/var/www/html
       - kepoli_uploads:/var/www/html/wp-content/uploads

@@ -174,11 +174,6 @@ add_action('template_redirect', static function (): void {
 add_action('wp_head', 'kepoli_mu_adsense_head', 9);
 function kepoli_mu_adsense_head(): void
 {
-    $enable = strtolower(kepoli_mu_env('ADSENSE_ENABLE'));
-    if ($enable === '' || in_array($enable, ['0', 'false', 'off', 'no'], true)) {
-        return;
-    }
-
     // Resolve a well-formed standard client id (ca-pub-XXXX). One id only.
     $client = kepoli_mu_env('ADSENSE_CLIENT_ID');
     if ($client === '') {
@@ -193,7 +188,37 @@ function kepoli_mu_adsense_head(): void
         return; // never emit a malformed or host-mode client
     }
 
+    // Site-ownership verification tag. This is Google's official "Ad code"
+    // verification method and it loads NO ads by itself, so we emit it whenever a
+    // valid publisher id is configured — even while ad SERVING is off. That lets
+    // AdSense verify/connect the site and review the content with ADSENSE_ENABLE=0,
+    // resolving the catch-22 of "Google needs the code present to review the site"
+    // vs "don't serve ads to EEA/UK/CH visitors before the consent/CMP flow is live".
     echo "\n" . '<meta name="google-adsense-account" content="' . esc_attr($client) . '">' . "\n";
+
+    // Ad SERVING (the loader that actually fetches and fills ad slots) is gated
+    // separately. Keep ADSENSE_ENABLE=0 until a Google-certified CMP / Google
+    // Privacy & Messaging is configured for EEA/UK/CH visitors.
+    $enable = strtolower(kepoli_mu_env('ADSENSE_ENABLE'));
+    if ($enable === '' || in_array($enable, ['0', 'false', 'off', 'no'], true)) {
+        return;
+    }
+
+    // Google Consent Mode v2 DEFAULTS — must run BEFORE the adsbygoogle loader.
+    // For the consent-required regions (EEA + UK + Switzerland) every storage/ads
+    // signal starts 'denied'; the CMP (Google Privacy & Messaging, delivered by the
+    // loader below) flips them to 'granted' via gtag('consent','update',...) once the
+    // visitor accepts. No region entry = the default stays granted, so readers
+    // outside these regions are unaffected. ads_data_redaction + url_passthrough keep
+    // measurement working in the denied state without cookies. This makes flipping
+    // ADSENSE_ENABLE=1 EEA-safe even while the CMP banner is still being tuned.
+    $eea = "['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','IS','LI','NO','GB','CH']";
+    echo "\n" . '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}'
+        . "gtag('consent','default',{"
+        . "'ad_storage':'denied','ad_user_data':'denied','ad_personalization':'denied','analytics_storage':'denied',"
+        . "'wait_for_update':500,'region':" . $eea . "});"
+        . "gtag('set','ads_data_redaction',true);gtag('set','url_passthrough',true);</script>" . "\n";
+
     echo '<link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin>' . "\n";
     echo '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='
         . esc_attr($client) . '" crossorigin="anonymous"></script>' . "\n";

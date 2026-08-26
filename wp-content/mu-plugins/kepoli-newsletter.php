@@ -80,9 +80,39 @@ function kepoli_newsletter_redirect(string $redirect_to, string $status): void
     exit;
 }
 
+/**
+ * Best-effort real client IP. Behind the reverse proxy (Traefik/Coolify) REMOTE_ADDR is the
+ * proxy's internal IP, so rate-limiting on it collapses EVERY visitor into one shared bucket —
+ * three bad/bot submissions then lock out all real subscribers for the window. The WordPress
+ * container is not host-published (compose `expose`, not `ports`), so it is reachable ONLY
+ * through the proxy, which makes the proxy-set forwarding headers trustworthy here. Prefer the
+ * LAST hop of X-Forwarded-For (the entry the proxy appends — a client can't forge the last one),
+ * then X-Real-IP, then REMOTE_ADDR. Each candidate is validated as a real IP.
+ */
+function kepoli_newsletter_client_ip(): string
+{
+    $candidates = [];
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $parts = array_map('trim', explode(',', (string) $_SERVER['HTTP_X_FORWARDED_FOR']));
+        $candidates[] = (string) end($parts);
+    }
+    if (!empty($_SERVER['HTTP_X_REAL_IP'])) {
+        $candidates[] = trim((string) $_SERVER['HTTP_X_REAL_IP']);
+    }
+    if (!empty($_SERVER['REMOTE_ADDR'])) {
+        $candidates[] = trim((string) $_SERVER['REMOTE_ADDR']);
+    }
+    foreach ($candidates as $ip) {
+        if ('' !== $ip && false !== filter_var($ip, FILTER_VALIDATE_IP)) {
+            return $ip;
+        }
+    }
+    return '';
+}
+
 function kepoli_newsletter_request_fingerprint(): string
 {
-    $ip = isset($_SERVER['REMOTE_ADDR']) ? trim((string) $_SERVER['REMOTE_ADDR']) : '';
+    $ip = kepoli_newsletter_client_ip();
     if ($ip === '') {
         return '';
     }
@@ -130,7 +160,7 @@ add_action('init', static function (): void {
         'labels' => [
             'name' => kepoli_newsletter_text('Abonari newsletter', 'Newsletter signups'),
             'singular_name' => kepoli_newsletter_text('Abonare newsletter', 'Newsletter signup'),
-            'menu_name' => __('Newsletter', 'kepoli'),
+            'menu_name' => kepoli_newsletter_text('Newsletter', 'Newsletter'),
             'name_admin_bar' => kepoli_newsletter_text('Abonare newsletter', 'Newsletter signup'),
             'all_items' => kepoli_newsletter_text('Toate abonarile', 'All signups'),
             'search_items' => kepoli_newsletter_text('Cauta emailuri', 'Search emails'),
@@ -179,7 +209,7 @@ add_action('admin_init', static function (): void {
 add_filter('manage_edit_kepoli_newsletter_columns', static function (array $columns): array {
     return [
         'cb' => $columns['cb'] ?? '',
-        'title' => __('Email', 'kepoli'),
+        'title' => kepoli_newsletter_text('Email', 'Email'),
         'newsletter_source' => kepoli_newsletter_text('Sursa', 'Source'),
         'date' => kepoli_newsletter_text('Data', 'Date'),
     ];
@@ -273,7 +303,7 @@ add_action('add_meta_boxes', static function (): void {
             ?>
             <table class="form-table" role="presentation">
                 <tr>
-                    <th scope="row"><?php esc_html_e('Email', 'kepoli'); ?></th>
+                    <th scope="row"><?php echo esc_html(kepoli_newsletter_text('Email', 'Email')); ?></th>
                     <td>
                         <?php if ($email !== '') : ?>
                             <a href="mailto:<?php echo esc_attr($email); ?>"><?php echo esc_html($email); ?></a>
@@ -360,7 +390,7 @@ add_action('restrict_manage_posts', static function (): void {
     printf(
         '<a class="button" href="%1$s">%2$s</a>',
         esc_url($url),
-        esc_html__('Export CSV', 'kepoli')
+        esc_html(kepoli_newsletter_text('Export CSV', 'Export CSV'))
     );
 });
 
