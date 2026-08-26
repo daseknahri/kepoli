@@ -68,7 +68,7 @@ services:
       # FORCE_SSL_ADMIN so admin-over-HTTPS never redirect-loops behind the TLS-terminating
       # reverse proxy. Guards avoid "already defined" notices.
       WORDPRESS_CONFIG_EXTRA: |
-        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $_SERVER['HTTPS'] = 'on'; }
+        if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') { $$_SERVER['HTTPS'] = 'on'; }
         if (!defined('DISALLOW_FILE_EDIT')) { define('DISALLOW_FILE_EDIT', true); }
         if (!defined('FORCE_SSL_ADMIN')) { define('FORCE_SSL_ADMIN', true); }
         if (!defined('WP_POST_REVISIONS')) { define('WP_POST_REVISIONS', 10); }
