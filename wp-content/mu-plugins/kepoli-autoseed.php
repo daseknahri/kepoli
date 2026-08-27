@@ -35,6 +35,43 @@ function kepoli_autoseed_env_bool(string $key, bool $default = false): bool
     return $default;
 }
 
+/**
+ * Admin recovery (opt-in). WP_ADMIN_PASSWORD is applied ONLY at first install by the WP-CLI seed
+ * (`bootstrap.sh`, which is profile:seed and does NOT run on a normal redeploy), so a later
+ * Coolify password change never reaches the existing admin — "login from env" then fails. Set
+ * KEPOLI_RESET_ADMIN=1 for ONE deploy to re-apply the env password + guarantee the administrator
+ * role on the WP_ADMIN_USER account, then set it back to 0.
+ *
+ * Runs at most ONCE per (user + password) value: a marker keyed on a hash of the env credentials
+ * is stored, so it never re-fires on later requests. That matters because wp_set_password() kills
+ * the user's sessions — a per-request reset would log the admin out in a loop. Changing
+ * WP_ADMIN_PASSWORD (or WP_ADMIN_USER) re-arms it for one more reset.
+ */
+add_action('init', static function (): void {
+    if (!kepoli_autoseed_env_bool('KEPOLI_RESET_ADMIN', false)) {
+        return;
+    }
+    $login = kepoli_autoseed_env('WP_ADMIN_USER', 'admin');
+    $pass  = kepoli_autoseed_env('WP_ADMIN_PASSWORD', '');
+    if ($login === '' || $pass === '') {
+        return;
+    }
+    $want = hash('sha256', $login . '|' . $pass);
+    if (get_option('kepoli_admin_reset_marker') === $want) {
+        return; // already applied for this exact credential — don't re-run (avoids a session-kill loop)
+    }
+    $user = get_user_by('login', $login);
+    if (!$user instanceof WP_User) {
+        return; // no such account — nothing to recover here
+    }
+    if (function_exists('wp_set_password')) {
+        wp_set_password($pass, $user->ID); // resets the password (invalidates old sessions once)
+    }
+    $user->set_role('administrator');      // guarantee the admin can reach wp-admin
+    update_option('kepoli_admin_reset_marker', $want, false);
+    error_log('[kepoli] KEPOLI_RESET_ADMIN: re-applied password + administrator role for "' . $login . '". Set KEPOLI_RESET_ADMIN back to 0.');
+}, 1);
+
 function kepoli_autoseed_activate_plugin(string $plugin): void
 {
     $plugin_path = WP_PLUGIN_DIR . '/' . $plugin;

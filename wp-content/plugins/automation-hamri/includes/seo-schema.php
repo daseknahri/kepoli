@@ -191,43 +191,115 @@ function wpap_seo_head() {
     if ( '' !== (string) $desc ) { $out .= '<meta name="twitter:description" content="' . esc_attr( $desc ) . '">' . "\n"; }
     if ( '' !== $img ) { $out .= '<meta name="twitter:image" content="' . esc_url( $img ) . '">' . "\n"; }
 
-    /* Skip the generic Article node ONLY when a more-specific Recipe node will ACTUALLY
-       render for this post — from the companion theme (vr_recipe_data non-null) or this
-       plugin's own renderer (wpap_recipe_should_render). Keying on the _wpap_recipe_on
-       flag alone would suppress Article on a recipe-flagged post that has no
-       ingredients/steps (theme emits no Recipe), leaving the page with NO schema at all.
-       Meta/OG/Twitter + BreadcrumbList still emit below regardless. */
+    /* ── Connected schema @graph (E-E-A-T author + @id-linked nodes). ──
+       ONE graph — WebPage → Article → Person(author) → Organization(publisher), plus a
+       primary ImageObject and the BreadcrumbList — cross-referenced by @id so Google reads
+       one connected entity instead of loose nodes. The Article node is still omitted when a
+       more-specific Recipe will render (theme via vr_recipe_data, or this plugin's own
+       renderer) — keying on the flag alone would suppress it on a recipe-flagged post with
+       no ingredients/steps, leaving no schema; but the WebPage/author/publisher/breadcrumb
+       always emit so the page keeps a complete graph either way. The #organization /
+       #website @ids reuse the site convention so these MERGE with a site-level
+       Organization/WebSite graph (e.g. the companion mu-plugin) when present. */
     $recipe_will_render = ( function_exists( 'vr_recipe_data' ) && vr_recipe_data( $post_id ) )
         || wpap_recipe_should_render( $post_id );
-    if ( ! $recipe_will_render ) {
-        $ld = array(
-            '@context'         => 'https://schema.org',
-            '@type'            => 'Article',
-            'headline'         => $title,
-            'mainEntityOfPage' => array( '@type' => 'WebPage', '@id' => $url ),
-            'datePublished'    => $pub,
-            'dateModified'     => $mod,
-            'author'           => array( '@type' => 'Person', 'name' => get_the_author_meta( 'display_name', $post->post_author ) ),
-            'publisher'        => array( '@type' => 'Organization', 'name' => $site ),
-        );
-        if ( '' !== (string) $desc ) { $ld['description'] = $desc; }
-        if ( '' !== $img )           { $ld['image'] = array( $img ); }
-        $out .= '<script type="application/ld+json">' . wp_json_encode( $ld, JSON_HEX_TAG | JSON_HEX_AMP ) . '</script>' . "\n";
+
+    $home    = home_url( '/' );
+    $lang    = str_replace( '_', '-', get_locale() );
+    $org_id  = $home . '#organization';
+    $site_id = $home . '#website';
+    $page_id = $url . '#webpage';
+    $img_id  = $url . '#primaryimage';
+    $bc_id   = $url . '#breadcrumb';
+    $author_num = (int) $post->post_author;
+    $person_id  = $home . '#/schema/person/' . $author_num;
+
+    $graph = array();
+
+    /* Publisher Organization (minimal; merges by @id with a site-level Organization node,
+       and stands alone on a site without one). */
+    $org = array( '@type' => 'Organization', '@id' => $org_id, 'name' => $site, 'url' => $home );
+    $logo = function_exists( 'get_site_icon_url' ) ? get_site_icon_url( 512 ) : '';
+    if ( $logo ) { $org['logo'] = array( '@type' => 'ImageObject', 'url' => $logo, 'width' => 512, 'height' => 512 ); }
+    $graph[] = $org;
+
+    /* Author Person — E-E-A-T: a real url (author archive), avatar, bio, and website
+       (sameAs), not just a bare name. */
+    $person = array(
+        '@type' => 'Person',
+        '@id'   => $person_id,
+        'name'  => get_the_author_meta( 'display_name', $author_num ),
+        'url'   => get_author_posts_url( $author_num ),
+    );
+    $avatar = get_avatar_url( $author_num, array( 'size' => 512 ) );
+    if ( $avatar ) { $person['image'] = array( '@type' => 'ImageObject', 'url' => $avatar ); }
+    $bio = (string) get_the_author_meta( 'description', $author_num );
+    if ( '' !== trim( $bio ) ) { $person['description'] = $bio; }
+    $author_site = (string) get_the_author_meta( 'user_url', $author_num );
+    if ( '' !== trim( $author_site ) ) { $person['sameAs'] = array( $author_site ); }
+    $graph[] = $person;
+
+    /* Primary image node (referenced by @id from WebPage + Article). */
+    if ( '' !== $img ) {
+        $image_obj = array( '@type' => 'ImageObject', '@id' => $img_id, 'url' => $img );
+        if ( $img_w > 0 && $img_h > 0 ) { $image_obj['width'] = $img_w; $image_obj['height'] = $img_h; }
+        $graph[] = $image_obj;
     }
 
-    /* BreadcrumbList JSON-LD: Home › Category › Post (replaces the bare URL in SERPs). */
+    /* WebPage. */
+    $webpage = array(
+        '@type'         => 'WebPage',
+        '@id'           => $page_id,
+        'url'           => $url,
+        'name'          => $title,
+        'isPartOf'      => array( '@id' => $site_id ),
+        'inLanguage'    => $lang,
+        'datePublished' => $pub,
+        'dateModified'  => $mod,
+        'breadcrumb'    => array( '@id' => $bc_id ),
+    );
+    if ( '' !== (string) $desc ) { $webpage['description'] = $desc; }
+    if ( '' !== $img ) {
+        $webpage['primaryImageOfPage'] = array( '@id' => $img_id );
+        $webpage['image']              = array( '@id' => $img_id );
+    }
+    $graph[] = $webpage;
+
+    /* Article (omitted when a Recipe will render as the page's primary entity). */
+    if ( ! $recipe_will_render ) {
+        $article = array(
+            '@type'            => 'Article',
+            '@id'              => $url . '#article',
+            'isPartOf'         => array( '@id' => $page_id ),
+            'mainEntityOfPage' => array( '@id' => $page_id ),
+            'headline'         => $title,
+            'datePublished'    => $pub,
+            'dateModified'     => $mod,
+            'author'           => array( '@id' => $person_id ),
+            'publisher'        => array( '@id' => $org_id ),
+            'inLanguage'       => $lang,
+        );
+        if ( '' !== (string) $desc ) { $article['description'] = $desc; }
+        if ( '' !== $img )           { $article['image'] = array( '@id' => $img_id ); }
+        $acats = get_the_category( $post_id );
+        if ( ! empty( $acats ) ) { $article['articleSection'] = $acats[0]->name; }
+        $graph[] = $article;
+    }
+
+    /* BreadcrumbList: Home › Category › Post. */
     $pos    = 1;
-    $crumbs = array( array( '@type' => 'ListItem', 'position' => $pos++, 'name' => $site, 'item' => home_url( '/' ) ) );
+    $crumbs = array( array( '@type' => 'ListItem', 'position' => $pos++, 'name' => $site, 'item' => $home ) );
     $cats   = get_the_category( $post_id );
     if ( ! empty( $cats ) ) {
         $c        = $cats[0];
         $c_link   = get_category_link( $c->term_id );
-        $crumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => $c->name, 'item' => is_wp_error( $c_link ) ? home_url( '/' ) : $c_link );
+        $crumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => $c->name, 'item' => is_wp_error( $c_link ) ? $home : $c_link );
     }
     $crumbs[] = array( '@type' => 'ListItem', 'position' => $pos, 'name' => $title, 'item' => $url );
-    $bc = array( '@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => $crumbs );
-    $out .= '<script type="application/ld+json">' . wp_json_encode( $bc, JSON_HEX_TAG | JSON_HEX_AMP ) . '</script>' . "\n";
+    $graph[] = array( '@type' => 'BreadcrumbList', '@id' => $bc_id, 'itemListElement' => $crumbs );
 
+    $ld = array( '@context' => 'https://schema.org', '@graph' => $graph );
+    $out .= '<script type="application/ld+json">' . wp_json_encode( $ld, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
     $out .= "";
 
     echo $out;   /* every dynamic value is individually escaped above */
@@ -433,31 +505,51 @@ function wpap_related_posts_block( $content ) {
     $cached    = get_transient( $cache_key );
     if ( is_string( $cached ) ) { return ( '' === $cached ) ? $content : $content . $cached; }
 
-    $cats = wp_get_post_categories( $post_id );
-    $args = array(
-        'post__not_in'        => array( $post_id ),
-        'posts_per_page'      => 4,
-        'post_status'         => 'publish',
-        'ignore_sticky_posts' => 1,
-        'no_found_rows'       => true,
-        'orderby'             => 'date',
-        'order'               => 'DESC',
-    );
-    if ( ! empty( $cats ) ) { $args['category__in'] = $cats; }
-    $q = new WP_Query( $args );
-    if ( ! $q->have_posts() ) { wp_reset_postdata(); set_transient( $cache_key, '', 12 * HOUR_IN_SECONDS ); return $content; }
+    /* Curated internal links first: a hand-picked slug list (_wpap_related_manual, set by
+       the import) is used in order; the category query fills any remaining slots. */
+    $limit   = 4;
+    $exclude = array( $post_id );
+    $ids     = array();
+    $manual  = get_post_meta( $post_id, '_wpap_related_manual', true );
+    if ( is_array( $manual ) ) {
+        foreach ( $manual as $slug ) {
+            if ( count( $ids ) >= $limit ) { break; }
+            $slug = sanitize_title( (string) $slug );
+            if ( '' === $slug ) { continue; }
+            $p = get_page_by_path( $slug, OBJECT, 'post' );
+            if ( $p && 'publish' === $p->post_status && ! in_array( (int) $p->ID, $exclude, true ) ) {
+                $ids[]     = (int) $p->ID;
+                $exclude[] = (int) $p->ID;
+            }
+        }
+    }
+    if ( count( $ids ) < $limit ) {
+        $cats = wp_get_post_categories( $post_id );
+        $args = array(
+            'post__not_in'        => $exclude,
+            'posts_per_page'      => $limit - count( $ids ),
+            'post_status'         => 'publish',
+            'ignore_sticky_posts' => 1,
+            'no_found_rows'       => true,
+            'fields'              => 'ids',
+            'orderby'             => 'date',
+            'order'               => 'DESC',
+        );
+        if ( ! empty( $cats ) ) { $args['category__in'] = $cats; }
+        $q   = new WP_Query( $args );
+        $ids = array_merge( $ids, array_map( 'intval', $q->posts ) );
+        wp_reset_postdata();
+    }
+    if ( empty( $ids ) ) { set_transient( $cache_key, '', 12 * HOUR_IN_SECONDS ); return $content; }
 
     $html = '<div class="wpap-related"><h3 class="wpap-related-title">' . esc_html__( 'You May Also Like', 'wp-automator-pro' ) . '</h3><ul class="wpap-related-list">';
-    while ( $q->have_posts() ) {
-        $q->the_post();
-        $rid   = (int) get_the_ID();
+    foreach ( $ids as $rid ) {
         $thumb = get_the_post_thumbnail_url( $rid, 'medium' );
         $html .= '<li class="wpap-related-item"><a href="' . esc_url( get_permalink( $rid ) ) . '">';
         if ( $thumb ) { $html .= '<img src="' . esc_url( $thumb ) . '" alt="' . esc_attr( get_the_title( $rid ) ) . '" loading="lazy">'; }
         $html .= '<span>' . esc_html( get_the_title( $rid ) ) . '</span></a></li>';
     }
     $html .= '</ul></div>';
-    wp_reset_postdata();
 
     set_transient( $cache_key, $html, 12 * HOUR_IN_SECONDS );
     return $content . $html;

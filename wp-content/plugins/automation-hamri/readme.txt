@@ -4,7 +4,7 @@ Tags: content, automation, adsense, seo, publishing
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 9.21.0
+Stable tag: 9.23.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,18 @@ No. Instant indexing (IndexNow) is opt-in and off until you enable it. License a
 No. It renders its own ad zones and SEO/recipe output on any theme, and defers to a dedicated SEO plugin if one is active.
 
 == Changelog ==
+
+= 9.23.0 =
+* Richer SEO structured data: each post now emits one connected schema graph (WebPage, Article, Author, Publisher, image, and breadcrumb linked by @id) with a real author profile — author page, photo, bio, and website — instead of just a name. Merges cleanly with a site-level Organization/Website graph.
+* Curated internal links: a post can specify a "related" list of slugs at import; the related-posts block links those first and fills the rest by category. (Front-end pairs with Viral Reader 1.9.5+.)
+
+= 9.22.1 =
+* Hardening for bulk import: the ZIP publisher can no longer double-publish on a retry and cleans up its temp files even after a crash; it parses compact times like "1h30m" correctly; an explicit article/guide/story type is respected (never forced into Recipe markup); ingredients/steps are accepted as a list OR newline text; a recipe with incomplete data publishes as a normal Article instead of broken recipe data; and "Parent > Child" categories are filed accurately.
+
+= 9.22.0 =
+* Bulk import now sets the RIGHT schema per content type automatically: an item marked "recipe" (or that includes ingredients and steps) publishes as a real recipe with schema.org/Recipe (ingredients, steps, prep/cook/total times, yield) and a recipe card; guides and stories stay Articles. No more manual editor step for bulk recipes.
+* Categories accept a "Parent > Child" path (created automatically), so a flat category list can grow sub-categories without any change. A per-item image alt is honored for the featured image.
+* Fully back-compatible: existing title/content/imageUrl/category feeds import exactly as before.
 
 = 9.21.0 =
 * Distribution Hub — Import Blog Posts: one click backfills a Hub row for every published post not already tracked (manual + pre-existing articles), and future manual publishes are auto-added, so the Hub mirrors the whole blog. Plus a per-row Posted toggle for one-by-one Facebook tracking.

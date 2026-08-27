@@ -37,6 +37,12 @@ services:
       KEPOLI_AUTOSEED_ENABLE: ${KEPOLI_AUTOSEED_ENABLE:-1}
       KEPOLI_FORCE_RESEED: ${KEPOLI_FORCE_RESEED:-0}
       KEPOLI_FRESH_CUTOVER: ${KEPOLI_FRESH_CUTOVER:-0}
+      # Opt-in admin recovery (see .env.example): set to 1 for ONE deploy to re-apply the admin
+      # password below + guarantee the administrator role, then set back to 0. The admin creds
+      # must live in THIS (serving) container because the recovery runs in the autoseed mu-plugin.
+      KEPOLI_RESET_ADMIN: ${KEPOLI_RESET_ADMIN:-0}
+      WP_ADMIN_USER: ${WP_ADMIN_USER:-admin}
+      WP_ADMIN_PASSWORD: ${WP_ADMIN_PASSWORD:-}
       CANONICAL_REDIRECT_HOSTS: ${CANONICAL_REDIRECT_HOSTS:-www.kepoli.com,api.kepoli.com,recipe.kepoli.com}
       ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-ca-pub-8166411196603757}
       ADSENSE_PUB_ID: ${ADSENSE_PUB_ID:-pub-8166411196603757}

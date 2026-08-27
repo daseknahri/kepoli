@@ -3,6 +3,79 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.23.0
+
+Optional SEO enhancements. Richer structured data + curated internal linking. No DB schema
+change. (Pairs with viral-reader ≥ 1.9.5 for the curated-links front-end.)
+
+### Added
+- **Connected schema `@graph` + E-E-A-T author**: the per-post JSON-LD is now one connected
+  graph — `WebPage → Article → Person(author) → Organization(publisher)` plus a primary
+  `ImageObject` and `BreadcrumbList`, all cross-referenced by `@id`. The author is a real
+  **Person** with `url` (author archive), `image` (avatar), `description` (bio) and `sameAs`
+  (website) instead of a bare name. The `#organization`/`#website` @ids reuse the site
+  convention so they merge with a site-level Organization/WebSite graph when present. The
+  Article node is still omitted when a Recipe renders as the primary entity.
+- **Curated internal links**: a per-item `related` list of slugs (import field, stored as
+  `_wpap_related_manual`) is rendered first by the related-posts block — the companion
+  theme's and the plugin's own — with auto-by-category filling any remaining slots. Lets an
+  author hand-pick cross-links; absent, behaviour is unchanged.
+
+### Notes
+- Deliberately NOT added: **FAQ schema** — Google restricted FAQ rich results to
+  authoritative government/health sites in 2023, so it renders no rich result for these
+  sites (same reason HowTo was skipped).
+
+## 9.22.1
+
+Hardening pass on the 9.22.0 bulk-import path (now the main publishing tool), from a
+security + correctness review (2 lens agents + verification). No schema change, no
+front-end change.
+
+### Fixed
+- **ZIP publish concurrency + temp cleanup**: the Bulk-ZIP handler now holds the same
+  atomic `add_option` CAS lock the JSON path uses, so a double-click / XHR retry can't
+  republish the whole bundle; plus a `register_shutdown_function` cleanup of the extract
+  dir so an *uncatchable* OOM fatal (thumbnailing a large image) can't leak an extracted
+  bundle under uploads.
+- **Duration parser**: compact forms like `"1h30m"` / `"2hrs30mins"` no longer drop the
+  hours (the `\b` boundary failed before a digit) — now 90 / 150. Spaced/ISO/bare forms
+  unchanged.
+- **Recipe gating**: an explicit non-recipe `type` (`article`/`guide`/`story`) is now
+  authoritative and never gets Recipe markup; `ingredients`/`steps` are accepted as a
+  newline STRING as well as an array; `_wpap_recipe_on` is set only when BOTH lists
+  survive cleaning, so a partial/dataless recipe publishes as a valid Article instead of
+  a broken Recipe; an explicit `total`/`totalTime` is honored.
+- **Category hierarchy**: the root-segment lookup is scoped to top-level (a bare
+  `"Football"` can't bind to a nested `"Sports > Football"`), and a creation collision
+  recovers via the parent-accurate term id WordPress returns in the error.
+
+## 9.22.0
+
+Per-type SEO for bulk import. Bulk-published items now earn the RIGHT schema automatically —
+recipes become real recipes, guides/stories stay Articles — and categories can nest. No DB
+schema change, no front-end change. Contract: `BULK-IMPORT-CONTRACT.md`.
+
+### Added
+- **Recipe schema on bulk import** (`wpap_publish_article`): an item with `type:"recipe"` (or that
+  simply carries both `ingredients` and `steps`) now sets the `_wpap_recipe_*` meta, so the theme
+  renders the recipe card and emits **schema.org/Recipe** (ingredients, instructions, prep/cook/
+  total times, yield) with zero manual editor steps. Previously bulk recipes published as plain
+  Articles. Guides/stories stay **Article** (Google retired HowTo rich results in 2023).
+- **Duration parser** (`wpap_parse_duration_to_minutes`): accepts `"40 min"`, `"2 hr"`,
+  `"1 hr 30 min"`, `"PT1H30M"`, or a bare integer → minutes, which the SEO emitter renders as
+  ISO-8601 `PT..H..M`.
+- **Hierarchical categories** (`wpap_resolve_category_path`): `category` now accepts a
+  `"Parent > Child"` path (each level created lazily) as well as a bare name or numeric id, so the
+  flat Recipes/Tips/Stories taxonomy can grow sub-categories with no plugin change.
+- **Descriptive featured-image alt**: a per-item `image_alt` overrides the title-derived default
+  on the featured attachment (Google Images / accessibility).
+
+### Notes
+- All fields are optional and back-compatible: existing `{title, content, imageUrl, category}`
+  feeds import exactly as before. The per-item fatal isolation, batch caps, atomic publish lock,
+  and content-hash dedup already in the bulk handler still apply.
+
 ## 9.21.0
 
 Second parity pass — build-final's safe back-end feature groups (8.50.0). No DB schema change,

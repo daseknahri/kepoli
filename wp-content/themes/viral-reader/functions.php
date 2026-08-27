@@ -15,7 +15,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 if ( ! defined( 'VR_VERSION' ) ) {
-	define( 'VR_VERSION', '1.9.4' );
+	define( 'VR_VERSION', '1.9.6' );
 }
 
 /* ─────────────────────────────────────────────
@@ -451,20 +451,43 @@ add_action( 'wp_head', 'vr_breadcrumb_jsonld', 21 );
 
 /* Related posts (same category, newest), excluding current. */
 function vr_related_posts( $post_id, $limit = 4 ) {
-	$cats = wp_get_post_categories( $post_id );
-	$args = array(
-		'post__not_in'        => array( $post_id ),
-		'posts_per_page'      => $limit,
-		'post_status'         => 'publish',
-		'ignore_sticky_posts' => 1,
-		'no_found_rows'       => true,
-		'orderby'             => 'date',
-		'order'               => 'DESC',
-	);
-	if ( ! empty( $cats ) ) { $args['category__in'] = $cats; }
-	$q = new WP_Query( $args );
-	$posts = $q->posts;
-	wp_reset_postdata();
+	$exclude = array( (int) $post_id );
+	$posts   = array();
+
+	/* Curated internal links win: a hand-picked list of slugs (_wpap_related_manual, set by
+	   the Automation Hamri import) is used first, in order; the category query below fills
+	   any remaining slots. No such meta → pure auto-by-category, exactly as before. */
+	$manual = get_post_meta( $post_id, '_wpap_related_manual', true );
+	if ( is_array( $manual ) ) {
+		foreach ( $manual as $slug ) {
+			if ( count( $posts ) >= $limit ) { break; }
+			$slug = sanitize_title( (string) $slug );
+			if ( '' === $slug ) { continue; }
+			$p = get_page_by_path( $slug, OBJECT, 'post' );
+			if ( $p && 'publish' === $p->post_status && ! in_array( (int) $p->ID, $exclude, true ) ) {
+				$posts[]   = $p;
+				$exclude[] = (int) $p->ID;
+			}
+		}
+	}
+
+	if ( count( $posts ) < $limit ) {
+		$cats = wp_get_post_categories( $post_id );
+		$args = array(
+			'post__not_in'        => $exclude,
+			'posts_per_page'      => $limit - count( $posts ),
+			'post_status'         => 'publish',
+			'ignore_sticky_posts' => 1,
+			'no_found_rows'       => true,
+			'orderby'             => 'date',
+			'order'               => 'DESC',
+		);
+		if ( ! empty( $cats ) ) { $args['category__in'] = $cats; }
+		$q     = new WP_Query( $args );
+		$posts = array_merge( $posts, $q->posts );
+		wp_reset_postdata();
+	}
+
 	return $posts;
 }
 
@@ -734,6 +757,10 @@ function vr_author_person_node( $user_id ) {
 	$user_id = (int) $user_id;
 	$node    = array(
 		'@type' => 'Person',
+		/* Same @id convention the companion plugin uses for its Person node, so the
+		   Recipe's author MERGES with the plugin's connected-graph Person (E-E-A-T) instead
+		   of floating as a second, unlinked author on recipe posts. */
+		'@id'   => home_url( '/' ) . '#/schema/person/' . $user_id,
 		'name'  => get_the_author_meta( 'display_name', $user_id ),
 		'url'   => get_author_posts_url( $user_id ),
 	);

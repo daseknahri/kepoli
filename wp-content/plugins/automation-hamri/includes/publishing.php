@@ -222,6 +222,79 @@ function wpap_post_title_exists( $title ) {
     return $found;
 }
 
+/* Parse a human duration ("40 min", "2 hr", "1 hr 30 min", "PT1H30M", or a bare
+   integer) into whole MINUTES for the _wpap_recipe_prep/cook/total meta — the SEO
+   emitter (seo-schema.php) turns those minutes into an ISO-8601 PT..H..M string.
+   Returns 0 when nothing parseable, so a missing time is simply omitted from schema. */
+function wpap_parse_duration_to_minutes( $raw ) {
+    if ( is_int( $raw ) ) { return max( 0, $raw ); }
+    $s = strtolower( trim( (string) ( is_scalar( $raw ) ? $raw : '' ) ) );
+    if ( '' === $s ) { return 0; }
+    if ( ctype_digit( $s ) ) { return (int) $s; }                 /* bare number = minutes */
+    if ( preg_match( '/^pt(?:(\d+)h)?(?:(\d+)m)?$/', $s, $m ) ) { /* ISO-8601 duration */
+        return (int) ( $m[1] ?? 0 ) * 60 + (int) ( $m[2] ?? 0 );
+    }
+    $minutes = 0;
+    /* Longest unit first + a "not followed by a letter" lookahead. (\b would fail when a
+       DIGIT follows the unit — e.g. in "1h30m" the hour clause wouldn't match, dropping
+       the hours and yielding 30 instead of 90.) */
+    if ( preg_match( '/(\d+)\s*(?:hours?|hrs?|h)(?![a-z])/', $s, $m ) ) { $minutes += (int) $m[1] * 60; }
+    if ( preg_match( '/(\d+)\s*(?:minutes?|mins?|m)(?![a-z])/', $s, $m ) ) { $minutes += (int) $m[1]; }
+    return max( 0, $minutes );
+}
+
+/* Resolve a category value into a term id, creating terms as needed, and return the
+   LEAF (most-specific) term id — or 0 if nothing resolves.
+   Accepts, in order of precedence:
+     • an existing numeric term id                       ("12")
+     • a hierarchy PATH "Parent > Child > Leaf"           (each level created under its parent)
+     • a bare category name                               ("Recipes")
+   The path form is what lets the flat taxonomy grow sub-categories later WITHOUT any
+   plugin change — the feed just starts sending "Recipes > Soups & Stews". */
+function wpap_resolve_category_path( $raw ) {
+    $raw = trim( (string) $raw );
+    if ( '' === $raw ) { return 0; }
+    if ( ctype_digit( $raw ) && term_exists( (int) $raw, 'category' ) ) { return (int) $raw; }
+
+    $parts = array_values( array_filter( array_map( 'trim', preg_split( '/\s*>\s*/', $raw ) ) ) );
+    if ( empty( $parts ) ) { return 0; }
+
+    $parent = 0;
+    $leaf   = 0;
+    foreach ( $parts as $name ) {
+        /* term_exists scoped to THIS parent so "Breakfast" under Recipes and under
+           Tips stay distinct; falls back to any same-name term if creation collides. */
+        /* Pass $parent (0 for the root segment, not null) so the lookup is scoped to that
+           level — a bare "Football" resolves to a TOP-LEVEL Football, never binding to a
+           nested "Sports > Football". */
+        $existing = term_exists( $name, 'category', $parent );
+        if ( $existing && ! is_wp_error( $existing ) ) {
+            $leaf = (int) ( is_array( $existing ) ? $existing['term_id'] : $existing );
+        } else {
+            $new = wp_insert_term( $name, 'category', $parent ? array( 'parent' => $parent ) : array() );
+            if ( is_wp_error( $new ) ) {
+                /* Creation collided with an existing term: WP carries the real, parent-accurate
+                   id in the error data — prefer it over a re-lookup that could match a
+                   same-name term under a different parent. */
+                $data = $new->get_error_data();
+                if ( is_array( $data ) && ! empty( $data['term_id'] ) ) {
+                    $leaf = (int) $data['term_id'];
+                } elseif ( is_numeric( $data ) ) {
+                    $leaf = (int) $data;
+                } else {
+                    $any  = term_exists( $name, 'category', $parent );
+                    $leaf = ( $any && ! is_wp_error( $any ) ) ? (int) ( is_array( $any ) ? $any['term_id'] : $any ) : 0;
+                }
+            } else {
+                $leaf = (int) $new['term_id'];
+            }
+        }
+        if ( $leaf <= 0 ) { break; }
+        $parent = $leaf;
+    }
+    return $leaf;
+}
+
 function wpap_publish_article( array $item, array $opts = array() ) {
     global $wpdb;
     $table = $wpdb->prefix . WPAP_TABLE;
@@ -276,6 +349,28 @@ function wpap_publish_article( array $item, array $opts = array() ) {
     $focus_kw_raw   = $item['focusKeyword'] ?? $item['keyword'] ?? '';
     $focus_kw       = is_scalar( $focus_kw_raw ) ? sanitize_text_field( wp_unslash( (string) $focus_kw_raw ) ) : '';
     $tags_raw       = $item['tags'] ?? '';
+
+    /* ── content type → per-type schema (recipe vs article). ──
+       `type`: recipe | guide | story | article (default article). A recipe is ALSO
+       inferred when the item carries both ingredients AND steps, so a feed that omits
+       `type` still earns Recipe schema. guide/story/article all render as Article
+       (Google retired HowTo rich results in 2023, so there is no HowTo path). */
+    $type_raw       = $item['type'] ?? $item['kind'] ?? '';
+    $type           = strtolower( is_scalar( $type_raw ) ? trim( (string) $type_raw ) : '' );
+    /* Accept ingredients/steps as an array OR a newline-delimited string (both are common
+       feed shapes). */
+    $wpap_to_lines  = static function ( $v ) {
+        if ( is_array( $v ) ) { return $v; }
+        if ( is_scalar( $v ) && '' !== trim( (string) $v ) ) { return preg_split( '/\r\n|\r|\n/', (string) $v ); }
+        return array();
+    };
+    $ingredients_in = $wpap_to_lines( $item['ingredients'] ?? '' );
+    $steps_in       = $wpap_to_lines( $item['steps'] ?? '' );
+    /* An explicit non-recipe type is AUTHORITATIVE: an article/guide/story never gets
+       Recipe markup even if it happens to carry ingredient/step fields. Otherwise a recipe
+       is the stated type, or auto-detected from having BOTH ingredients and steps. */
+    $is_recipe      = ! in_array( $type, array( 'article', 'guide', 'story', 'post', 'page' ), true )
+        && ( 'recipe' === $type || ( ! empty( $ingredients_in ) && ! empty( $steps_in ) ) );
 
     if ( '' === $title && '' === trim( wp_strip_all_tags( $content ) ) ) {
         return new WP_Error( 'wpap_empty', 'needs at least a title or content.' );
@@ -381,23 +476,11 @@ function wpap_publish_article( array $item, array $opts = array() ) {
         $cat_raw = $default_category;
     }
     if ( '' !== $cat_raw ) {
-        $term_id = 0;
-        /* A purely-numeric value is FIRST tried as a term ID; if no such category
-           ID exists, fall through and treat it as a NAME (so a category literally
-           named e.g. "2024" is matched or created, not silently dropped). */
-        if ( ctype_digit( $cat_raw ) && term_exists( (int) $cat_raw, 'category' ) ) {
-            $term_id = (int) $cat_raw;
-        } else {
-            $existing = term_exists( $cat_raw, 'category' );
-            if ( $existing && ! is_wp_error( $existing ) ) {
-                $term_id = (int) ( is_array( $existing ) ? $existing['term_id'] : $existing );
-            } else {
-                $new = wp_insert_term( $cat_raw, 'category' );
-                if ( ! is_wp_error( $new ) && ! empty( $new['term_id'] ) ) {
-                    $term_id = (int) $new['term_id'];
-                }
-            }
-        }
+        /* Resolve a bare name, a numeric id, OR a "Parent > Child" hierarchy path
+           (each level created lazily). The leaf term becomes the post's category, so a
+           flat feed ("Recipes") and a future nested one ("Recipes > Soups & Stews")
+           both work with no plugin change. */
+        $term_id = wpap_resolve_category_path( $cat_raw );
         if ( $term_id > 0 ) {
             wp_set_object_terms( $post_id, $term_id, 'category' );
         }
@@ -420,6 +503,15 @@ function wpap_publish_article( array $item, array $opts = array() ) {
         if ( ! is_wp_error( $attach_id ) && $attach_id ) {
             $image_url = wpap_apply_featured_attachment( $post_id, (int) $attach_id, $title );
         }
+    }
+
+    /* Descriptive featured-image alt (SEO / Google Images). The importer defaults the
+       attachment alt to the post title; a per-item `image_alt` overrides it with
+       something more descriptive when the feed supplies one. */
+    $image_alt_raw = $item['image_alt'] ?? $item['imageAlt'] ?? $item['alt'] ?? '';
+    $image_alt     = is_scalar( $image_alt_raw ) ? sanitize_text_field( wp_unslash( (string) $image_alt_raw ) ) : '';
+    if ( '' !== $image_alt && isset( $attach_id ) && is_int( $attach_id ) && $attach_id > 0 ) {
+        update_post_meta( (int) $attach_id, '_wp_attachment_image_alt', $image_alt );
     }
 
     if ( '' === $hook ) { $hook = $title; }
@@ -468,6 +560,66 @@ function wpap_publish_article( array $item, array $opts = array() ) {
     if ( ! empty( $tags ) ) {
         $tags = array_slice( array_values( array_unique( $tags ) ), 0, 15 );
         wp_set_post_terms( $post_id, $tags, 'post_tag', false );
+    }
+
+    /* ── recipe payload → schema.org/Recipe (per-type SEO). ──
+       Setting _wpap_recipe_on + the ingredient/step/time meta makes the theme render
+       the recipe card AND the theme/plugin emit Recipe JSON-LD automatically — the
+       same meta the manual editor writes, so a bulk-imported recipe is a first-class
+       recipe with zero manual steps. Guarded by $is_recipe so an article never gets
+       recipe meta. This is a STRUCTURED-DATA mapping, not the AI recipe extractor. */
+    if ( $is_recipe ) {
+        $clean_lines = static function ( $arr ) {
+            $out = array();
+            foreach ( (array) $arr as $line ) {
+                if ( ! is_scalar( $line ) ) { continue; }
+                $t = sanitize_text_field( wp_unslash( (string) $line ) );
+                if ( '' !== $t ) { $out[] = $t; }
+            }
+            /* Bound the lists so a malformed feed can't bloat one post's meta. */
+            return array_slice( $out, 0, 60 );
+        };
+        $ing = $clean_lines( $ingredients_in );
+        $stp = $clean_lines( $steps_in );
+
+        /* Require BOTH lists to survive cleaning before flagging a recipe: a recipe-typed
+           item with missing/partial data publishes as a valid Article instead of emitting a
+           broken Recipe (recipeIngredient without recipeInstructions, or vice-versa). */
+        if ( ! empty( $ing ) && ! empty( $stp ) ) {
+            $prep  = wpap_parse_duration_to_minutes( $item['prep'] ?? $item['prepTime'] ?? '' );
+            $cook  = wpap_parse_duration_to_minutes( $item['cook'] ?? $item['cookTime'] ?? '' );
+            /* Prefer an explicit total; else derive it from prep + cook. */
+            $total = wpap_parse_duration_to_minutes( $item['total'] ?? $item['totalTime'] ?? '' );
+            if ( $total <= 0 ) { $total = $prep + $cook; }
+            $serv_raw = $item['servings'] ?? $item['yield'] ?? '';
+            $serv = is_scalar( $serv_raw ) ? sanitize_text_field( wp_unslash( (string) $serv_raw ) ) : '';
+
+            update_post_meta( $post_id, '_wpap_recipe_on', '1' );
+            update_post_meta( $post_id, '_wpap_recipe_ingredients', implode( "\n", $ing ) );
+            update_post_meta( $post_id, '_wpap_recipe_steps', implode( "\n", $stp ) );
+            if ( '' !== $serv ) { update_post_meta( $post_id, '_wpap_recipe_servings', $serv ); }
+            if ( $prep > 0 )    { update_post_meta( $post_id, '_wpap_recipe_prep', (string) $prep ); }
+            if ( $cook > 0 )    { update_post_meta( $post_id, '_wpap_recipe_cook', (string) $cook ); }
+            if ( $total > 0 )   { update_post_meta( $post_id, '_wpap_recipe_total', (string) $total ); }
+        }
+    }
+
+    /* ── curated internal links: a per-item `related` list of slugs, stored for the theme /
+       related-posts block to render as hand-picked cross-links (the block falls back to
+       auto-by-category when this is absent). Accepts an array or a comma/newline string. */
+    $related_raw   = $item['related'] ?? $item['related_articles'] ?? '';
+    $related_slugs = array();
+    if ( is_array( $related_raw ) ) {
+        foreach ( $related_raw as $rs ) {
+            if ( is_scalar( $rs ) ) { $s = sanitize_title( (string) $rs ); if ( '' !== $s ) { $related_slugs[] = $s; } }
+        }
+    } elseif ( is_scalar( $related_raw ) && '' !== trim( (string) $related_raw ) ) {
+        foreach ( preg_split( '/[,\r\n]+/', (string) $related_raw ) as $rs ) {
+            $s = sanitize_title( $rs ); if ( '' !== $s ) { $related_slugs[] = $s; }
+        }
+    }
+    if ( ! empty( $related_slugs ) ) {
+        update_post_meta( $post_id, '_wpap_related_manual', array_slice( array_values( array_unique( $related_slugs ) ), 0, 10 ) );
     }
 
     /* ── distribution row ── */
@@ -920,6 +1072,37 @@ function wpap_ajax_bulk_publish_zip() {
     @ini_set( 'max_execution_time', '600' );
     if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( array( 'message' => 'Unauthorized' ) ); }
 
+    /* Concurrency guard (parity with the JSON bulk path's lock): a double-click or an
+       XHR retry on a long-running bundle must not publish the whole zip twice. Atomic
+       add_option CAS acquire; a stale lock from a crashed run auto-reclaims after 15
+       min; released on shutdown even if the request dies mid-batch. */
+    $wpap_zip_lock = 'wpap_bulk_zip_lock';
+    $zip_lock_now  = time();
+    if ( ! add_option( $wpap_zip_lock, $zip_lock_now, '', 'no' ) ) {
+        $held = (int) get_option( $wpap_zip_lock, 0 );
+        if ( $held && ( $zip_lock_now - $held ) < 15 * MINUTE_IN_SECONDS ) {
+            wp_send_json_error( array( 'message' => 'A bundle publish is already in progress — wait for it to finish before uploading another.' ) );
+        }
+        if ( 0 === $held ) {
+            if ( ! add_option( $wpap_zip_lock, $zip_lock_now, '', 'no' ) ) {
+                wp_send_json_error( array( 'message' => 'A bundle publish is already in progress — wait for it to finish before uploading another.' ) );
+            }
+        } else {
+            global $wpdb;
+            $reclaimed = $wpdb->query( $wpdb->prepare(
+                "DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s",
+                $wpap_zip_lock, (string) $held
+            ) );
+            wp_cache_delete( $wpap_zip_lock, 'options' );
+            if ( ! $reclaimed || ! add_option( $wpap_zip_lock, $zip_lock_now, '', 'no' ) ) {
+                wp_send_json_error( array( 'message' => 'A bundle publish is already in progress — wait for it to finish before uploading another.' ) );
+            }
+        }
+    }
+    register_shutdown_function( function () use ( $wpap_zip_lock, $zip_lock_now ) {
+        wpap_release_lock_if_owner( $wpap_zip_lock, $zip_lock_now );
+    } );
+
     if ( ! class_exists( 'ZipArchive' ) ) {
         wp_send_json_error( array( 'message' => "PHP's ZipArchive is not available on this server — ask your host to enable the zip extension." ) );
     }
@@ -946,6 +1129,14 @@ function wpap_ajax_bulk_publish_zip() {
     if ( ! file_exists( $base . '/.htaccess' ) )  { @file_put_contents( $base . '/.htaccess', "Deny from all\n" ); }
     $work = $base . '/' . wp_generate_password( 16, false );
     if ( ! wp_mkdir_p( $work ) ) { wp_send_json_error( array( 'message' => 'Could not create a work directory.' ) ); }
+
+    /* Clean up the extract dir even on an UNCATCHABLE fatal (e.g. an OOM during
+       thumbnail generation), which the per-item try/catch cannot trap — otherwise a
+       full extracted bundle (up to the uncompressed cap) leaks under uploads on every
+       such crash. Idempotent with the explicit rrmdir on the normal/error paths below. */
+    register_shutdown_function( function () use ( $work ) {
+        if ( is_dir( $work ) ) { wpap_bundle_rrmdir( $work ); }
+    } );
 
     $zip = new ZipArchive();
     if ( true !== $zip->open( $tmp_upload ) ) { wpap_bundle_rrmdir( $work ); wp_send_json_error( array( 'message' => 'Not a valid zip archive.' ) ); }
