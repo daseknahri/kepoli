@@ -72,6 +72,56 @@ add_action('init', static function (): void {
     error_log('[kepoli] KEPOLI_RESET_ADMIN: re-applied password + administrator role for "' . $login . '". Set KEPOLI_RESET_ADMIN back to 0.');
 }, 1);
 
+/*
+ * One-time backfill: schema.org recipeCategory ("Home remedy") for the ingestible
+ * remedy RECIPES imported before the plugin's `course` field (Automation Hamri 9.24.0).
+ * New imports carry `course` through the content-pipeline, but the already-published
+ * recipe-remedies have no _wpap_recipe_course meta, so they emit no recipeCategory.
+ *
+ * Self-targeting + safe: only touches posts flagged as recipes (_wpap_recipe_on=1) that
+ * sit in a remedy category and don't already have a course — so it never labels a food
+ * recipe or a non-recipe remedy. Idempotent (sets only when empty) and guarded by an
+ * option marker so the query runs once, not on every boot. To re-run after adding more
+ * legacy recipes, delete the kepoli_remedy_course_backfilled option.
+ */
+add_action('init', static function (): void {
+    if (get_option('kepoli_remedy_course_backfilled')) {
+        return;
+    }
+    if (!class_exists('WP_Query')) {
+        return;
+    }
+    $cat_ids = [];
+    foreach (['colds-respiratory', 'skin-wounds-teeth', 'aches-pains-fever'] as $slug) {
+        $term = get_term_by('slug', $slug, 'category');
+        if ($term instanceof WP_Term) {
+            $cat_ids[] = (int) $term->term_id;
+        }
+    }
+    if (empty($cat_ids)) {
+        return; // categories not created yet — try again next boot (don't set the marker)
+    }
+    $q = new WP_Query([
+        'post_type'      => 'post',
+        'post_status'    => 'any',
+        'category__in'   => $cat_ids,
+        'posts_per_page' => 200,
+        'fields'         => 'ids',
+        'no_found_rows'  => true,
+        'meta_key'       => '_wpap_recipe_on',
+        'meta_value'     => '1',
+    ]);
+    $done = 0;
+    foreach ($q->posts as $pid) {
+        if ('' === trim((string) get_post_meta((int) $pid, '_wpap_recipe_course', true))) {
+            update_post_meta((int) $pid, '_wpap_recipe_course', 'Home remedy');
+            $done++;
+        }
+    }
+    update_option('kepoli_remedy_course_backfilled', 1, false);
+    error_log('[kepoli] recipe course backfill: set "Home remedy" on ' . $done . ' remedy recipe(s).');
+}, 20);
+
 function kepoli_autoseed_activate_plugin(string $plugin): void
 {
     $plugin_path = WP_PLUGIN_DIR . '/' . $plugin;
