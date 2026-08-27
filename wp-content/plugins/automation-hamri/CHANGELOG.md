@@ -3,6 +3,22 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.23.1
+
+Structured-data correctness fix. No DB schema change. (Pairs with viral-reader ≥ 1.9.7.)
+
+### Fixed
+- **Double-encoded HTML entities in JSON-LD.** WordPress returns term names, titles, author
+  display names, and bios entity-encoded for HTML display (`get_the_title()` on "Honey &
+  Pepper" → `"Honey &amp; Pepper"`; a bio's "doesn't" → `"doesn&#039;t"`). The schema builders
+  passed that straight to `wp_json_encode`, double-encoding it in the output
+  (`"Colds &amp; Respiratory"`, which Google reads as the literal "Colds &amp;
+  Respiratory"). Added `wpap_ld_text()` and decode at the JSON-LD boundary for the
+  breadcrumb, `articleSection`, WebPage/Article title + description, author `Person`
+  (name + bio), and the plugin's own Recipe renderer (name, description, ingredients,
+  steps). HTML `<meta>` paths are unaffected — they still run through `esc_attr()`, which
+  re-encodes for the HTML context.
+
 ## 9.23.0
 
 Optional SEO enhancements. Richer structured data + curated internal linking. No DB schema

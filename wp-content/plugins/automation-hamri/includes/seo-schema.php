@@ -109,6 +109,16 @@ function wpap_seo_plugin_active() {
         || function_exists( 'the_seo_framework' ) );   /* SEO Framework  */
 }
 
+/* Decode HTML entities to raw UTF-8 for JSON-LD values. WP returns titles, term names,
+   author display names, and bios entity-encoded for HTML display ("doesn&#039;t", "Salt
+   &amp; Pepper"); passing that to wp_json_encode DOUBLE-encodes it in structured data.
+   Decode once at the JSON-LD boundary — HTML output paths keep using esc_* which
+   re-encodes for their context. Arrays are decoded element-by-element. */
+function wpap_ld_text( $v ) {
+    if ( is_array( $v ) ) { return array_map( 'wpap_ld_text', $v ); }
+    return html_entity_decode( (string) $v, ENT_QUOTES, 'UTF-8' );
+}
+
 add_action( 'wp_head', 'wpap_seo_head', 1 );
 function wpap_seo_head() {
     if ( ! is_singular( 'post' ) ) { return; }
@@ -118,9 +128,14 @@ function wpap_seo_head() {
 
     $post = get_post( $post_id );
     if ( ! $post ) { return; }
-    $title = get_the_title( $post_id );
+    /* Decode HTML entities to raw UTF-8 for JSON-LD. WP stores term names and titles
+       entity-encoded (get_the_title() on "Honey & Pepper" => "Honey &amp; Pepper");
+       feeding that straight to wp_json_encode double-encodes it in structured data
+       ("Honey &amp; Pepper"). Decode once here — every HTML <meta> use below still
+       goes through esc_attr(), which re-encodes for the HTML context, so both are correct. */
+    $title = html_entity_decode( (string) get_the_title( $post_id ), ENT_QUOTES, 'UTF-8' );
     $url   = wpap_public_permalink( $post_id );   /* (#4) pretty even for a logged-in preview of a future post */
-    $desc  = ( '' !== (string) $post->post_excerpt ) ? $post->post_excerpt : wpap_make_excerpt( $post->post_content );
+    $desc  = html_entity_decode( (string) ( ( '' !== (string) $post->post_excerpt ) ? $post->post_excerpt : wpap_make_excerpt( $post->post_content ) ), ENT_QUOTES, 'UTF-8' );
     $img   = (string) get_post_meta( $post_id, '_wpap_image_url', true );
     $img_w = 0;
     $img_h = 0;
@@ -160,7 +175,7 @@ function wpap_seo_head() {
     if ( '' !== $img && 'https' === wp_parse_url( home_url(), PHP_URL_SCHEME ) ) {
         $img = set_url_scheme( $img, 'https' );
     }
-    $site  = get_bloginfo( 'name' );
+    $site  = html_entity_decode( (string) get_bloginfo( 'name' ), ENT_QUOTES, 'UTF-8' );
     $pub   = get_the_date( 'c', $post_id );
     $mod   = get_the_modified_date( 'c', $post_id );
 
@@ -228,13 +243,13 @@ function wpap_seo_head() {
     $person = array(
         '@type' => 'Person',
         '@id'   => $person_id,
-        'name'  => get_the_author_meta( 'display_name', $author_num ),
+        'name'  => wpap_ld_text( get_the_author_meta( 'display_name', $author_num ) ),
         'url'   => get_author_posts_url( $author_num ),
     );
     $avatar = get_avatar_url( $author_num, array( 'size' => 512 ) );
     if ( $avatar ) { $person['image'] = array( '@type' => 'ImageObject', 'url' => $avatar ); }
     $bio = (string) get_the_author_meta( 'description', $author_num );
-    if ( '' !== trim( $bio ) ) { $person['description'] = $bio; }
+    if ( '' !== trim( $bio ) ) { $person['description'] = wpap_ld_text( $bio ); }
     $author_site = (string) get_the_author_meta( 'user_url', $author_num );
     if ( '' !== trim( $author_site ) ) { $person['sameAs'] = array( $author_site ); }
     $graph[] = $person;
@@ -282,7 +297,7 @@ function wpap_seo_head() {
         if ( '' !== (string) $desc ) { $article['description'] = $desc; }
         if ( '' !== $img )           { $article['image'] = array( '@id' => $img_id ); }
         $acats = get_the_category( $post_id );
-        if ( ! empty( $acats ) ) { $article['articleSection'] = $acats[0]->name; }
+        if ( ! empty( $acats ) ) { $article['articleSection'] = html_entity_decode( (string) $acats[0]->name, ENT_QUOTES, 'UTF-8' ); }
         $graph[] = $article;
     }
 
@@ -293,7 +308,7 @@ function wpap_seo_head() {
     if ( ! empty( $cats ) ) {
         $c        = $cats[0];
         $c_link   = get_category_link( $c->term_id );
-        $crumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => $c->name, 'item' => is_wp_error( $c_link ) ? $home : $c_link );
+        $crumbs[] = array( '@type' => 'ListItem', 'position' => $pos++, 'name' => html_entity_decode( (string) $c->name, ENT_QUOTES, 'UTF-8' ), 'item' => is_wp_error( $c_link ) ? $home : $c_link );
     }
     $crumbs[] = array( '@type' => 'ListItem', 'position' => $pos, 'name' => $title, 'item' => $url );
     $graph[] = array( '@type' => 'BreadcrumbList', '@id' => $bc_id, 'itemListElement' => $crumbs );
@@ -406,12 +421,12 @@ function wpap_recipe_head() {
     $data = array(
         '@context'      => 'https://schema.org/',
         '@type'         => 'Recipe',
-        'name'          => wp_strip_all_tags( get_the_title( $id ) ),
-        'author'        => array( '@type' => 'Person', 'name' => get_the_author_meta( 'display_name', (int) get_post_field( 'post_author', $id ) ) ),
+        'name'          => wpap_ld_text( wp_strip_all_tags( get_the_title( $id ) ) ),
+        'author'        => array( '@type' => 'Person', 'name' => wpap_ld_text( get_the_author_meta( 'display_name', (int) get_post_field( 'post_author', $id ) ) ) ),
         'datePublished' => get_the_date( 'c', $id ),
     );
     $desc = has_excerpt( $id ) ? get_the_excerpt( $id ) : wp_trim_words( wp_strip_all_tags( (string) get_post_field( 'post_content', $id ) ), 40, '' );
-    if ( '' !== trim( (string) $desc ) ) { $data['description'] = $desc; }
+    if ( '' !== trim( (string) $desc ) ) { $data['description'] = wpap_ld_text( $desc ); }
     $thumb_id = get_post_thumbnail_id( $id );
     $img      = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'large' ) : '';
     if ( $img ) {
@@ -424,10 +439,10 @@ function wpap_recipe_head() {
     if ( $r['prep'] > 0 )  { $data['prepTime']  = wpap_recipe_iso_minutes( $r['prep'] ); }
     if ( $r['cook'] > 0 )  { $data['cookTime']  = wpap_recipe_iso_minutes( $r['cook'] ); }
     if ( $r['total'] > 0 ) { $data['totalTime'] = wpap_recipe_iso_minutes( $r['total'] ); }
-    if ( ! empty( $r['ingredients'] ) ) { $data['recipeIngredient'] = $r['ingredients']; }
+    if ( ! empty( $r['ingredients'] ) ) { $data['recipeIngredient'] = wpap_ld_text( $r['ingredients'] ); }
     if ( ! empty( $r['steps'] ) ) {
         $data['recipeInstructions'] = array_map(
-            static function ( $s ) { return array( '@type' => 'HowToStep', 'text' => $s ); },
+            static function ( $s ) { return array( '@type' => 'HowToStep', 'text' => wpap_ld_text( $s ) ); },
             $r['steps']
         );
     }

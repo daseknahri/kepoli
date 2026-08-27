@@ -15,7 +15,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 if ( ! defined( 'VR_VERSION' ) ) {
-	define( 'VR_VERSION', '1.9.6' );
+	define( 'VR_VERSION', '1.9.7' );
 }
 
 /* ─────────────────────────────────────────────
@@ -440,7 +440,9 @@ function vr_breadcrumb_jsonld() {
 	}
 	$elements = array();
 	foreach ( $crumbs as $i => $c ) {
-		$item = array( '@type' => 'ListItem', 'position' => $i + 1, 'name' => wp_strip_all_tags( (string) $c[1] ) );
+		/* Decode entities to raw UTF-8 for JSON-LD: term names / titles arrive entity-encoded
+		   ("Colds &amp; Respiratory"), and wp_json_encode would otherwise double-encode them. */
+		$item = array( '@type' => 'ListItem', 'position' => $i + 1, 'name' => html_entity_decode( wp_strip_all_tags( (string) $c[1] ), ENT_QUOTES, 'UTF-8' ) );
 		if ( ! empty( $c[0] ) ) { $item['item'] = $c[0]; }
 		$elements[] = $item;
 	}
@@ -640,6 +642,16 @@ function vr_human_minutes( $min ) {
 	return implode( ' ', $out );
 }
 
+/* Decode HTML entities to raw UTF-8 for JSON-LD values. WP returns titles, term names,
+   excerpts, and recipe meta entity-encoded for HTML display ("you&#039;ll", "Salt &amp;
+   Pepper"); wp_json_encode would then DOUBLE-encode them in the structured data. Decode
+   once here — JSON-LD carries raw Unicode text, and wp_json_encode re-escapes safely for
+   the block (JSON_HEX_TAG|JSON_HEX_AMP). Arrays are decoded element-by-element. */
+function vr_ld_text( $v ) {
+	if ( is_array( $v ) ) { return array_map( 'vr_ld_text', $v ); }
+	return html_entity_decode( (string) $v, ENT_QUOTES, 'UTF-8' );
+}
+
 function vr_recipe_jsonld() {
 	if ( ! is_singular( 'post' ) ) { return; }
 	$id = get_queried_object_id();
@@ -649,14 +661,14 @@ function vr_recipe_jsonld() {
 	$data = array(
 		'@context'      => 'https://schema.org/',
 		'@type'         => 'Recipe',
-		'name'          => wp_strip_all_tags( get_the_title( $id ) ),
+		'name'          => vr_ld_text( wp_strip_all_tags( get_the_title( $id ) ) ),
 		'author'        => vr_author_person_node( (int) get_post_field( 'post_author', $id ) ),
 		'datePublished' => get_the_date( 'c', $id ),
 	);
 	$mod = get_the_modified_date( 'c', $id );
 	if ( $mod ) { $data['dateModified'] = $mod; }
 	$desc = has_excerpt( $id ) ? get_the_excerpt( $id ) : wp_trim_words( wp_strip_all_tags( (string) get_post_field( 'post_content', $id ) ), 40, '' );
-	if ( '' !== trim( (string) $desc ) ) { $data['description'] = $desc; }
+	if ( '' !== trim( (string) $desc ) ) { $data['description'] = vr_ld_text( $desc ); }
 	$thumb_id = get_post_thumbnail_id( $id );
 	$img      = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'large' ) : '';
 	if ( ! $img ) {
@@ -683,10 +695,10 @@ function vr_recipe_jsonld() {
 	if ( $r['prep'] > 0 )  { $data['prepTime']  = vr_iso_minutes( $r['prep'] ); }
 	if ( $r['cook'] > 0 )  { $data['cookTime']  = vr_iso_minutes( $r['cook'] ); }
 	if ( $r['total'] > 0 ) { $data['totalTime'] = vr_iso_minutes( $r['total'] ); }
-	if ( ! empty( $r['ingredients'] ) ) { $data['recipeIngredient'] = $r['ingredients']; }
+	if ( ! empty( $r['ingredients'] ) ) { $data['recipeIngredient'] = vr_ld_text( $r['ingredients'] ); }
 	if ( ! empty( $r['steps'] ) ) {
 		$data['recipeInstructions'] = array_map(
-			function ( $s ) { return array( '@type' => 'HowToStep', 'text' => $s ); },
+			function ( $s ) { return array( '@type' => 'HowToStep', 'text' => vr_ld_text( $s ) ); },
 			$r['steps']
 		);
 	}
@@ -694,7 +706,7 @@ function vr_recipe_jsonld() {
 	   strengthens topical relevance (comma-separated, per schema.org guidance). */
 	$tags = get_the_tags( $id );
 	if ( $tags && ! is_wp_error( $tags ) ) {
-		$names = array_filter( array_map( 'wp_strip_all_tags', wp_list_pluck( $tags, 'name' ) ) );
+		$names = array_filter( array_map( 'vr_ld_text', array_map( 'wp_strip_all_tags', wp_list_pluck( $tags, 'name' ) ) ) );
 		if ( $names ) { $data['keywords'] = implode( ', ', $names ); }
 	}
 	/* JSON_HEX_TAG|JSON_HEX_AMP so a stray </script> in any field can't break out of
@@ -761,7 +773,7 @@ function vr_author_person_node( $user_id ) {
 		   Recipe's author MERGES with the plugin's connected-graph Person (E-E-A-T) instead
 		   of floating as a second, unlinked author on recipe posts. */
 		'@id'   => home_url( '/' ) . '#/schema/person/' . $user_id,
-		'name'  => get_the_author_meta( 'display_name', $user_id ),
+		'name'  => vr_ld_text( get_the_author_meta( 'display_name', $user_id ) ),
 		'url'   => get_author_posts_url( $user_id ),
 	);
 	$avatar = get_avatar_url( $user_id, array( 'size' => 512 ) );
@@ -779,7 +791,7 @@ function vr_author_profile_jsonld() {
 	if ( ! $uid ) { return; }
 	$person = vr_author_person_node( $uid );
 	$bio    = trim( (string) get_the_author_meta( 'description', $uid ) );
-	if ( '' !== $bio ) { $person['description'] = $bio; }
+	if ( '' !== $bio ) { $person['description'] = vr_ld_text( $bio ); }
 	$avatar = get_avatar_url( $uid, array( 'size' => 256 ) );
 	if ( $avatar ) { $person['image'] = $avatar; }
 	$data = array(
