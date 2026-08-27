@@ -4,7 +4,7 @@ Tags: content, automation, adsense, seo, publishing
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 9.23.1
+Stable tag: 9.24.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,9 @@ No. Instant indexing (IndexNow) is opt-in and off until you enable it. License a
 No. It renders its own ad zones and SEO/recipe output on any theme, and defers to a dedicated SEO plugin if one is active.
 
 == Changelog ==
+
+= 9.24.0 =
+* Recipes can now carry a course/meal type ("Main course", "Dessert", "Home remedy") via a new `course` import field (alias `recipeCategory`), emitted as schema.org `recipeCategory` for richer Recipe rich results. Optional; recipes without it are unchanged. (Pairs with Viral Reader 1.9.8.)
 
 = 9.23.1 =
 * Fixed double-encoded HTML entities in structured data: category names, titles, author bios, and recipe fields containing "&" or apostrophes (e.g. "Colds & Respiratory", "doesn't") were emitted in JSON-LD as "Colds &amp; Respiratory" / "doesn&#039;t". They now carry clean text in breadcrumb, articleSection, Recipe, and author Person nodes. (Pairs with Viral Reader 1.9.7.)

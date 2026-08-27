@@ -593,14 +593,21 @@ function wpap_publish_article( array $item, array $opts = array() ) {
             if ( $total <= 0 ) { $total = $prep + $cook; }
             $serv_raw = $item['servings'] ?? $item['yield'] ?? '';
             $serv = is_scalar( $serv_raw ) ? sanitize_text_field( wp_unslash( (string) $serv_raw ) ) : '';
+            /* recipeCategory (schema.org): the COURSE / meal type — "Main course",
+               "Dessert", "Home remedy" — NOT the blog category. Accept `course` or the
+               schema-native `recipeCategory` key. Omitted when absent (it is a
+               recommended, not required, Recipe field). */
+            $course_raw = $item['course'] ?? $item['recipeCategory'] ?? '';
+            $course = is_scalar( $course_raw ) ? sanitize_text_field( wp_unslash( (string) $course_raw ) ) : '';
 
             update_post_meta( $post_id, '_wpap_recipe_on', '1' );
             update_post_meta( $post_id, '_wpap_recipe_ingredients', implode( "\n", $ing ) );
             update_post_meta( $post_id, '_wpap_recipe_steps', implode( "\n", $stp ) );
-            if ( '' !== $serv ) { update_post_meta( $post_id, '_wpap_recipe_servings', $serv ); }
-            if ( $prep > 0 )    { update_post_meta( $post_id, '_wpap_recipe_prep', (string) $prep ); }
-            if ( $cook > 0 )    { update_post_meta( $post_id, '_wpap_recipe_cook', (string) $cook ); }
-            if ( $total > 0 )   { update_post_meta( $post_id, '_wpap_recipe_total', (string) $total ); }
+            if ( '' !== $serv )   { update_post_meta( $post_id, '_wpap_recipe_servings', $serv ); }
+            if ( '' !== $course ) { update_post_meta( $post_id, '_wpap_recipe_course', $course ); }
+            if ( $prep > 0 )      { update_post_meta( $post_id, '_wpap_recipe_prep', (string) $prep ); }
+            if ( $cook > 0 )      { update_post_meta( $post_id, '_wpap_recipe_cook', (string) $cook ); }
+            if ( $total > 0 )     { update_post_meta( $post_id, '_wpap_recipe_total', (string) $total ); }
         }
     }
 

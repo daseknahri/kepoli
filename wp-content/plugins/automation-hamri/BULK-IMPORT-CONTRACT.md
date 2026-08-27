@@ -62,6 +62,7 @@ Required for a recipe to earn a valid **schema.org/Recipe** rich result:
 | `prep` | string\|int | Prep time. `"40 min"`, `"1 hr 30 min"`, `"PT40M"`, or minutes as an int. Alias: `prepTime`. |
 | `cook` | string\|int | Cook time (same formats). Alias: `cookTime`. |
 | `servings` | string | Yield, e.g. `"6 servings"`. Alias: `yield`. |
+| `course` | string | schema.org `recipeCategory` — the **course / meal type**, NOT the blog category. e.g. `"Main course"`, `"Dessert"`, `"Soup"`, `"Home remedy"`. Optional (recommended). Alias: `recipeCategory`. |
 
 `total` time is computed from `prep + cook`, or supply an explicit `total`/`totalTime` to
 override. `ingredients`/`steps` may be an array **or** a newline-delimited string. A recipe
@@ -148,6 +149,7 @@ Recipe:
   "imageUrl": "https://cdn.example.com/cabbage-rolls.jpg",
   "image_alt": "Cabbage rolls in a pot with tomato sauce",
   "servings": "6 servings",
+  "course": "Main course",
   "prep": "40 min",
   "cook": "2 hr",
   "ingredients": ["1 large cabbage", "500g ground pork", "1 cup rice", "2 cups tomato sauce"],

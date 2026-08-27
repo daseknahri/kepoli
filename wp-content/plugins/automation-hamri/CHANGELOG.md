@@ -3,6 +3,20 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.24.0
+
+Recipe `course` → schema.org `recipeCategory`. No DB schema change. (Pairs with viral-reader ≥ 1.9.8.)
+
+### Added
+- **`course` recipe field.** A recipe item may now carry a `course` (alias `recipeCategory`) —
+  the meal/course type ("Main course", "Dessert", "Home remedy"), which is what schema.org's
+  `recipeCategory` means (NOT the blog category). `wpap_publish_article()` stores it as
+  `_wpap_recipe_course`, `wpap_recipe_render_data()` exposes it, and both the plugin's Recipe
+  renderer and the theme emit `recipeCategory` when present (entity-decoded via `wpap_ld_text`).
+  Optional and back-compatible — recipes without a course emit exactly as before. Documented in
+  `BULK-IMPORT-CONTRACT.md`; the content-pipeline can fill it from a profile `defaultCourse` /
+  `courseByCategory` (the remedies profile defaults ingestible recipes to "Home remedy").
+
 ## 9.23.1
 
 Structured-data correctness fix. No DB schema change. (Pairs with viral-reader ≥ 1.9.7.)

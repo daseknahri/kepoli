@@ -355,6 +355,7 @@ function wpap_recipe_render_data( $post_id ) {
     if ( $total <= 0 ) { $total = $prep + $cook; }
     return array(
         'servings'    => (string) get_post_meta( $post_id, '_wpap_recipe_servings', true ),
+        'course'      => (string) get_post_meta( $post_id, '_wpap_recipe_course', true ),
         'prep'        => $prep,
         'cook'        => $cook,
         'total'       => $total,
@@ -436,6 +437,7 @@ function wpap_recipe_head() {
             : array( $img );
     }
     if ( '' !== trim( $r['servings'] ) ) { $data['recipeYield'] = $r['servings']; }
+    if ( '' !== trim( (string) ( $r['course'] ?? '' ) ) ) { $data['recipeCategory'] = wpap_ld_text( $r['course'] ); }
     if ( $r['prep'] > 0 )  { $data['prepTime']  = wpap_recipe_iso_minutes( $r['prep'] ); }
     if ( $r['cook'] > 0 )  { $data['cookTime']  = wpap_recipe_iso_minutes( $r['cook'] ); }
     if ( $r['total'] > 0 ) { $data['totalTime'] = wpap_recipe_iso_minutes( $r['total'] ); }
