@@ -78,6 +78,7 @@ services:
         if (!defined('DISALLOW_FILE_EDIT')) { define('DISALLOW_FILE_EDIT', true); }
         if (!defined('FORCE_SSL_ADMIN')) { define('FORCE_SSL_ADMIN', true); }
         if (!defined('WP_POST_REVISIONS')) { define('WP_POST_REVISIONS', 10); }
+        if (!defined('DISABLE_WP_CRON')) { define('DISABLE_WP_CRON', true); }
       # Per-deploy secret for the manual URL cutover trigger. Unset = the URL trigger stays
       # DISABLED (the KEPOLI_FRESH_CUTOVER env flag remains the safe reseed path). Set a long
       # random value in Coolify to enable it.
@@ -92,6 +93,31 @@ services:
       interval: 30s
       timeout: 10s
       retries: 10
+
+  # Real cron for WordPress. With DISABLE_WP_CRON=true (set in WORDPRESS_CONFIG_EXTRA),
+  # WordPress no longer spawns cron on page visits — reliable on a low-traffic site,
+  # where visitor-triggered cron silently misses scheduled-post publish times. This
+  # sidecar pings wp-cron.php over the internal compose network on a fixed interval so
+  # scheduled posts publish on time and the automation-hamri Google-Sheet jobs fire
+  # deterministically. BusyBox wget (built into alpine, no package install) keeps it
+  # tiny; the retry loop tolerates WordPress restarts. Interval is WP_CRON_INTERVAL
+  # seconds (default 120). wp-cron.php runs before template_redirect, so the canonical
+  # host redirect never fires on it — the internal http://wordpress/ call is safe.
+  wp-cron:
+    image: alpine:3.20
+    restart: unless-stopped
+    depends_on:
+      wordpress:
+        condition: service_started
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "[wp-cron] sidecar up; pinging http://wordpress/wp-cron.php every ${WP_CRON_INTERVAL:-120}s"
+        while true; do
+          wget -q -T 55 -O /dev/null "http://wordpress/wp-cron.php?doing_wp_cron" 2>/dev/null || echo "[wp-cron] ping failed (WordPress not ready yet?)"
+          sleep "${WP_CRON_INTERVAL:-120}"
+        done
 
   wp-init:
     profiles:

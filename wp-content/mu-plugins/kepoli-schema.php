@@ -152,3 +152,67 @@ function kepoli_seo_meta_head(): void
     $out .= '<meta name="twitter:image" content="' . esc_url($img) . '">' . "\n";
     echo $out;
 }
+
+/**
+ * Canonical URL for ARCHIVE views (category, tag, custom taxonomy, author,
+ * post-type archive, and the blog posts index).
+ *
+ * WordPress core emits rel=canonical only on SINGULAR views; archives get none.
+ * With the site's /%category%/%postname%/ permalinks, every category archive is
+ * reachable at BOTH /category/<slug>/ (the base form used by the menu, breadcrumbs,
+ * and wp-sitemap) AND the base-less /<slug>/ that the permalink structure also
+ * resolves — the same page at two URLs with nothing telling Google which is primary
+ * (duplicate content). Emitting the term's own canonical on whichever URL was
+ * requested consolidates both to the single /category/<slug>/ form already used
+ * everywhere else. Defers to a real SEO plugin, and never touches singular or the
+ * front page (core / kepoli_seo_meta_head own those) to avoid a double canonical.
+ */
+add_action('wp_head', 'kepoli_archive_canonical', 3);
+function kepoli_archive_canonical(): void
+{
+    if (defined('WPSEO_VERSION') || defined('RANK_MATH_VERSION') || function_exists('seopress_init') || defined('AIOSEO_VERSION')) {
+        return;
+    }
+    if (is_admin() || is_feed() || is_singular() || is_front_page() || is_404() || is_search()) {
+        return;
+    }
+
+    $url = '';
+    if (is_category() || is_tag() || is_tax()) {
+        $term = get_queried_object();
+        if ($term instanceof WP_Term) {
+            $link = get_term_link($term);
+            if (!is_wp_error($link)) {
+                $url = $link;
+            }
+        }
+    } elseif (is_author()) {
+        $url = get_author_posts_url((int) get_queried_object_id());
+    } elseif (is_post_type_archive()) {
+        $pt = get_query_var('post_type');
+        if (is_array($pt)) {
+            $pt = reset($pt);
+        }
+        $link = get_post_type_archive_link((string) $pt);
+        if ($link) {
+            $url = $link;
+        }
+    } elseif (is_home()) {
+        // Reached only when a static front page is set (front page returned above);
+        // this is the separate blog posts index.
+        $posts_page = (int) get_option('page_for_posts');
+        $url = $posts_page ? (string) get_permalink($posts_page) : home_url('/');
+    }
+
+    if ($url === '') {
+        return;
+    }
+
+    // A paginated archive (/page/N/) is its own canonical, not a duplicate of page 1.
+    $paged = (int) get_query_var('paged');
+    if ($paged > 1) {
+        $url = trailingslashit($url) . 'page/' . $paged . '/';
+    }
+
+    echo "\n" . '<link rel="canonical" href="' . esc_url($url) . '">' . "\n";
+}
