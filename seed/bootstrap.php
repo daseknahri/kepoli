@@ -1829,7 +1829,7 @@ if ($about_page_slug !== '' && isset($page_ids[$about_page_slug])) {
 }
 
 $footer_menu = kepoli_seed_reset_menu('Footer', 'footer');
-foreach (array_unique(array_filter([$about_page_slug, $author_page_slug, 'contact', $privacy_page_slug, $cookies_page_slug, $advertising_page_slug, $editorial_page_slug, $terms_page_slug, $disclaimer_page_slug])) as $slug) {
+foreach (array_unique(array_filter([$about_page_slug, $author_page_slug, 'contact', $privacy_page_slug, $cookies_page_slug, $advertising_page_slug, $editorial_page_slug, $terms_page_slug, $disclaimer_page_slug, 'medical-disclaimer'])) as $slug) {
     if (!isset($page_ids[$slug])) {
         continue;
     }
