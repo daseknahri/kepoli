@@ -122,6 +122,49 @@ add_action('init', static function (): void {
     error_log('[kepoli] recipe course backfill: set "Home remedy" on ' . $done . ' remedy recipe(s).');
 }, 20);
 
+/*
+ * One-time backfill: sync each seeded post's excerpt to its curated meta_description.
+ * The seed marks food posts _wpap_smart_link, so Automation Hamri emits post_excerpt as
+ * the meta description; older seed runs stored the LONG `excerpt` (~183c), overflowing the
+ * SERP snippet, while the curated <=160c description sat in _kepoli_meta_description meta.
+ * bootstrap.php now seeds the meta_description as the excerpt, but the already-published
+ * posts still carry the long one — this applies the same fix on a plain REDEPLOY (no full
+ * KEPOLI_FORCE_RESEED, which would also revert wp-admin page/profile edits).
+ *
+ * Self-targeting: only posts carrying _kepoli_meta_description (the seeded ones — the
+ * bulk-imported remedies don't have it) whose excerpt differs. Idempotent + marker-guarded.
+ * Re-run by deleting the kepoli_food_excerpt_backfilled option.
+ */
+add_action('init', static function (): void {
+    if (get_option('kepoli_food_excerpt_backfilled')) {
+        return;
+    }
+    if (!class_exists('WP_Query')) {
+        return;
+    }
+    $q = new WP_Query([
+        'post_type'      => 'post',
+        'post_status'    => 'any',
+        'posts_per_page' => 200,
+        'fields'         => 'ids',
+        'no_found_rows'  => true,
+        'meta_key'       => '_kepoli_meta_description',
+    ]);
+    $done = 0;
+    foreach ($q->posts as $pid) {
+        $md = trim((string) get_post_meta((int) $pid, '_kepoli_meta_description', true));
+        if ('' === $md) {
+            continue;
+        }
+        if ((string) get_post_field('post_excerpt', (int) $pid) !== $md) {
+            wp_update_post(['ID' => (int) $pid, 'post_excerpt' => $md]);
+            $done++;
+        }
+    }
+    update_option('kepoli_food_excerpt_backfilled', 1, false);
+    error_log('[kepoli] food excerpt backfill: synced ' . $done . ' excerpt(s) to the curated meta_description.');
+}, 21);
+
 function kepoli_autoseed_activate_plugin(string $plugin): void
 {
     $plugin_path = WP_PLUGIN_DIR . '/' . $plugin;
