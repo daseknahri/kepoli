@@ -1702,7 +1702,11 @@ foreach ($posts as $index => $post) {
         'post_author' => $author_id,
         'post_name' => $post['slug'],
         'post_title' => $post['title'],
-        'post_excerpt' => $post['excerpt'],
+        // Use the curated SEO meta_description (kept <=160c) as the post excerpt: the post
+        // is marked _wpap_smart_link below, so WP Automator Pro emits post_excerpt as the
+        // meta description. The longer `excerpt` (used only for the seed's own listing
+        // cards via kepoli_seed_post_excerpt) would otherwise overflow the SERP snippet.
+        'post_excerpt' => ('' !== (string) ($post['meta_description'] ?? '')) ? $post['meta_description'] : $post['excerpt'],
         'comment_status' => 'closed',
         'ping_status' => 'closed',
         'post_content' => '<p>' . esc_html(kepoli_seed_post_intro($post)) . '</p>',
