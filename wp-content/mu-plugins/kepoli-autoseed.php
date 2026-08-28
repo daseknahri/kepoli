@@ -165,6 +165,34 @@ add_action('init', static function (): void {
     error_log('[kepoli] food excerpt backfill: synced ' . $done . ' excerpt(s) to the curated meta_description.');
 }, 21);
 
+/*
+ * One-time: promote the site-owner author account to administrator. bootstrap.php now seeds the
+ * author AS an administrator (owner's choice — one login for authoring + admin/campaign tools), but
+ * a plain redeploy doesn't re-run the seed, so an already-provisioned author keeps its old role
+ * (Editor). Identify it the same way the seed does — by WRITER_EMAIL — and promote it once. The
+ * account's existing password is unchanged (no session kill), so the owner logs in as usual and now
+ * reaches wp-admin. The separate WP_ADMIN_USER account remains an independent admin. Marker-guarded;
+ * re-run by deleting the kepoli_author_admin_promoted option.
+ */
+add_action('init', static function (): void {
+    if (get_option('kepoli_author_admin_promoted')) {
+        return;
+    }
+    $email = kepoli_autoseed_env('WRITER_EMAIL', 'isalunemerovik@gmail.com');
+    if ($email === '') {
+        return;
+    }
+    $user = get_user_by('email', $email);
+    if (!$user instanceof WP_User) {
+        return; // author not provisioned yet — retry next boot (don't set the marker)
+    }
+    if (!in_array('administrator', (array) $user->roles, true)) {
+        $user->set_role('administrator'); // superset of editor; does not invalidate the session
+        error_log('[kepoli] author admin promotion: "' . $user->user_login . '" is now administrator.');
+    }
+    update_option('kepoli_author_admin_promoted', 1, false);
+}, 22);
+
 function kepoli_autoseed_activate_plugin(string $plugin): void
 {
     $plugin_path = WP_PLUGIN_DIR . '/' . $plugin;

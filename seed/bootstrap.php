@@ -450,11 +450,12 @@ function kepoli_seed_ensure_author(array $pages, string $site_name, array $profi
         'last_name' => $last_name,
         'user_url' => home_url('/' . $author_slug . '/'),
         'description' => $description,
-        // Least privilege: the public byline author's login/slug is enumerable (author archive,
-        // REST, bylines), so it must NOT be an administrator — otherwise enumeration hands an
-        // attacker the admin username for free. 'editor' gives full content control with no
-        // admin/plugin/user surface. The real admin is the separate WP_ADMIN_USER account.
-        'role' => 'editor',
+        // Site owner's choice: the public byline author is ALSO the administrator, so there is one
+        // login for authoring + admin/campaign tools. Tradeoff (accepted): the login/slug is
+        // enumerable (author archive, REST, bylines), so this exposes the admin username — mitigate
+        // with a strong password + login-attempt limiting. The separate WP_ADMIN_USER account stays
+        // as an independent admin fallback.
+        'role' => 'administrator',
     ]);
     update_user_meta((int) $user->ID, 'locale', kepoli_seed_admin_locale());
 
