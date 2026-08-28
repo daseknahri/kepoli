@@ -171,6 +171,31 @@ add_action('template_redirect', static function (): void {
  * The client id is derived from the SAME ADSENSE_PUB_ID that feeds /ads.txt,
  * so the on-page publisher id and ads.txt can never drift apart.
  */
+/**
+ * Google Consent Mode v2 DEFAULTS, emitted at most once per request. For the
+ * consent-required regions (EEA + UK + Switzerland) every storage/ads signal starts
+ * 'denied'; a Google-certified CMP (Google Privacy & Messaging, delivered by the AdSense
+ * loader) flips them to 'granted' via gtag('consent','update',...) once the visitor
+ * accepts. No region entry = the default stays granted, so readers outside these regions
+ * are unaffected. ads_data_redaction + url_passthrough keep measurement working in the
+ * denied state without cookies. Shared by the AdSense loader and the GA4 tag
+ * (kepoli-analytics) so whichever loads first establishes the state before any Google tag.
+ */
+function kepoli_mu_consent_default(): void
+{
+    static $emitted = false;
+    if ($emitted) {
+        return;
+    }
+    $emitted = true;
+    $eea = "['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','IS','LI','NO','GB','CH']";
+    echo "\n" . '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}'
+        . "gtag('consent','default',{"
+        . "'ad_storage':'denied','ad_user_data':'denied','ad_personalization':'denied','analytics_storage':'denied',"
+        . "'wait_for_update':500,'region':" . $eea . "});"
+        . "gtag('set','ads_data_redaction',true);gtag('set','url_passthrough',true);</script>" . "\n";
+}
+
 add_action('wp_head', 'kepoli_mu_adsense_head', 9);
 function kepoli_mu_adsense_head(): void
 {
@@ -204,20 +229,11 @@ function kepoli_mu_adsense_head(): void
         return;
     }
 
-    // Google Consent Mode v2 DEFAULTS — must run BEFORE the adsbygoogle loader.
-    // For the consent-required regions (EEA + UK + Switzerland) every storage/ads
-    // signal starts 'denied'; the CMP (Google Privacy & Messaging, delivered by the
-    // loader below) flips them to 'granted' via gtag('consent','update',...) once the
-    // visitor accepts. No region entry = the default stays granted, so readers
-    // outside these regions are unaffected. ads_data_redaction + url_passthrough keep
-    // measurement working in the denied state without cookies. This makes flipping
-    // ADSENSE_ENABLE=1 EEA-safe even while the CMP banner is still being tuned.
-    $eea = "['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','IS','LI','NO','GB','CH']";
-    echo "\n" . '<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}'
-        . "gtag('consent','default',{"
-        . "'ad_storage':'denied','ad_user_data':'denied','ad_personalization':'denied','analytics_storage':'denied',"
-        . "'wait_for_update':500,'region':" . $eea . "});"
-        . "gtag('set','ads_data_redaction',true);gtag('set','url_passthrough',true);</script>" . "\n";
+    // Google Consent Mode v2 DEFAULTS — must run BEFORE the adsbygoogle loader (and
+    // before GA4). Shared with kepoli-analytics via kepoli_mu_consent_default() so
+    // whichever Google tag fires first establishes the denied-by-default state for
+    // EEA/UK/CH; the helper is idempotent, so this never double-emits.
+    kepoli_mu_consent_default();
 
     echo '<link rel="preconnect" href="https://pagead2.googlesyndication.com" crossorigin>' . "\n";
     echo '<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='
