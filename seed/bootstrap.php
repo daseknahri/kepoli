@@ -1678,6 +1678,26 @@ foreach ($pages as $page) {
 update_option('show_on_front', 'page');
 update_option('page_on_front', $page_ids[$home_page_slug] ?? (count($page_ids) > 0 ? (int) reset($page_ids) : 0));
 
+/* ── Automation Hamri plugin defaults (fill-if-empty; never clobbers a configured site) ──
+   The plugin ships with everything OFF/blank; on a FRESH kepoli deploy these bring it up
+   "complete" for the bulk-publish + AdSense workflow. add_option() only inserts when the
+   option is ABSENT, so a redeploy or any manual settings change is preserved untouched.
+   NOTES: (1) the ad-injection master switch is deliberately left UNSET (= OFF, the plugin's
+   default) — kepoli serves AdSense through its own kepoli-adtech mu-plugin, and turning on
+   the plugin's ad engine too would double-load ads (an AdSense policy risk). (2) Recipe
+   schema needs NO setting — it emits automatically for type:recipe posts via the theme.
+   (3) The global first-comment default is reach-safe (no CTA/"full article"); a per-post
+   comment always overrides it. */
+add_option('wpap_content_opts', array(
+    'min_words'           => 0,
+    'skip_dupe_titles'    => 1,   // don't re-publish a same-title post on a zip re-upload
+    'disable_comments'    => 0,
+    'clean_media'         => 0,
+    'fb_comment_template' => "This is one of those little tricks worth remembering.\n{{link}}\nHave you come across it before?",
+), '', 'no');
+add_option('wpap_indexnow', array('enabled' => 1), '', 'no');   // ping Bing/Yandex on publish (faster indexing)
+add_option('wpap_webp_enabled', '1', '', 'yes');                // convert imported images to WebP
+
 $sample = get_page_by_path('hello-world', OBJECT, 'post');
 if ($sample) {
     wp_delete_post($sample->ID, true);
