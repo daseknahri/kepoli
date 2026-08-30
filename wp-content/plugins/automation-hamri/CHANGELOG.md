@@ -3,6 +3,19 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.25.1
+
+Fix the 9.25.0 Facebook image on the primary publish path. No DB schema change.
+
+### Fixed
+- **FB image is now exported on the `wpap_publish_article` path.** 9.25.0 stored `_wpap_fb_image_url`
+  but the Distribution Hub row insert kept `image_url => $image_url` (the blog image), and the export
+  reads the row's `image_url` directly — so Direct Publish / bulk / Bulk-ZIP / Sheet-automation posts
+  still sent the **blog** image to Facebook and the feature silently no-op'd there. The row now stores
+  the Facebook-preferred image (`'' !== $fb_image_url ? $fb_image_url : $image_url`), matching
+  `wpap_autoadd_post_to_hub` / `wpap_restore_distribution_row_for_post` (which use `wpap_fb_image_url()`).
+  Only affects rows created after the fix; the fallback is unchanged when no `fbImage` is supplied.
+
 ## 9.25.0
 
 Separate Facebook image (blog image vs FB image). No DB schema change.

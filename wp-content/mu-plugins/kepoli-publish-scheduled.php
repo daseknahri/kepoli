@@ -7,8 +7,10 @@
  *   cron hit will NOT recover it. This finds any 'future' post whose time has already passed and
  *   publishes it directly with wp_publish_post() — bypassing the fragile publish_future_post event.
  *   Runs on init (so the wp-cron sidecar ping AND any real visitor both trigger it), throttled to
- *   ~once per 90s via a transient. Only ever touches genuinely OVERDUE posts (post_date_gmt in the
- *   past); it never publishes a post you deliberately scheduled for the future.
+ *   ~once per 90s via an autoloaded timestamp option (free per-request read) and guarded by an
+ *   atomic add_option single-runner lock so two simultaneous requests can't double-publish. Only
+ *   ever touches genuinely OVERDUE posts (post_date_gmt in the past); it never publishes a post you
+ *   deliberately scheduled for the future.
  *
  * @package Kepoli
  */
@@ -20,31 +22,66 @@ if (!defined('ABSPATH')) {
 add_action('init', 'kepoli_publish_overdue_scheduled', 30);
 function kepoli_publish_overdue_scheduled(): void
 {
-    // Throttle: run the check at most ~once every 90s, not on every request.
-    if (get_transient('kepoli_overdue_pub_lock')) {
+    // Throttle (~once per 90s): an AUTOLOADED "next run" timestamp, so the common per-request
+    // check is free from the alloptions bundle. A transient would cost ~2 wp_options SELECTs on
+    // this cache-less host (no persistent object cache) on every request, even when nothing is due.
+    // This is a throttle, NOT a concurrency lock — that is the atomic add_option claim below.
+    $next = (int) get_option('kepoli_overdue_next', 0);
+    if (time() < $next) {
         return;
     }
-    set_transient('kepoli_overdue_pub_lock', 1, 90);
+    update_option('kepoli_overdue_next', time() + 90, true);
 
-    global $wpdb;
-    $now_gmt = gmdate('Y-m-d H:i:s');
-    // Indexed on (post_status, post_date_gmt); cheap, and usually returns nothing.
-    $ids = $wpdb->get_col(
-        $wpdb->prepare(
-            "SELECT ID FROM {$wpdb->posts} WHERE post_status = 'future' AND post_date_gmt <= %s LIMIT 100",
-            $now_gmt
-        )
-    );
-    if (empty($ids)) {
-        return;
+    // Atomic single-runner claim: add_option() fails (returns false) if the row already exists, so
+    // two simultaneous requests — the wp-cron sidecar ping and a visitor — can't both enter the
+    // publish critical section and double-publish the same IDs. That matters because this path calls
+    // wp_publish_post() directly (not wpap_publish_article), so the Hub-autoadd suppression flag is
+    // never set and a concurrent double-publish could land a DUPLICATE Distribution Hub row.
+    // Mirrors the cutover-lock pattern in kepoli-autoseed.php (add_option claim + stale steal).
+    $lock = get_option('kepoli_overdue_pub_lock');
+    if (false !== $lock) {
+        if ((int) $lock > time() - 300) {
+            return;                                       // another runner is active (< 5 min old)
+        }
+        delete_option('kepoli_overdue_pub_lock');         // stale lock from a hard-crashed run — steal it
+    }
+    if (false === add_option('kepoli_overdue_pub_lock', (string) time(), '', 'no')) {
+        return;                                            // lost the claim race to a concurrent request
     }
 
-    $published = 0;
-    foreach ($ids as $pid) {
-        // wp_publish_post transitions 'future' -> 'publish' and fires the normal publish hooks.
-        wp_publish_post((int) $pid);
-        clean_post_cache((int) $pid);
-        $published++;
+    try {
+        global $wpdb;
+        $now_gmt = gmdate('Y-m-d H:i:s');
+        // Indexed on (post_status, post_date_gmt); cheap, and usually returns nothing. ORDER BY
+        // oldest-overdue-first makes processing deterministic so one bad post can't shadow a window.
+        $ids = $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts} WHERE post_status = 'future' AND post_date_gmt <= %s ORDER BY post_date_gmt ASC LIMIT 100",
+                $now_gmt
+            )
+        );
+        if (empty($ids)) {
+            return;
+        }
+
+        $published = 0;
+        foreach ($ids as $pid) {
+            // Per-item isolation: wp_publish_post fires save_post / wp_insert_post; one throwing hook
+            // must not abort the batch (which would strand every later overdue post) nor turn the
+            // visitor request that triggered this self-heal into an HTTP 500. Skip the poison post,
+            // keep going — the same discipline the seed/cutover paths use.
+            try {
+                wp_publish_post((int) $pid);
+                clean_post_cache((int) $pid);
+                $published++;
+            } catch (\Throwable $e) {
+                error_log('[kepoli] auto-publish failed for post ' . (int) $pid . ': ' . $e->getMessage());
+            }
+        }
+        if ($published > 0) {
+            error_log('[kepoli] auto-published ' . $published . ' overdue scheduled post(s).');
+        }
+    } finally {
+        delete_option('kepoli_overdue_pub_lock');          // always release, even on an unexpected throw
     }
-    error_log('[kepoli] auto-published ' . $published . ' overdue scheduled post(s).');
 }

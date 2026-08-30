@@ -85,41 +85,57 @@ add_action('init', static function (): void {
  * legacy recipes, delete the kepoli_remedy_course_backfilled option.
  */
 add_action('init', static function (): void {
+    // Keep one-time maintenance off the cache-less front-end hot path: run only on wp-admin loads
+    // and the wp-cron sidecar tick (which self-heals a redeploy within ~2 min). A front-end request
+    // would otherwise pay a get_option marker SELECT on every hit, forever, for a once-only backfill.
+    if (!is_admin() && !wp_doing_cron()) {
+        return;
+    }
     if (get_option('kepoli_remedy_course_backfilled')) {
         return;
     }
     if (!class_exists('WP_Query')) {
         return;
     }
-    $cat_ids = [];
-    foreach (['colds-respiratory', 'skin-wounds-teeth', 'aches-pains-fever'] as $slug) {
-        $term = get_term_by('slug', $slug, 'category');
-        if ($term instanceof WP_Term) {
-            $cat_ids[] = (int) $term->term_id;
+    try {
+        $cat_ids = [];
+        foreach (['colds-respiratory', 'skin-wounds-teeth', 'aches-pains-fever'] as $slug) {
+            $term = get_term_by('slug', $slug, 'category');
+            if ($term instanceof WP_Term) {
+                $cat_ids[] = (int) $term->term_id;
+            }
         }
-    }
-    if (empty($cat_ids)) {
-        return; // categories not created yet — try again next boot (don't set the marker)
-    }
-    $q = new WP_Query([
-        'post_type'      => 'post',
-        'post_status'    => 'any',
-        'category__in'   => $cat_ids,
-        'posts_per_page' => 200,
-        'fields'         => 'ids',
-        'no_found_rows'  => true,
-        'meta_key'       => '_wpap_recipe_on',
-        'meta_value'     => '1',
-    ]);
-    $done = 0;
-    foreach ($q->posts as $pid) {
-        if ('' === trim((string) get_post_meta((int) $pid, '_wpap_recipe_course', true))) {
-            update_post_meta((int) $pid, '_wpap_recipe_course', 'Home remedy');
-            $done++;
+        if (empty($cat_ids)) {
+            return; // categories not created yet — try again next boot (don't set the marker)
         }
+        $q = new WP_Query([
+            'post_type'      => 'post',
+            'post_status'    => 'any',
+            'category__in'   => $cat_ids,
+            'posts_per_page' => 200,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'meta_key'       => '_wpap_recipe_on',
+            'meta_value'     => '1',
+        ]);
+        $done = 0;
+        foreach ($q->posts as $pid) {
+            // Per-item isolation: one poison post can't 500 the request or block the rest.
+            try {
+                if ('' === trim((string) get_post_meta((int) $pid, '_wpap_recipe_course', true))) {
+                    update_post_meta((int) $pid, '_wpap_recipe_course', 'Home remedy');
+                    $done++;
+                }
+            } catch (\Throwable $e) {
+                error_log('[kepoli] course backfill: post ' . (int) $pid . ' failed: ' . $e->getMessage());
+            }
+        }
+        update_option('kepoli_remedy_course_backfilled', 1, false);
+        error_log('[kepoli] recipe course backfill: set "Home remedy" on ' . $done . ' remedy recipe(s).');
+    } catch (\Throwable $e) {
+        // Never turn a self-heal into a public fatal; retry next admin/cron tick (marker stays unset).
+        error_log('[kepoli] recipe course backfill failed: ' . $e->getMessage());
     }
-    update_option('kepoli_remedy_course_backfilled', 1, false);
-    error_log('[kepoli] recipe course backfill: set "Home remedy" on ' . $done . ' remedy recipe(s).');
 }, 20);
 
 /*
@@ -136,33 +152,47 @@ add_action('init', static function (): void {
  * Re-run by deleting the kepoli_food_excerpt_backfilled option.
  */
 add_action('init', static function (): void {
+    // One-time maintenance: keep off the front-end hot path (runs on admin / cron — see above).
+    if (!is_admin() && !wp_doing_cron()) {
+        return;
+    }
     if (get_option('kepoli_food_excerpt_backfilled')) {
         return;
     }
     if (!class_exists('WP_Query')) {
         return;
     }
-    $q = new WP_Query([
-        'post_type'      => 'post',
-        'post_status'    => 'any',
-        'posts_per_page' => 200,
-        'fields'         => 'ids',
-        'no_found_rows'  => true,
-        'meta_key'       => '_kepoli_meta_description',
-    ]);
-    $done = 0;
-    foreach ($q->posts as $pid) {
-        $md = trim((string) get_post_meta((int) $pid, '_kepoli_meta_description', true));
-        if ('' === $md) {
-            continue;
+    try {
+        $q = new WP_Query([
+            'post_type'      => 'post',
+            'post_status'    => 'any',
+            'posts_per_page' => 200,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'meta_key'       => '_kepoli_meta_description',
+        ]);
+        $done = 0;
+        foreach ($q->posts as $pid) {
+            // Per-item isolation: wp_update_post fires save_post; one throwing hook must not 500 the
+            // request or strand the rest of the batch (and leave the marker unset → a 500 loop).
+            try {
+                $md = trim((string) get_post_meta((int) $pid, '_kepoli_meta_description', true));
+                if ('' === $md) {
+                    continue;
+                }
+                if ((string) get_post_field('post_excerpt', (int) $pid) !== $md) {
+                    wp_update_post(['ID' => (int) $pid, 'post_excerpt' => $md]);
+                    $done++;
+                }
+            } catch (\Throwable $e) {
+                error_log('[kepoli] excerpt backfill: post ' . (int) $pid . ' failed: ' . $e->getMessage());
+            }
         }
-        if ((string) get_post_field('post_excerpt', (int) $pid) !== $md) {
-            wp_update_post(['ID' => (int) $pid, 'post_excerpt' => $md]);
-            $done++;
-        }
+        update_option('kepoli_food_excerpt_backfilled', 1, false);
+        error_log('[kepoli] food excerpt backfill: synced ' . $done . ' excerpt(s) to the curated meta_description.');
+    } catch (\Throwable $e) {
+        error_log('[kepoli] food excerpt backfill failed: ' . $e->getMessage());
     }
-    update_option('kepoli_food_excerpt_backfilled', 1, false);
-    error_log('[kepoli] food excerpt backfill: synced ' . $done . ' excerpt(s) to the curated meta_description.');
 }, 21);
 
 /*
@@ -175,22 +205,30 @@ add_action('init', static function (): void {
  * re-run by deleting the kepoli_author_admin_promoted option.
  */
 add_action('init', static function (): void {
+    // One-time maintenance: keep off the front-end hot path (runs on admin / cron — see above).
+    if (!is_admin() && !wp_doing_cron()) {
+        return;
+    }
     if (get_option('kepoli_author_admin_promoted')) {
         return;
     }
-    $email = kepoli_autoseed_env('WRITER_EMAIL', 'isalunemerovik@gmail.com');
-    if ($email === '') {
-        return;
+    try {
+        $email = kepoli_autoseed_env('WRITER_EMAIL', 'isalunemerovik@gmail.com');
+        if ($email === '') {
+            return;
+        }
+        $user = get_user_by('email', $email);
+        if (!$user instanceof WP_User) {
+            return; // author not provisioned yet — retry next boot (don't set the marker)
+        }
+        if (!in_array('administrator', (array) $user->roles, true)) {
+            $user->set_role('administrator'); // superset of editor; does not invalidate the session
+            error_log('[kepoli] author admin promotion: "' . $user->user_login . '" is now administrator.');
+        }
+        update_option('kepoli_author_admin_promoted', 1, false);
+    } catch (\Throwable $e) {
+        error_log('[kepoli] author admin promotion failed: ' . $e->getMessage());
     }
-    $user = get_user_by('email', $email);
-    if (!$user instanceof WP_User) {
-        return; // author not provisioned yet — retry next boot (don't set the marker)
-    }
-    if (!in_array('administrator', (array) $user->roles, true)) {
-        $user->set_role('administrator'); // superset of editor; does not invalidate the session
-        error_log('[kepoli] author admin promotion: "' . $user->user_login . '" is now administrator.');
-    }
-    update_option('kepoli_author_admin_promoted', 1, false);
 }, 22);
 
 function kepoli_autoseed_activate_plugin(string $plugin): void

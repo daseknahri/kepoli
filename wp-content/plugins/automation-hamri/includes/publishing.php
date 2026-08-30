@@ -653,11 +653,16 @@ function wpap_publish_article( array $item, array $opts = array() ) {
     }
 
     /* ── distribution row ── */
+    /* The Hub row carries the FACEBOOK-preferred image so the export/auto-poster use it: the FB
+       image when one was supplied (fbImage/local_fb_image_path, computed above), else the blog
+       image so a single image still serves both. The export reads row.image_url directly, so the
+       preference must be baked into the row here — matching wpap_autoadd_post_to_hub /
+       wpap_restore_distribution_row_for_post, which resolve it via wpap_fb_image_url(). */
     $saved = $wpdb->insert( $table, array(
         'post_id'    => $post_id,
         'title'      => $title,
         'post_url'   => $post_url,
-        'image_url'  => $image_url,
+        'image_url'  => ( '' !== $fb_image_url ? $fb_image_url : $image_url ),
         'fb_text'    => $hook,
         'fb_post_id' => '',
         'smart_link' => $smart_link,

@@ -4,7 +4,7 @@ Tags: content, automation, adsense, seo, publishing
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 9.25.0
+Stable tag: 9.25.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,9 @@ No. Instant indexing (IndexNow) is opt-in and off until you enable it. License a
 No. It renders its own ad zones and SEO/recipe output on any theme, and defers to a dedicated SEO plugin if one is active.
 
 == Changelog ==
+
+= 9.25.1 =
+* Fix: the separate Facebook image (9.25.0) is now actually used by the Distribution Hub export on the primary publish path (Direct Publish / bulk / ZIP bundle / Sheet automation). It was stored but the Hub row kept the blog image, so Facebook still received the blog image; the row now carries the Facebook-preferred image (falls back to the blog image when none is given), matching the manual-publish auto-add path.
 
 = 9.25.0 =
 * Separate Facebook image: a post can now carry a different image for Facebook than for the blog, via a new optional `fbImage` import field (URL or a path inside the Bulk-ZIP bundle). The Distribution Hub export uses the Facebook image; if none is given, the blog image is used for both. Fully back-compatible.
