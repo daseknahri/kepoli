@@ -21,20 +21,20 @@ if (!defined('ABSPATH')) {
 }
 
 /** The remedy (YMYL folk-cure) category slugs — the only content this shield touches. */
-function kepoli_remedy_category_slugs(): array
+function kepoli_noindex_remedy_slugs(): array
 {
     return ['colds-respiratory', 'skin-wounds-teeth', 'aches-pains-fever'];
 }
 
 /** Remedy category term IDs (memoized per request). */
-function kepoli_remedy_category_ids(): array
+function kepoli_noindex_remedy_ids(): array
 {
     static $ids = null;
     if (null !== $ids) {
         return $ids;
     }
     $ids = [];
-    foreach (kepoli_remedy_category_slugs() as $slug) {
+    foreach (kepoli_noindex_remedy_slugs() as $slug) {
         $term = get_term_by('slug', $slug, 'category');
         if ($term instanceof WP_Term) {
             $ids[] = (int) $term->term_id;
@@ -52,7 +52,7 @@ function kepoli_noindex_remedies_on(): bool
 
 /* (4) Hide remedy categories from the theme footer's Explore list (cheap front-end filter). */
 add_filter('vr_hide_footer_categories', static function (array $slugs): array {
-    return kepoli_noindex_remedies_on() ? array_merge($slugs, kepoli_remedy_category_slugs()) : $slugs;
+    return kepoli_noindex_remedies_on() ? array_merge($slugs, kepoli_noindex_remedy_slugs()) : $slugs;
 });
 
 /* (2) Noindex the remedy CATEGORY ARCHIVE pages via WP core's wp_robots API. */
@@ -60,7 +60,7 @@ add_filter('wp_robots', static function ($robots) {
     if (!is_array($robots) || is_admin()) {
         return $robots;
     }
-    if (kepoli_noindex_remedies_on() && is_category(kepoli_remedy_category_slugs())) {
+    if (kepoli_noindex_remedies_on() && is_category(kepoli_noindex_remedy_slugs())) {
         unset($robots['index']);
         $robots['noindex'] = true;
     }
@@ -72,7 +72,7 @@ add_filter('wp_sitemaps_posts_query_args', static function ($args, $post_type) {
     if ('post' !== $post_type || !kepoli_noindex_remedies_on()) {
         return $args;
     }
-    $ids = kepoli_remedy_category_ids();
+    $ids = kepoli_noindex_remedy_ids();
     if ($ids) {
         $tax = isset($args['tax_query']) && is_array($args['tax_query']) ? $args['tax_query'] : [];
         $tax[] = [
@@ -103,7 +103,7 @@ function kepoli_noindex_remedies_sync(): void
     if ((string) get_option($marker, '') === $want) {
         return; // already applied for this state
     }
-    $cat_ids = kepoli_remedy_category_ids();
+    $cat_ids = kepoli_noindex_remedy_ids();
     if (empty($cat_ids)) {
         return; // remedy categories not created yet — retry next tick (don't set the marker)
     }
