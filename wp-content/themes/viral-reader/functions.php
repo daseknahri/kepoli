@@ -123,8 +123,19 @@ function vr_front_query() {
 function vr_top_categories( $n = 8 ) {
 	static $all = null;
 	if ( null === $all ) {
-		$all = get_categories( array( 'orderby' => 'count', 'order' => 'DESC', 'number' => 8, 'hide_empty' => true ) );
+		/* Fetch a few extra (12) so a site that hides some via the filter below still has
+		   enough to fill the footer/explore slots. */
+		$all = get_categories( array( 'orderby' => 'count', 'order' => 'DESC', 'number' => 12, 'hide_empty' => true ) );
 		if ( ! is_array( $all ) ) { $all = array(); }
+		/* Let a site hide specific categories from the footer "Explore" list by returning their
+		   slugs from this filter — e.g. YMYL remedy categories kept out of the crawlable nav
+		   during an AdSense review. Generic: default hides nothing. */
+		$hide = array_map( 'strval', (array) apply_filters( 'vr_hide_footer_categories', array() ) );
+		if ( $hide ) {
+			$all = array_values( array_filter( $all, static function ( $c ) use ( $hide ) {
+				return ! in_array( $c->slug, $hide, true );
+			} ) );
+		}
 	}
 	return array_slice( $all, 0, max( 0, (int) $n ) );
 }
