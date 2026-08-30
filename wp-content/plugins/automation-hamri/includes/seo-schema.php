@@ -68,7 +68,7 @@ function wpap_make_excerpt( $html, $max = 155 ) {
    plugin is active. Only the active plugin's keys are written; when no SEO
    plugin is installed, the render-time wpap_seo_head() emits the description
    from post_excerpt instead, so the meta description is covered either way. */
-function wpap_set_seo_meta( $post_id, $description, $title = '', $keyword = '' ) {
+function wpap_set_seo_meta( $post_id, $description, $title = '', $keyword = '', $args = array() ) {
     $post_id = (int) $post_id;
     if ( $post_id <= 0 ) { return; }
     $description = trim( (string) $description );
@@ -116,6 +116,54 @@ function wpap_set_seo_meta( $post_id, $description, $title = '', $keyword = '' )
         $fill( $post_id, '_genesis_description', $description );
         $fill( $post_id, '_genesis_title',       $title );
     }
+
+    /* ── Robots: honor an explicit noindex request ($args['noindex']). Writes the active SEO
+       plugin's own noindex meta (so its UI reflects it) AND our own _wpap_noindex marker, which
+       wpap_robots_honor_noindex() enforces via WP core's wp_robots API even on a site with NO SEO
+       plugin. Acts ONLY when the caller passes an explicit noindex (isset) — an editor save with no
+       $args never touches robots, so a manually-noindexed post is never silently re-indexed. ── */
+    if ( isset( $args['noindex'] ) ) {
+        if ( $args['noindex'] ) {
+            if ( $yoast ) { update_post_meta( $post_id, '_yoast_wpseo_meta-robots-noindex', '1' ); }
+            if ( $rank )  {
+                $r = get_post_meta( $post_id, 'rank_math_robots', true );
+                if ( ! is_array( $r ) ) { $r = array(); }
+                $r = array_values( array_diff( $r, array( 'index' ) ) );   /* drop a stale 'index' */
+                if ( ! in_array( 'noindex', $r, true ) ) { $r[] = 'noindex'; }
+                update_post_meta( $post_id, 'rank_math_robots', $r );
+            }
+            if ( $seopress ) { update_post_meta( $post_id, '_seopress_robots_index', 'yes' ); }   /* SEOPress: 'yes' == noindex */
+            if ( $tsf )      { update_post_meta( $post_id, '_genesis_noindex', '1' ); }
+            update_post_meta( $post_id, '_wpap_noindex', 1 );
+        } else {
+            /* Explicit index request — clear a prior noindex marker + the SEO plugin's flag. */
+            delete_post_meta( $post_id, '_wpap_noindex' );
+            if ( $yoast ) { delete_post_meta( $post_id, '_yoast_wpseo_meta-robots-noindex' ); }
+            if ( $rank )  {
+                $r = get_post_meta( $post_id, 'rank_math_robots', true );
+                if ( is_array( $r ) ) { update_post_meta( $post_id, 'rank_math_robots', array_values( array_diff( $r, array( 'noindex' ) ) ) ); }
+            }
+            if ( $seopress ) { delete_post_meta( $post_id, '_seopress_robots_index' ); }
+            if ( $tsf )      { delete_post_meta( $post_id, '_genesis_noindex' ); }
+        }
+    }
+}
+
+/* Enforce a post's noindex request plugin-agnostically via WordPress core's wp_robots API.
+   wpap_set_seo_meta() writes the per-plugin noindex meta (so each SEO plugin's UI reflects it);
+   THIS filter additionally honors our own _wpap_noindex marker, so an explicitly-noindexed post
+   stays out of search even on a site with NO SEO plugin (kepoli's case) or one that composes with
+   core wp_robots. Acts ONLY on a singular post carrying the marker — every other page is returned
+   untouched, so the default (indexable) behavior is never changed. */
+add_filter( 'wp_robots', 'wpap_robots_honor_noindex', 20 );
+function wpap_robots_honor_noindex( $robots ) {
+    if ( ! is_array( $robots ) || is_admin() || ! is_singular( 'post' ) ) { return $robots; }
+    $id = (int) get_queried_object_id();
+    if ( $id > 0 && get_post_meta( $id, '_wpap_noindex', true ) ) {
+        unset( $robots['index'] );
+        $robots['noindex'] = true;
+    }
+    return $robots;
 }
 
 /* True when a dedicated SEO plugin is already handling <head> meta. */

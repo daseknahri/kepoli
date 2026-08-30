@@ -3,6 +3,22 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.27.0
+
+Per-post noindex control. No DB schema change.
+
+### Added
+- **`noindex` import field** (bool). Marks a post to be kept out of search — for thin, utility, or
+  near-duplicate content. Enforced plugin-agnostically via WordPress core's `wp_robots` API
+  (`wpap_robots_honor_noindex()` honors a `_wpap_noindex` marker), so it works on a site with **no SEO
+  plugin** (adds `noindex` to the page's robots meta). When a supported SEO plugin is active,
+  `wpap_set_seo_meta()` also sets that plugin's own noindex flag (Yoast `_yoast_wpseo_meta-robots-noindex`,
+  Rank Math `rank_math_robots`, SEOPress `_seopress_robots_index`, TSF `_genesis_noindex`) so its UI
+  reflects the state. `wpap_set_seo_meta()` gained a 5th `$args` parameter (`['noindex' => bool]`); it acts
+  only when `noindex` is explicitly passed, so an ordinary editor save never touches a post's robots state.
+  Omit the field and posts stay indexable exactly as before. (Ports the passive build's noindex enforcement
+  to build-v9, the one SEO capability it lacked.)
+
 ## 9.26.0
 
 Hardening + SEO/recipe compatibility pass (multi-agent review). No DB schema change.

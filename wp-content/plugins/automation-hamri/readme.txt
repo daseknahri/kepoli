@@ -4,7 +4,7 @@ Tags: content, automation, adsense, seo, publishing
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 9.26.0
+Stable tag: 9.27.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,9 @@ No. Instant indexing (IndexNow) is opt-in and off until you enable it. License a
 No. It renders its own ad zones and SEO/recipe output on any theme, and defers to a dedicated SEO plugin if one is active.
 
 == Changelog ==
+
+= 9.27.0 =
+* Noindex control: a post can now be kept out of search with an optional `noindex` import field (true/false). It is enforced plugin-agnostically through WordPress core's robots API, so it works even with no SEO plugin installed — and, when a supported SEO plugin (Yoast/Rank Math/SEOPress/The SEO Framework) is active, its own noindex flag is set too so its UI matches. Use it for thin, utility, or near-duplicate posts. Omit it and posts stay indexable as before.
 
 = 9.26.0 =
 * SEO compatibility: the writer's meta title/description/keyword are now also written for SEOPress and The SEO Framework (previously only Yoast and Rank Math), so the curated meta is no longer silently lost on those sites.

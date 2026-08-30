@@ -562,8 +562,15 @@ function wpap_publish_article( array $item, array $opts = array() ) {
     /* ── SEO metadata: meta description / title / focus keyword into whichever
        SEO plugin is active (Yoast, Rank Math). The description also lives in
        post_excerpt, which the plugin's own <head> emitter uses when no SEO
-       plugin is installed — so a proper meta description is set either way. ── */
-    wpap_set_seo_meta( $post_id, $description, $meta_title, $focus_kw );
+       plugin is installed — so a proper meta description is set either way.
+       Optional per-item `noindex` (thin / utility / near-duplicate posts): true keeps
+       the post out of search — enforced via wpap_robots_honor_noindex() even with no
+       SEO plugin — and false explicitly re-indexes; omit to leave it indexable. ── */
+    $seo_args = array();
+    if ( array_key_exists( 'noindex', $item ) && null !== $item['noindex'] ) {
+        $seo_args['noindex'] = filter_var( $item['noindex'], FILTER_VALIDATE_BOOLEAN );
+    }
+    wpap_set_seo_meta( $post_id, $description, $meta_title, $focus_kw, $seo_args );
 
     /* ── tags (array or comma-separated string) ── */
     $tags = array();
