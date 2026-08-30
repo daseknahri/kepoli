@@ -25,19 +25,22 @@ function kepoli_publish_overdue_scheduled(): void
     // Throttle (~once per 90s): an AUTOLOADED "next run" timestamp, so the common per-request
     // check is free from the alloptions bundle. A transient would cost ~2 wp_options SELECTs on
     // this cache-less host (no persistent object cache) on every request, even when nothing is due.
-    // This is a throttle, NOT a concurrency lock — that is the atomic add_option claim below.
+    // This is a throttle, NOT a concurrency lock — that is the atomic INSERT IGNORE claim below.
     $next = (int) get_option('kepoli_overdue_next', 0);
     if (time() < $next) {
         return;
     }
     update_option('kepoli_overdue_next', time() + 90, true);
 
-    // Atomic single-runner claim: add_option() fails (returns false) if the row already exists, so
-    // two simultaneous requests — the wp-cron sidecar ping and a visitor — can't both enter the
-    // publish critical section and double-publish the same IDs. That matters because this path calls
-    // wp_publish_post() directly (not wpap_publish_article), so the Hub-autoadd suppression flag is
-    // never set and a concurrent double-publish could land a DUPLICATE Distribution Hub row.
-    // Mirrors the cutover-lock pattern in kepoli-autoseed.php (add_option claim + stale steal).
+    // Atomic single-runner claim via INSERT IGNORE — a TRUE UNIQUE-key compare-and-swap. NOT
+    // add_option(): WP core's add_option runs INSERT ... ON DUPLICATE KEY UPDATE, so a second racer
+    // whose value differs (two requests straddling a 1-second boundary, both writing time()) gets
+    // affected-rows=2 and add_option returns true — a silent double-acquire. INSERT IGNORE inserts
+    // exactly one row and no-ops every other racer (affected-rows=0). Two simultaneous requests — the
+    // wp-cron sidecar ping and a visitor — thus can't both enter the publish critical section and land
+    // a DUPLICATE Distribution Hub row (this path calls wp_publish_post() directly, so the Hub-autoadd
+    // suppression flag is never set). A stale lock from a hard-crashed run is stolen after 5 min.
+    global $wpdb;
     $lock = get_option('kepoli_overdue_pub_lock');
     if (false !== $lock) {
         if ((int) $lock > time() - 300) {
@@ -45,7 +48,14 @@ function kepoli_publish_overdue_scheduled(): void
         }
         delete_option('kepoli_overdue_pub_lock');         // stale lock from a hard-crashed run — steal it
     }
-    if (false === add_option('kepoli_overdue_pub_lock', (string) time(), '', 'no')) {
+    $claimed = $wpdb->query($wpdb->prepare(
+        "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')",
+        'kepoli_overdue_pub_lock',
+        (string) time()
+    ));
+    wp_cache_delete('kepoli_overdue_pub_lock', 'options');
+    wp_cache_delete('notoptions', 'options');
+    if (1 !== (int) $claimed) {
         return;                                            // lost the claim race to a concurrent request
     }
 

@@ -21,8 +21,11 @@
  * Published posts and their scheduled publish events are — and always were —
  * left completely intact. Deleting the plugin never touches your content.
  *
- * If you ever want a TRUE clean wipe (drop the table + delete all options),
- * do it deliberately from a database tool — it is intentionally NOT automatic.
+ * If you ever want a TRUE clean wipe (drop the table + delete all options, INCLUDING the
+ * stored API keys + license), set  define( 'WPAP_UNINSTALL_PURGE', true );  in wp-config.php
+ * before deleting. It is safe on a SINGLE-COPY install (an in-place upgrade or a Docker-vendored
+ * deploy), which has no parallel-folder constraint; it stays OFF by default so the multi-folder
+ * model above is never harmed.
  */
 
 /* Guard: only ever run inside WordPress's uninstall context. */
@@ -41,5 +44,41 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 delete_transient( 'wpap_license_cache' );
 delete_transient( 'wpap_revoke_notice' );
 
-/* NOTE: DROP TABLE and delete_option(...) calls are intentionally omitted so
-   that deleting one installed version never erases the shared Hub or settings. */
+/* OPT-IN full clean wipe (default OFF). The DROP TABLE + delete_option() calls stay omitted on a
+   normal delete so removing one installed version never erases the shared Hub or settings that a
+   parallel ACTIVE version still uses. But a single-copy install has no such constraint and may want
+   a true clean removal — critically, the stored API keys + license, which otherwise linger in
+   wp_options after the plugin is gone (a later DB dump / migration / site sale then exposes them).
+   Enable with  define( 'WPAP_UNINSTALL_PURGE', true );  in wp-config.php. Published posts and their
+   scheduled events are ALWAYS left intact. Option list mirrors the passive build's uninstall. */
+if ( defined( 'WPAP_UNINSTALL_PURGE' ) && WPAP_UNINSTALL_PURGE ) {
+    global $wpdb;
+    $wpap_table = $wpdb->prefix . 'wpap_generated_posts';   /* WPAP_TABLE literal */
+    $wpdb->query( "DROP TABLE IF EXISTS `{$wpap_table}`" );
+
+    foreach ( array(
+        'wpap_settings',                 /* API keys / config      */
+        'wpap_license_data',             /* license user + key     */
+        'wpap_license_last_check',
+        'wpap_db_version',               /* so a reinstall recreates the just-dropped table */
+        'wpap_ads_txt',
+        'wpap_ads_inject',
+        'wpap_content_opts',
+        'wpap_utm',
+        'wpap_indexnow',
+        'wpap_indexnow_key',
+        'wpap_indexnow_last',
+        'wpap_automation',
+        'wpap_automation_seen',
+        'wpap_automation_count',
+        'wpap_automation_status',
+        'wpap_automation_fails',
+        'wpap_automation_deleted_keys',
+        'wpap_automation_giveup_keys',
+        'wpap_automation_lock',
+        'wpap_automation_alert_sent',
+    ) as $wpap_opt ) {
+        delete_option( $wpap_opt );
+    }
+    wp_clear_scheduled_hook( 'wpap_automation_cron' );
+}

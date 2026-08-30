@@ -75,8 +75,10 @@ function wpap_set_seo_meta( $post_id, $description, $title = '', $keyword = '' )
     $title       = trim( (string) $title );
     $keyword     = trim( (string) $keyword );
 
-    $yoast = defined( 'WPSEO_VERSION' );
-    $rank  = defined( 'RANK_MATH_VERSION' );
+    $yoast    = defined( 'WPSEO_VERSION' );
+    $rank     = defined( 'RANK_MATH_VERSION' );
+    $seopress = defined( 'SEOPRESS_VERSION' );
+    $tsf      = function_exists( 'the_seo_framework' );   /* TSF reads Genesis-compat _genesis_* post meta */
 
     /* Fill-if-empty ONLY: seed the SEO plugin's field when it's blank, but never
        overwrite a value the user typed directly into the Yoast / Rank Math panel.
@@ -97,6 +99,22 @@ function wpap_set_seo_meta( $post_id, $description, $title = '', $keyword = '' )
         $fill( $post_id, 'rank_math_description',   $description );
         $fill( $post_id, 'rank_math_title',         $title );
         $fill( $post_id, 'rank_math_focus_keyword', $keyword );
+    }
+    /* SEOPress and The SEO Framework are BOTH counted by wpap_seo_plugin_active() as "an SEO
+       plugin owns the head" (so wpap_seo_head() stays silent on those sites) — but without these
+       branches the writer's meta title/description/keyword were never written to them either, so
+       the curated meta was silently lost and the SEO plugin auto-generated a generic one. Keys
+       match the passive build (build-final). (AIOSEO 4.x stores SEO in its own table, not post
+       meta, so it can't be seeded this way — a known limitation shared with build-final.) */
+    if ( $seopress ) {
+        $fill( $post_id, '_seopress_titles_desc',        $description );
+        $fill( $post_id, '_seopress_titles_title',       $title );
+        $fill( $post_id, '_seopress_analysis_target_kw', $keyword );
+    }
+    if ( $tsf ) {
+        /* The SEO Framework has no first-class focus-keyword meta; seed title + description. */
+        $fill( $post_id, '_genesis_description', $description );
+        $fill( $post_id, '_genesis_title',       $title );
     }
 }
 
@@ -387,14 +405,24 @@ function wpap_recipe_human_minutes( $min ) {
     return implode( ' ', $out );
 }
 
-/* Render recipe output for this post? No when it's not a recipe, when the active
-   theme already owns recipe rendering, or when filtered off. */
+/* A dedicated recipe plugin already owns the recipe card + Recipe schema → don't add a second.
+   Two Recipe blocks on one page is duplicate/conflicting structured data that Google Search Console
+   flags and that can suppress the rich result (plus a visibly doubled card). Mirrors build-final. */
+function wpap_recipe_plugin_active() {
+    return defined( 'WPRM_VERSION' ) || class_exists( 'WP_Recipe_Maker' )
+        || defined( 'TASTY_RECIPES_VERSION' ) || class_exists( 'Tasty_Recipes' )
+        || class_exists( 'WPZOOM_Recipe_Card_Block' ) || defined( 'WP_ULTIMATE_RECIPE' );
+}
+
+/* Render recipe output for this post? No when it's not a recipe, when the active theme OR a
+   dedicated recipe plugin already owns recipe rendering, or when filtered off. */
 function wpap_recipe_should_render( $post_id ) {
     if ( ! wpap_recipe_render_data( $post_id ) ) { return false; }
     /* (#12) A password-protected post shows only the password form — do NOT leak
        its ingredients/steps through the card or the <head> JSON-LD. */
     if ( post_password_required( $post_id ) ) { return false; }
     if ( function_exists( 'vr_recipe_card' ) || function_exists( 'vr_recipe_jsonld' ) ) { return false; }
+    if ( wpap_recipe_plugin_active() ) { return false; }   /* a recipe plugin already emits Recipe schema/card */
     return (bool) apply_filters( 'wpap_recipe_render_enabled', true, $post_id );
 }
 
@@ -428,12 +456,28 @@ function wpap_recipe_head() {
     );
     $desc = has_excerpt( $id ) ? get_the_excerpt( $id ) : wp_trim_words( wp_strip_all_tags( (string) get_post_field( 'post_content', $id ) ), 40, '' );
     if ( '' !== trim( (string) $desc ) ) { $data['description'] = wpap_ld_text( $desc ); }
+    /* Google REQUIRES `image` for a Recipe rich result. Resolve it the way the rest of the plugin
+       does: featured attachment → the stored remote URL (_wpap_image_url — the common case in this
+       pipeline, an externally-hosted image with no local attachment) → the first in-content <img>.
+       If none resolves, skip the whole Recipe block below (an image-less Recipe is invalid
+       structured data — worse than emitting nothing). Matches build-final. */
     $thumb_id = get_post_thumbnail_id( $id );
-    $img      = $thumb_id ? wp_get_attachment_image_url( $thumb_id, 'large' ) : '';
-    if ( $img ) {
-        $alt = trim( (string) get_post_meta( $thumb_id, '_wp_attachment_image_alt', true ) );
-        $data['image'] = ( '' !== $alt )
-            ? array( '@type' => 'ImageObject', 'url' => $img, 'caption' => $alt )
+    $img      = $thumb_id ? (string) wp_get_attachment_image_url( $thumb_id, 'large' ) : '';
+    $img_alt  = '';
+    if ( '' !== $img ) {
+        $img_alt = trim( (string) get_post_meta( $thumb_id, '_wp_attachment_image_alt', true ) );
+    } else {
+        $meta_img = trim( (string) get_post_meta( $id, '_wpap_image_url', true ) );
+        if ( '' !== $meta_img ) {
+            $img = $meta_img;
+        } elseif ( preg_match( '#<img[^>]+src=(["\'])(https?://[^"\']+)\1#i', (string) get_post_field( 'post_content', $id ), $mimg ) ) {
+            $img = $mimg[2];
+        }
+    }
+    if ( '' !== $img ) {
+        $img = set_url_scheme( $img );   /* https, absolute — match the canonical scheme */
+        $data['image'] = ( '' !== $img_alt )
+            ? array( '@type' => 'ImageObject', 'url' => $img, 'caption' => wpap_ld_text( $img_alt ) )
             : array( $img );
     }
     if ( '' !== trim( $r['servings'] ) ) { $data['recipeYield'] = $r['servings']; }
@@ -448,6 +492,9 @@ function wpap_recipe_head() {
             $r['steps']
         );
     }
+    /* No resolvable image → don't emit an invalid (image-less) Recipe; the visible card, whose CSS
+       was already printed above, still renders. */
+    if ( '' === $img ) { return; }
     /* (#10) JSON_HEX_TAG|JSON_HEX_AMP (matching the Article/Breadcrumb emitters) so a
        stray </script> in any field can't break out of the JSON-LD block. Dropped
        JSON_UNESCAPED_SLASHES — its default /-escaping is itself a breakout defense. */

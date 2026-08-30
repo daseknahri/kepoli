@@ -420,6 +420,26 @@ function wpap_release_lock_if_owner( $name, $token ) {
     wp_cache_delete( $name, 'options' );
 }
 
+/* TRUE atomic lock acquire — the one guarantee WP's add_option() does NOT give us. Core's
+   add_option() runs `INSERT ... ON DUPLICATE KEY UPDATE`, so a SECOND concurrent writer whose
+   value differs (two runs that straddle a 1-second boundary while both writing time()) gets
+   affected-rows = 2 and add_option returns TRUE → a silent double-acquire. `INSERT IGNORE`
+   inserts exactly one row and the UNIQUE(option_name) key makes every other racer a no-op
+   (affected-rows = 0) — the real compare-and-swap. Returns true only for the single winner.
+   Autoload is 'no' (a lock is never wanted on the front end). Pair with wpap_release_lock_if_owner(). */
+function wpap_atomic_lock_acquire( $name, $value ) {
+    global $wpdb;
+    $inserted = $wpdb->query( $wpdb->prepare(
+        "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'no')",
+        (string) $name, (string) $value
+    ) );
+    /* The raw INSERT bypassed the options cache: drop any cached value AND the "notoptions"
+       marker so a later get_option( $name ) on the reclaim path reads the real DB row. */
+    wp_cache_delete( $name, 'options' );
+    wp_cache_delete( 'notoptions', 'options' );
+    return ( 1 === (int) $inserted );
+}
+
 /* Stable CONTENT key: md5(lower(title)|md5(content)), independent of the Sheet's optional `id`
    column. Stored on every published post as _wpap_source_alt_key and checked as an ADDITIONAL
    dedup anchor, so adding/removing/renaming the Sheet's `id` column — which flips
@@ -498,13 +518,12 @@ function wpap_automation_run( $force = false ) {
         return wpap_automation_write_status( array( 'message' => 'No Google Sheet CSV URL is configured.' ) );
     }
 
-    /* Atomic mutual exclusion for BOTH cron and manual Run-now. add_option()
-       INSERTs a UNIQUE option row, so only ONE concurrent run acquires it — this
-       avoids the get-then-set TOCTOU that could let two runs read the same
-       seen-set and double-publish. Stale locks (a prior run that died) are
-       reclaimed after 10 minutes. */
+    /* Atomic mutual exclusion for BOTH cron and manual Run-now via wpap_atomic_lock_acquire()
+       (INSERT IGNORE — a true UNIQUE-key CAS; see its note on why add_option() is NOT one), so
+       only ONE concurrent run acquires the lock and two runs can't read the same seen-set and
+       double-publish. Stale locks (a prior run that died) are reclaimed after 10 minutes. */
     $now = time();
-    if ( ! add_option( 'wpap_automation_lock', $now, '', 'no' ) ) {
+    if ( ! wpap_atomic_lock_acquire( 'wpap_automation_lock', $now ) ) {
         $held = (int) get_option( 'wpap_automation_lock', 0 );
         if ( $held && ( $now - $held ) < 10 * MINUTE_IN_SECONDS ) {
             return wpap_automation_write_status( array( 'message' => 'A run is already in progress — try again shortly.' ) );
@@ -513,7 +532,7 @@ function wpap_automation_run( $force = false ) {
             /* The lock vanished between our failed add and this read (another run just
                released it). Claim it fresh rather than CAS-deleting a non-existent row
                (which would spuriously report "in progress"). */
-            if ( ! add_option( 'wpap_automation_lock', $now, '', 'no' ) ) {
+            if ( ! wpap_atomic_lock_acquire( 'wpap_automation_lock', $now ) ) {
                 return wpap_automation_write_status( array( 'message' => 'A run is already in progress — try again shortly.' ) );
             }
         } else {
@@ -529,7 +548,7 @@ function wpap_automation_run( $force = false ) {
                 'wpap_automation_lock', (string) $held
             ) );
             wp_cache_delete( 'wpap_automation_lock', 'options' );
-            if ( ! $removed || ! add_option( 'wpap_automation_lock', $now, '', 'no' ) ) {
+            if ( ! $removed || ! wpap_atomic_lock_acquire( 'wpap_automation_lock', $now ) ) {
                 return wpap_automation_write_status( array( 'message' => 'A run is already in progress — try again shortly.' ) );
             }
         }

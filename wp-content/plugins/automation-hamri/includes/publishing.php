@@ -752,12 +752,12 @@ function wpap_ajax_bulk_publish_posts() {
        (15 min) so a crash can never wedge publishing permanently. */
     $wpap_lock = 'wpap_bulk_publish_lock';
     $lock_now  = time();
-    /* ATOMIC acquire: add_option INSERTs a UNIQUE row, so only ONE concurrent
-       request wins. The previous get_transient/set_transient pair was a
-       check-then-set TOCTOU that a double-click or an XHR retry could slip through
-       and publish the whole batch twice. Stale lock (a crashed run) reclaimed after
-       15 min — via a compare-and-swap conditional DELETE so two racers can't both reclaim. */
-    if ( ! add_option( $wpap_lock, $lock_now, '', 'no' ) ) {
+    /* ATOMIC acquire via wpap_atomic_lock_acquire() (INSERT IGNORE — a true UNIQUE-key CAS;
+       add_option() is NOT one, see its note in automation.php), so only ONE concurrent request
+       wins. The original get_transient/set_transient pair was a check-then-set TOCTOU a
+       double-click or XHR retry could slip through to publish the batch twice. Stale lock (a
+       crashed run) reclaimed after 15 min via a compare-and-swap conditional DELETE. */
+    if ( ! wpap_atomic_lock_acquire( $wpap_lock, $lock_now ) ) {
         $held = (int) get_option( $wpap_lock, 0 );
         if ( $held && ( $lock_now - $held ) < 15 * MINUTE_IN_SECONDS ) {
             wp_send_json_error( 'A publish run is already in progress — wait for it to finish before starting another.' );
@@ -766,7 +766,7 @@ function wpap_ajax_bulk_publish_posts() {
             /* The lock vanished between our failed add and this read (a concurrent run
                just released it). Claim it fresh rather than CAS-deleting a non-existent
                row (which would spuriously reject a legitimate publish). */
-            if ( ! add_option( $wpap_lock, $lock_now, '', 'no' ) ) {
+            if ( ! wpap_atomic_lock_acquire( $wpap_lock, $lock_now ) ) {
                 wp_send_json_error( 'A publish run is already in progress — wait for it to finish before starting another.' );
             }
         } else {
@@ -779,7 +779,7 @@ function wpap_ajax_bulk_publish_posts() {
                 $wpap_lock, (string) $held
             ) );
             wp_cache_delete( $wpap_lock, 'options' );
-            if ( ! $reclaimed || ! add_option( $wpap_lock, $lock_now, '', 'no' ) ) {
+            if ( ! $reclaimed || ! wpap_atomic_lock_acquire( $wpap_lock, $lock_now ) ) {
                 wp_send_json_error( 'A publish run is already in progress — wait for it to finish before starting another.' );
             }
         }
@@ -931,6 +931,15 @@ function wpap_ajax_export_distribution_json() {
         $offset = ( $page - 1 ) * $per;
         $rows   = wpap_hub_ordered_rows( $cols, $where_sql, $params, $per, $offset );
     }
+
+    /* Bulk-prime post meta ONCE so the per-row get_post_meta calls in the loop (hook, smart_link,
+       fb comment/template) hit cache instead of firing a meta query per row — an N+1 that on the
+       ?all=1 path (up to 5000 rows) meant thousands of queries. */
+    $prime_ids = array_values( array_filter( array_map(
+        static function ( $r ) { return (int) ( $r['post_id'] ?? 0 ); },
+        (array) $rows
+    ) ) );
+    if ( $prime_ids ) { update_meta_cache( 'post', $prime_ids ); }
 
     $items    = array();
     $post_ids = array();   /* the exported (live) post ids — lets the Hub mark THIS batch as posted */
@@ -1109,17 +1118,17 @@ function wpap_ajax_bulk_publish_zip() {
 
     /* Concurrency guard (parity with the JSON bulk path's lock): a double-click or an
        XHR retry on a long-running bundle must not publish the whole zip twice. Atomic
-       add_option CAS acquire; a stale lock from a crashed run auto-reclaims after 15
-       min; released on shutdown even if the request dies mid-batch. */
+       wpap_atomic_lock_acquire() (INSERT IGNORE CAS); a stale lock from a crashed run
+       auto-reclaims after 15 min; released on shutdown even if the request dies mid-batch. */
     $wpap_zip_lock = 'wpap_bulk_zip_lock';
     $zip_lock_now  = time();
-    if ( ! add_option( $wpap_zip_lock, $zip_lock_now, '', 'no' ) ) {
+    if ( ! wpap_atomic_lock_acquire( $wpap_zip_lock, $zip_lock_now ) ) {
         $held = (int) get_option( $wpap_zip_lock, 0 );
         if ( $held && ( $zip_lock_now - $held ) < 15 * MINUTE_IN_SECONDS ) {
             wp_send_json_error( array( 'message' => 'A bundle publish is already in progress — wait for it to finish before uploading another.' ) );
         }
         if ( 0 === $held ) {
-            if ( ! add_option( $wpap_zip_lock, $zip_lock_now, '', 'no' ) ) {
+            if ( ! wpap_atomic_lock_acquire( $wpap_zip_lock, $zip_lock_now ) ) {
                 wp_send_json_error( array( 'message' => 'A bundle publish is already in progress — wait for it to finish before uploading another.' ) );
             }
         } else {
@@ -1129,7 +1138,7 @@ function wpap_ajax_bulk_publish_zip() {
                 $wpap_zip_lock, (string) $held
             ) );
             wp_cache_delete( $wpap_zip_lock, 'options' );
-            if ( ! $reclaimed || ! add_option( $wpap_zip_lock, $zip_lock_now, '', 'no' ) ) {
+            if ( ! $reclaimed || ! wpap_atomic_lock_acquire( $wpap_zip_lock, $zip_lock_now ) ) {
                 wp_send_json_error( array( 'message' => 'A bundle publish is already in progress — wait for it to finish before uploading another.' ) );
             }
         }

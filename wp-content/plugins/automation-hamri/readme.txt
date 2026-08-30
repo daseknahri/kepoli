@@ -4,7 +4,7 @@ Tags: content, automation, adsense, seo, publishing
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 9.25.1
+Stable tag: 9.26.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,13 @@ No. Instant indexing (IndexNow) is opt-in and off until you enable it. License a
 No. It renders its own ad zones and SEO/recipe output on any theme, and defers to a dedicated SEO plugin if one is active.
 
 == Changelog ==
+
+= 9.26.0 =
+* SEO compatibility: the writer's meta title/description/keyword are now also written for SEOPress and The SEO Framework (previously only Yoast and Rank Math), so the curated meta is no longer silently lost on those sites.
+* Recipe rich results: defer to a dedicated recipe plugin (WP Recipe Maker, Tasty Recipes, WPZOOM, WP Ultimate Recipe) when one is active — no more duplicate recipe card or conflicting Recipe schema. The Recipe JSON-LD now resolves its required image from the featured image, the stored remote image, or the first in-content image, and is skipped entirely when no image exists (never emits an invalid, image-less Recipe).
+* Reliability: bulk-publish, ZIP-publish, and Google-Sheet automation acquire their run lock with a true atomic INSERT IGNORE compare-and-swap (WordPress's add_option is INSERT … ON DUPLICATE KEY UPDATE, which could let two simultaneous runs both acquire and double-publish).
+* Performance: the Distribution Hub JSON export bulk-primes post meta once instead of a per-row query (thousands fewer queries on a full export).
+* Uninstall: opt-in full data wipe — define WPAP_UNINSTALL_PURGE in wp-config.php to also remove the stored API keys, license, and Hub table on delete (off by default; safe for single-copy installs).
 
 = 9.25.1 =
 * Fix: the separate Facebook image (9.25.0) is now actually used by the Distribution Hub export on the primary publish path (Direct Publish / bulk / ZIP bundle / Sheet automation). It was stored but the Hub row kept the blog image, so Facebook still received the blog image; the row now carries the Facebook-preferred image (falls back to the blog image when none is given), matching the manual-publish auto-add path.

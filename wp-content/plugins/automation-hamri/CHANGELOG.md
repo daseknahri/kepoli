@@ -3,6 +3,42 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.26.0
+
+Hardening + SEO/recipe compatibility pass (multi-agent review). No DB schema change.
+
+### Added
+- **SEOPress + The SEO Framework meta.** `wpap_set_seo_meta()` now fill-if-empty seeds SEOPress
+  (`_seopress_titles_desc`/`_seopress_titles_title`/`_seopress_analysis_target_kw`) and TSF
+  (`_genesis_description`/`_genesis_title`) in addition to Yoast + Rank Math. Both are already counted
+  by `wpap_seo_plugin_active()` (so the plugin's own `<head>` stays silent on those sites), so without
+  these branches the writer's curated meta was silently dropped and the SEO plugin auto-generated a
+  generic one. (AIOSEO 4.x stores SEO in its own table, not post meta — a known limitation shared with
+  build-final.)
+- **Recipe-plugin deference.** New `wpap_recipe_plugin_active()` (WP Recipe Maker / Tasty Recipes /
+  WPZOOM / WP Ultimate Recipe); `wpap_recipe_should_render()` returns false when one is active, so
+  build-v9 no longer paints a second recipe card or emits a second Recipe JSON-LD (duplicate
+  structured data Google Search Console flags). Ported from build-final.
+- **Opt-in uninstall purge.** `define( 'WPAP_UNINSTALL_PURGE', true )` in wp-config.php makes uninstall
+  drop the Hub table and delete every option (API keys + license included); default-off preserves the
+  multi-version-folder-safe behavior.
+
+### Fixed
+- **Recipe JSON-LD image.** `wpap_recipe_head()` resolved the required `image` only from the featured
+  attachment and still emitted the Recipe block when there was none — invalid structured data, and it
+  ignored the external `_wpap_image_url` this pipeline usually uses. It now resolves featured →
+  `_wpap_image_url` → first in-content `<img>` (via `set_url_scheme`), and skips the Recipe JSON-LD
+  entirely when none resolves (the visible card still renders).
+- **Atomic run locks.** New `wpap_atomic_lock_acquire()` uses `INSERT IGNORE` (a true UNIQUE-key CAS).
+  The prior `add_option()` acquire is not atomic — WP core runs `INSERT … ON DUPLICATE KEY UPDATE`, so
+  two runs straddling a 1-second boundary (both writing `time()`) could both return true and
+  double-acquire. Applied to the automation cron lock and both bulk-publish locks (JSON + ZIP).
+
+### Performance
+- **Hub export N+1.** `wpap_ajax_export_distribution_json` bulk-primes post meta once
+  (`update_meta_cache`) instead of a per-row meta query — thousands fewer queries on the `?all=1`
+  (up to 5000-row) export.
+
 ## 9.25.1
 
 Fix the 9.25.0 Facebook image on the primary publish path. No DB schema change.
