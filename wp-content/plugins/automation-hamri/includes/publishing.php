@@ -65,7 +65,9 @@ function wpap_ajax_bulk_import_distribution() {
         /* Per-item fatal isolation (matches wpap_ajax_bulk_publish_posts): a throwing
            save_post / term hook on ONE row must not abort the whole batch. */
         try {
-        $image_raw = $item['imageUrl'] ?? $item['image_url'] ?? $item['image'] ?? '';
+        /* Prefer a Facebook-specific image for the poster row (this box builds FB-poster rows,
+           and extraction uses the Facebook image); fall back to the single blog image. */
+        $image_raw = $item['fbImageUrl'] ?? $item['fbImage'] ?? $item['imageUrl'] ?? $item['image_url'] ?? $item['image'] ?? '';
         $image_url = esc_url_raw( trim( is_scalar( $image_raw ) ? (string) $image_raw : '' ) );
 
         /* Field mapping is SYMMETRIC with the JSON export {caption, comment, imageUrl}, so an
@@ -521,6 +523,27 @@ function wpap_publish_article( array $item, array $opts = array() ) {
 
     /* ── meta (mirror the AI path + import handler) ── */
     update_post_meta( $post_id, '_wpap_image_url',  $image_url );
+
+    /* ── Facebook image (optional, separate from the blog featured image) ──
+       A post can carry a DIFFERENT image for Facebook than for the blog. A LOCAL zip file
+       (opts['local_fb_image_path']) is sideloaded to a hosted attachment; a remote fbImageUrl is
+       stored as-is. Kept in _wpap_fb_image_url; the Distribution Hub export uses it, falling back
+       to the blog image when absent so one image can serve both. Never featured; never fatal. */
+    $fb_raw        = $item['fbImageUrl'] ?? $item['fbImage'] ?? $item['facebook_image'] ?? $item['fb_image'] ?? '';
+    $fb_raw        = is_scalar( $fb_raw ) ? trim( (string) $fb_raw ) : '';
+    $local_fb_path = isset( $opts['local_fb_image_path'] ) ? (string) $opts['local_fb_image_path'] : '';
+    $fb_image_url  = '';
+    if ( '' !== $local_fb_path && @is_file( $local_fb_path ) && @is_readable( $local_fb_path ) ) {
+        $fb_att = wpap_import_local_image_as_attachment( $local_fb_path, $post_id, $title . ' (Facebook)' );
+        if ( ! is_wp_error( $fb_att ) && $fb_att ) {
+            $fb_src = wp_get_attachment_image_url( (int) $fb_att, 'full' );
+            if ( $fb_src ) { $fb_image_url = (string) $fb_src; }
+        }
+    } elseif ( '' !== $fb_raw && wp_http_validate_url( $fb_raw ) ) {
+        $fb_image_url = esc_url_raw( $fb_raw );
+    }
+    if ( '' !== $fb_image_url ) { update_post_meta( $post_id, '_wpap_fb_image_url', $fb_image_url ); }
+
     update_post_meta( $post_id, '_wpap_fb_hook',    $hook );
     update_post_meta( $post_id, 'ah_social_hook',   $hook );
     update_post_meta( $post_id, '_wpap_smart_link', $smart_link );
@@ -1230,6 +1253,26 @@ function wpap_ajax_bulk_publish_zip() {
                     $opts['local_image_path'] = $local;
                 } else {
                     $messages[] = sprintf( 'Row %d: image "%s" was not found in the zip.', $row_number, sanitize_text_field( $img_ref ) );
+                }
+            }
+
+            /* Facebook image (optional, separate from the blog image): a remote URL passes
+               through; a zip path resolves to a local file sideloaded for Facebook only. */
+            $fb_ref = '';
+            foreach ( array( 'fbImage', 'fbImageUrl', 'facebook_image', 'fb_image' ) as $fk ) {
+                if ( isset( $item[ $fk ] ) && is_scalar( $item[ $fk ] ) && '' !== trim( (string) $item[ $fk ] ) ) {
+                    $fb_ref = trim( (string) $item[ $fk ] );
+                    break;
+                }
+            }
+            if ( '' !== $fb_ref && preg_match( '#^https?://#i', $fb_ref ) ) {
+                $item['fbImageUrl'] = $fb_ref;
+            } elseif ( '' !== $fb_ref ) {
+                $fb_local = wpap_bundle_resolve_image( $img_base, $work, $fb_ref );
+                if ( '' !== $fb_local ) {
+                    $opts['local_fb_image_path'] = $fb_local;
+                } else {
+                    $messages[] = sprintf( 'Row %d: Facebook image "%s" was not found in the zip.', $row_number, sanitize_text_field( $fb_ref ) );
                 }
             }
 

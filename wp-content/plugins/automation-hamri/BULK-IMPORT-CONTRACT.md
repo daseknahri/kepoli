@@ -44,7 +44,8 @@ runs. Each item is **fatal-isolated**: one bad row is skipped, the batch continu
 | `meta_description` | string | rec. | **150–160 characters.** Aliases: `metaDescription`, `description`, `excerpt`. Auto-derived from `content` if omitted. |
 | `seo_title` | string | opt. | SEO `<title>` if you want it different from `title`. **≤ 60 chars.** Alias: `metaTitle`. |
 | `focusKeyword` | string | opt. | Primary keyword (fed to Yoast/Rank Math if active). Alias: `keyword`. |
-| `imageUrl` | string (URL) | ✅ | Featured image; sideloaded + set as featured. Aliases: `image_url`, `image`. (Bundle ZIP uses a local path instead.) |
+| `imageUrl` | string (URL) | ✅ | **Blog** featured image; sideloaded + set as featured. Aliases: `image_url`, `image`. (Bundle ZIP uses a local path instead.) |
+| `fbImage` | string | opt. | **Facebook** image — the image the Distribution Hub exports for FB posting, when it should differ from the blog image. URL, or a path inside the bundle ZIP (e.g. `fb-images/x.jpg`). Aliases: `fbImageUrl`, `facebook_image`, `fb_image`. **Omit it and the blog image is used for both.** A local (zip) FB image is hosted as an attachment; a remote URL is stored as-is. Stored in `_wpap_fb_image_url`; the Hub export's `imageUrl` resolves to the FB image → blog image → featured. |
 | `image_alt` | string | rec. | Descriptive alt text for the featured image (Google Images / a11y). Defaults to `title`. Aliases: `imageAlt`, `alt`. |
 | `hook` | string | opt. | Facebook caption for the Distribution Hub. Aliases: `fb_text`. |
 | `comment` | string | opt. | First-comment template with `{{link}}` where the post URL goes. Alias: `fb_comment`. A bare URL is treated as a link, not a template. |

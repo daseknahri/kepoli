@@ -16,6 +16,18 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
    p.post_status IS NULL). Straddle math splits a page that spans the boundary so pagination
    is byte-identical to the old order. $cols is the SELECT list; $where_sql/$params must NOT
    carry a status filter (callers use this only for the mixed 'all' view). */
+/** The image to submit to Facebook for a post: the FB-specific image (_wpap_fb_image_url) if set,
+ *  else the blog featured/source image (_wpap_image_url, then the WP thumbnail). Lets a post carry
+ *  a DIFFERENT image for Facebook than for the blog, while one image serves both when only one was
+ *  provided. The Hub stores + exports this as the row's image_url, so extraction uses the FB image. */
+function wpap_fb_image_url( $post_id ) {
+    $fb = (string) get_post_meta( (int) $post_id, '_wpap_fb_image_url', true );
+    if ( '' !== $fb ) { return $fb; }
+    $img = (string) get_post_meta( (int) $post_id, '_wpap_image_url', true );
+    if ( '' !== $img ) { return $img; }
+    return (string) get_the_post_thumbnail_url( (int) $post_id, 'full' );
+}
+
 function wpap_hub_ordered_rows( $cols, $where_sql, $params, $per, $offset ) {
     global $wpdb;
     $table = $wpdb->prefix . WPAP_TABLE;
@@ -181,19 +193,12 @@ function wpap_ajax_get_posts() {
                 }
             }
 
-            /* image_url: post meta → plugin table → WP featured image */
+            /* image_url: the Facebook image → blog image → WP featured (see wpap_fb_image_url) */
             if ( empty( $row['image_url'] ) ) {
-                $meta_img = get_post_meta( $pid, '_wpap_image_url', true );
-                if ( $meta_img ) {
-                    $row['image_url'] = $meta_img;
+                $img = wpap_fb_image_url( $pid );
+                if ( '' !== $img ) {
+                    $row['image_url'] = $img;
                     $needs_update     = true;
-                } else {
-                    $thumb = get_the_post_thumbnail_url( $pid, 'full' );
-                    if ( $thumb ) {
-                        $row['image_url'] = $thumb;
-                        update_post_meta( $pid, '_wpap_image_url', $thumb );
-                        $needs_update = true;
-                    }
                 }
             }
 
@@ -360,8 +365,7 @@ function wpap_autoadd_post_to_hub( $new_status, $old_status, $post ) {
     if ( (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE post_id = %d LIMIT 1", $post_id ) ) ) { return; }
 
     $url   = wpap_public_permalink( $post_id );
-    $image = (string) get_post_meta( $post_id, '_wpap_image_url', true );
-    if ( '' === $image ) { $image = (string) get_the_post_thumbnail_url( $post_id, 'full' ); }
+    $image = wpap_fb_image_url( $post_id );
     $hook  = (string) get_post_meta( $post_id, '_wpap_fb_hook', true );
     $title = get_the_title( $post_id );
 
@@ -658,7 +662,7 @@ function wpap_restore_distribution_row_for_post( $post_id ) {
         'post_id'    => $post_id,
         'title'      => get_the_title( $post_id ),
         'post_url'   => wpap_public_permalink( $post_id ),
-        'image_url'  => (string) get_post_meta( $post_id, '_wpap_image_url', true ),
+        'image_url'  => wpap_fb_image_url( $post_id ),
         'fb_text'    => (string) get_post_meta( $post_id, '_wpap_fb_hook', true ),
         'fb_post_id' => '',
         'smart_link' => $smart,

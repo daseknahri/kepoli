@@ -4,7 +4,7 @@ Tags: content, automation, adsense, seo, publishing
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 9.24.0
+Stable tag: 9.25.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,9 @@ No. Instant indexing (IndexNow) is opt-in and off until you enable it. License a
 No. It renders its own ad zones and SEO/recipe output on any theme, and defers to a dedicated SEO plugin if one is active.
 
 == Changelog ==
+
+= 9.25.0 =
+* Separate Facebook image: a post can now carry a different image for Facebook than for the blog, via a new optional `fbImage` import field (URL or a path inside the Bulk-ZIP bundle). The Distribution Hub export uses the Facebook image; if none is given, the blog image is used for both. Fully back-compatible.
 
 = 9.24.0 =
 * Recipes can now carry a course/meal type ("Main course", "Dessert", "Home remedy") via a new `course` import field (alias `recipeCategory`), emitted as schema.org `recipeCategory` for richer Recipe rich results. Optional; recipes without it are unchanged. (Pairs with Viral Reader 1.9.8.)

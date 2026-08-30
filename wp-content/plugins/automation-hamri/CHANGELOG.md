@@ -3,6 +3,21 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.25.0
+
+Separate Facebook image (blog image vs FB image). No DB schema change.
+
+### Added
+- **`fbImage` import field** (aliases `fbImageUrl`, `facebook_image`, `fb_image`). A post can carry a
+  DIFFERENT image for Facebook than for the blog featured image. A local path inside a Bulk-ZIP
+  bundle (e.g. `fb-images/x.jpg`) is sideloaded to a hosted attachment; a remote URL is stored
+  as-is. Kept in `_wpap_fb_image_url`. New `wpap_fb_image_url()` helper resolves the Distribution
+  Hub export image as **FB image → blog image → featured thumbnail**, so exports/extraction use the
+  Facebook image while a single image still serves both when only one is provided. `wpap_publish_article`
+  stores it (Direct Publish + Bulk-ZIP, which resolves the zip path to `local_fb_image_path`); the Hub
+  "Bulk Import JSON" box prefers `fbImage` for its poster rows. Back-compatible — omit it and nothing
+  changes.
+
 ## 9.24.0
 
 Recipe `course` → schema.org `recipeCategory`. No DB schema change. (Pairs with viral-reader ≥ 1.9.8.)
