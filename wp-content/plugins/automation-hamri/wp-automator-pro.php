@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Automation Hamri
  * Description: An advanced AI-powered bulk content generator for WordPress that automates SEO articles, internal linking, and multi-engine image sourcing. Optimized for high-traffic niches.
- * Version:     9.28.1
+ * Version:     9.29.0
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author:      Oussama Hamri
@@ -621,7 +621,7 @@ function wpap_bulk_max_items() {
     return (int) apply_filters( 'wpap_bulk_max_items', 300 );
 }
 
-define( 'WPAP_VERSION', '9.28.1' );
+define( 'WPAP_VERSION', '9.29.0' );
 define( 'WPAP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPAP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'WPAP_TABLE',      'wpap_generated_posts' );
@@ -834,6 +834,7 @@ function wpap_admin_menu() {
     add_submenu_page( 'wp-automator-pro', 'Dashboard', 'Dashboard', 'manage_options', 'wp-automator-pro', 'wpap_render_dashboard' );
     add_submenu_page( 'wp-automator-pro', 'Settings', 'Settings', 'manage_options', 'wp-automator-pro-settings', 'wpap_render_settings' );
     add_submenu_page( 'wp-automator-pro', 'Bulk ZIP Publish', 'Bulk ZIP Publish', 'manage_options', 'wp-automator-pro-bundle', 'wpap_render_bundle' );
+    add_submenu_page( 'wp-automator-pro', 'Apply Rewrites', 'Apply Rewrites', 'manage_options', 'wp-automator-pro-apply', 'wpap_render_apply_rewrites' );
 }
 
 /* ════════════════════════════════════════════
@@ -876,6 +877,7 @@ require_once __DIR__ . '/includes/scheduling.php'; // Scheduling, public permali
 require_once __DIR__ . '/includes/media.php'; // Image upload / WebP conversion / SSRF-guarded remote import
 require_once __DIR__ . '/includes/publishing.php'; // Distribution import, article publish, bulk publish, JSON export, title processing (process_title nests the AI hook/title generators — DO NOT EDIT the AI portions)
 require_once __DIR__ . '/includes/internal-links.php'; // In-content internal linking: [[link:slug]] tokens + auto-keyword cross-linking (baked at publish; admin passes)
+require_once __DIR__ . '/includes/apply-rewrites.php'; // In-place content rewrite applier: upload {id,title,content} JSON → update posts under admin session, with server-side backup + one-click revert
 require_once __DIR__ . '/includes/distribution.php'; // Distribution Hub queries, delete/cleanup, row lifecycle, cache purge, image proxy
 require_once __DIR__ . '/includes/automation.php'; // Google-Sheet automation cron + SSRF IP helpers + lock ownership
 require_once __DIR__ . '/includes/ai-content.php'; // AI content + image generation — DO NOT EDIT (AI generation pipeline)

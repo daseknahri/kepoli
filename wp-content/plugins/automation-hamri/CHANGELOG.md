@@ -3,9 +3,23 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
-## 9.28.1
+## 9.29.0
 
-Bugfix for the 9.28.0 auto-keyword linker + a repair pass for content it already damaged.
+Apply Rewrites — an in-place content updater for existing posts. No DB schema change (adds a transient
+`_wpap_rewrite_backup` post meta, removed on revert).
+
+### Added
+- **Settings menu → "Apply Rewrites"** (`includes/apply-rewrites.php`). Upload a JSON array of
+  `{ id, title, content }` (aliases `new_title` / `new_html`) and it updates each post's **title + body in
+  place** via `wp_update_post()`, under the normal admin session (`manage_options` + nonce) — **no external
+  credential, no re-publishing, slugs unchanged**. Purpose: push an edited/rewritten catalogue onto live
+  posts without the publisher (which creates new posts) or an app-password round-trip.
+- **One-click reversibility.** Before the FIRST overwrite of a post, its original title + content are saved
+  to `_wpap_rewrite_backup`; the page's **Revert all** button restores every backed-up post and clears the
+  backups. The plugin never edits a post it can't put back.
+- After a successful apply it **re-weaves the in-content internal links** (`wpap_internal_links_bake()`),
+  since a rewrite drops the old inline links — repairing legacy nested-link damage first — and purges caches.
+- Per-item fatal isolation (`try/catch`), 8 MB / 1000-item upload caps, and a results table with live links.
 
 ### Fixed
 - **Nested-anchor corruption in `wpap_autolink_content()`.** Within a single text run, after the pass
