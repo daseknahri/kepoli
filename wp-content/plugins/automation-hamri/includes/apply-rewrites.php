@@ -98,6 +98,15 @@ function wpap_ajax_apply_rewrites() {
 			unset( $GLOBALS['wpap_suppress_hub_autoadd'] );
 
 			if ( is_wp_error( $res ) ) { $skipped++; $messages[] = "Row {$row}: update failed — " . $res->get_error_message(); continue; }
+
+			/* Optional per-item noindex: true keeps a redundant/thin post out of search (enforced by the
+			   9.27.0 wp_robots filter honoring _wpap_noindex), false explicitly re-indexes; omit to leave
+			   the post's index state untouched. Lets one upload both rewrite AND thin duplicate clusters. */
+			if ( array_key_exists( 'noindex', $item ) && null !== $item['noindex'] ) {
+				if ( filter_var( $item['noindex'], FILTER_VALIDATE_BOOLEAN ) ) { update_post_meta( $id, '_wpap_noindex', 1 ); }
+				else { delete_post_meta( $id, '_wpap_noindex' ); }
+			}
+
 			clean_post_cache( $id );
 			$updated++;
 			$rows[] = array(
@@ -171,10 +180,11 @@ function wpap_render_apply_rewrites() {
 	<div class="wrap">
 	  <h1>Apply Rewrites</h1>
 	  <p style="max-width:820px">Upload a JSON array of <code>{ "id": &lt;post ID&gt;, "title": "…", "content": "…&lt;html&gt;…" }</code>
-	  (the keys <code>new_title</code> / <code>new_html</code> are also accepted). Each item updates that post's
-	  <strong>title and body in place</strong> — no re-publishing, slugs unchanged. The original of every post is
-	  backed up on the server before its first overwrite, so you can revert with one click. After applying, the
-	  in-content internal links are re-woven automatically.</p>
+	  (the keys <code>new_title</code> / <code>new_html</code> are also accepted; an optional <code>"noindex": true</code>
+	  keeps a redundant post out of search). Each item updates that post's <strong>title and body in place</strong> —
+	  no re-publishing, slugs unchanged. The original of every post is backed up on the server before its first
+	  overwrite, so you can revert with one click. After applying, the in-content internal links are re-woven
+	  automatically.</p>
 	  <table class="form-table">
 	    <tr><th scope="row"><label for="wpap-apply-file">Rewrites <code>.json</code></label></th>
 	        <td><input type="file" id="wpap-apply-file" accept="application/json,.json" /></td></tr>

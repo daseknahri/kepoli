@@ -3,6 +3,13 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.30.0
+
+Apply Rewrites now carries an optional per-item **`noindex`** flag: `{ id, title, content, "noindex": true }`
+sets `_wpap_noindex` on that post (false clears it; omit to leave its index state untouched). So a single
+upload can both push the rewritten titles/bodies AND thin redundant/duplicate posts out of the indexed set in
+one pass — no separate chore. No DB schema change.
+
 ## 9.29.0
 
 Apply Rewrites — an in-place content updater for existing posts. No DB schema change (adds a transient
