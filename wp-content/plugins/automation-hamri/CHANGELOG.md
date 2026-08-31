@@ -3,6 +3,42 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.28.0
+
+Internal linking — the passive build's in-content cross-linking engine, ported to the active plugin
+(`includes/internal-links.php`). No DB schema change (adds the `_wpap_keywords` post meta).
+
+### Added
+- **`[[link:slug]]` / `[[link:slug|anchor text]]` writer tokens.** On publish each becomes a real
+  `<a href>` when a **published** post owns that slug; a target not yet live becomes a reader-invisible,
+  kses-safe marker (`<a class="wpap-ilink" data-wpap-ilink="slug">` — no href) that the **Resolve
+  internal links** pass upgrades once the target goes live, so forward references across a batch
+  self-heal. Resolved on the raw body at import (`wpap_resolve_internal_links()`), before the page split,
+  with a kses allow-list guard (`wpap_ilink_kses_allow()`) that lets ONLY our own marker attribute
+  through and only while the importer is sanitizing.
+- **Auto keyword cross-linking.** A per-item **`keywords`** import field (array or comma/newline string,
+  ≤12, stored as `_wpap_keywords`) registers the phrases a post should be the link **target** for. The
+  **Auto-link keywords** pass (`wpap_auto_keyword_link_run()`) then links the first eligible mention of
+  each phrase in **other** posts to that post — bounded (≤4 links/post), idempotent, tag-aware (never
+  inside an existing `<a>`, a heading, or `code`/`pre`/`figure`), longest-phrase-first, oldest-post-wins.
+- **Auto-run after every bulk publish.** Both Bulk-ZIP Publish and Direct Publish call
+  `wpap_internal_links_bake()` at the tail of a successful batch — it upgrades forward-ref markers now
+  that the whole batch is live, then weaves keyword links — so links are baked with no manual click.
+  Self-isolating (`try/catch \Throwable`): a linking hiccup can never fail a publish that already
+  succeeded. The two passes are also exposed as **admin buttons** (Settings → Internal linking) for a
+  manual catalogue-wide re-run, mirroring the passive build.
+
+- **Activate on already-published posts (one click).** For a catalogue published *before* this engine
+  existed (no `keywords` set → nothing to link to), Settings → Internal linking → **Activate on existing
+  posts** runs `wpap_backfill_keywords_from_tags()`: it seeds `_wpap_keywords` on live posts from each
+  post's own tags (+ its focus keyword, if an SEO plugin stored one; generic terms stop-listed), then
+  bakes the links — no re-publishing. Idempotent and non-destructive: it never overwrites a `keywords`
+  list you supplied yourself, so it is safe to re-run.
+
+### Notes
+- These are the two IN-CONTENT mechanisms; the curated bottom-of-post `related` widget is unchanged.
+- This is NOT the AI link injector (`wpap_inject_internal_links`, generation-time, untouched).
+
 ## 9.27.0
 
 Per-post noindex control. No DB schema change.

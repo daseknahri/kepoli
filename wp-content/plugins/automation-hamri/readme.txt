@@ -4,7 +4,7 @@ Tags: content, automation, adsense, seo, publishing
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 9.27.0
+Stable tag: 9.28.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,6 +18,7 @@ Automation Hamri turns ready-made content into published WordPress posts at scal
 * **Google-Sheet automation** — poll a published-CSV sheet on an hourly cron and drip posts out in submission order, deduplicated so a row is published once and never recreated.
 * **AdSense ad manager** — header/sidebar/footer zones, in-content injection with a density guardrail, a live placement preview, an earnings estimator, and a thin-content safety net; ads.txt served from your publisher ID.
 * **SEO & structured data** — Open Graph / Twitter cards, meta descriptions, Article + BreadcrumbList JSON-LD, related-posts block, and a theme-independent Recipe card + Recipe schema. Defers automatically to Yoast / Rank Math / AIOSEO / SEOPress / The SEO Framework when one is active.
+* **Internal linking** — in-content cross-links that lift crawl depth and pages-per-session: `[[link:slug]]` writer tokens (self-healing across a batch) plus keyword-based auto-linking, both baked in on publish.
 * **Instant indexing (IndexNow)** — opt-in (off by default); pings Bing/Yandex on publish once enabled in Settings.
 
 The plugin pairs with the companion "Viral Reader" theme but works on any theme.
@@ -39,6 +40,9 @@ No. Instant indexing (IndexNow) is opt-in and off until you enable it. License a
 No. It renders its own ad zones and SEO/recipe output on any theme, and defers to a dedicated SEO plugin if one is active.
 
 == Changelog ==
+
+= 9.28.0 =
+* Internal linking: two in-content cross-linking mechanisms that lift crawl depth and pages-per-session (an SEO / AdSense signal). Writers can drop `[[link:slug]]` or `[[link:slug|anchor text]]` tokens that become real links on publish (and self-heal across a batch when the target is published later). A per-item `keywords` field registers the phrases a post should be linked FROM elsewhere, and an "Auto-link keywords" pass weaves the first mention of each into other posts — bounded, idempotent, and tag-aware (never inside a heading, code, or an existing link). Both run automatically after every bulk publish, and are also available as manual buttons under Settings → Internal linking. Already have a published catalogue? One click on "Activate on existing posts" seeds keyword targets from each post's tags and links everything — no re-publishing.
 
 = 9.27.0 =
 * Noindex control: a post can now be kept out of search with an optional `noindex` import field (true/false). It is enforced plugin-agnostically through WordPress core's robots API, so it works even with no SEO plugin installed — and, when a supported SEO plugin (Yoast/Rank Math/SEOPress/The SEO Framework) is active, its own noindex flag is set too so its UI matches. Use it for thin, utility, or near-duplicate posts. Omit it and posts stay indexable as before.

@@ -51,7 +51,15 @@ runs. Each item is **fatal-isolated**: one bad row is skipped, the batch continu
 | `hook` | string | opt. | Facebook caption for the Distribution Hub. Aliases: `fb_text`. |
 | `comment` | string | opt. | First-comment template with `{{link}}` where the post URL goes. Alias: `fb_comment`. A bare URL is treated as a link, not a template. |
 | `related` | string[] | opt. | Curated internal links — slugs of sibling posts to link first in the related block (auto-by-category fills any remaining slots). Array or comma/newline string; up to 10. Alias: `related_articles`. |
+| `keywords` | string[] | opt. | Phrases this post should be the internal-link **TARGET** for. The auto-link pass links the first mention of each phrase in **other** posts to this one (bounded ≤4/post, tag-aware, idempotent). Array or comma/newline string; up to 12. Alias: `link_keywords`. Distinct from `focusKeyword` (which feeds the SEO plugin). |
 | `parts` | int | opt. | Split the body into N paginated pages (1–10). |
+
+**Inline internal-link tokens (in `content`).** Anywhere in the body you may write `[[link:some-slug]]` or
+`[[link:some-slug|anchor text]]`. On publish it becomes a real link to the post whose slug is `some-slug`
+(default anchor = that post's title). If the target isn't published yet (e.g. it's later in the same
+batch), it's rendered as plain anchor text and auto-upgraded to a link once the target goes live — so
+you can cross-link freely within a batch without worrying about order. Slugs are `sanitize_title()` of
+each post's `title`. This is the writer-driven counterpart to the `keywords` field's automatic linking.
 
 ### 2.2 Recipe-only fields (`type: "recipe"`)
 

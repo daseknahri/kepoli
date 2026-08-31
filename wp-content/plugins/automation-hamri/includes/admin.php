@@ -703,6 +703,53 @@ function wpap_render_settings() {
         })();
         </script>
 
+        <?php /* ── Internal linking: manual passes (also auto-run at the end of every bulk publish) ── */ ?>
+        <h2 style="margin-top:32px;">Internal linking</h2>
+        <p class="description" style="max-width:760px;">
+            In-content cross-links lift crawl depth and pages-per-session (an SEO / AdSense signal). Both passes are baked into stored content and run automatically after each bulk publish — use these buttons to re-run them across the whole catalogue by hand.
+        </p>
+        <p class="description" style="max-width:760px;margin-top:6px;">
+            <strong>Already-published posts?</strong> They have no link keywords yet, so the linker has nothing to point at. Click <strong>Activate on existing posts</strong> once — it seeds keyword targets from each post's tags (and focus keyword), then links the whole live catalogue. No re-publishing. Safe to re-run; it never overwrites keywords you set yourself.
+        </p>
+        <p style="margin-top:8px;">
+            <button type="button" class="button button-primary" id="wpap-backfill-keywords">Activate on existing posts</button>
+            <button type="button" class="button button-secondary" id="wpap-resolve-ilinks" style="margin-left:12px;">Resolve internal links</button>
+            <button type="button" class="button button-secondary" id="wpap-auto-keyword-link" style="margin-left:6px;">Auto-link keywords</button>
+            <span id="wpap-ilink-msg" style="margin-left:10px;color:#555;"></span>
+        </p>
+        <script>
+        (function(){
+            var bBtn = document.getElementById('wpap-backfill-keywords'),
+                rBtn = document.getElementById('wpap-resolve-ilinks'),
+                kBtn = document.getElementById('wpap-auto-keyword-link'),
+                msg  = document.getElementById('wpap-ilink-msg');
+            if(!rBtn || !kBtn) return;
+            var ajaxUrl = <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>,
+                nonce   = <?php echo wp_json_encode( wp_create_nonce( 'wpap_nonce' ) ); ?>;
+            function run(action, done){
+                if(bBtn){ bBtn.disabled = true; } rBtn.disabled = kBtn.disabled = true; msg.textContent = 'Running…';
+                fetch(ajaxUrl, {
+                    method:'POST', credentials:'same-origin',
+                    headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8'},
+                    body: 'action=' + action + '&nonce=' + encodeURIComponent(nonce)
+                }).then(function(r){ return r.json(); }).then(function(res){
+                    if(bBtn){ bBtn.disabled = false; } rBtn.disabled = kBtn.disabled = false;
+                    if(res && res.success){ msg.textContent = done(res.data || {}); }
+                    else { msg.textContent = 'Error: ' + ((res && res.data) ? res.data : 'unknown'); }
+                }).catch(function(e){ if(bBtn){ bBtn.disabled = false; } rBtn.disabled = kBtn.disabled = false; msg.textContent = 'Request failed: ' + e; });
+            }
+            if(bBtn){ bBtn.addEventListener('click', function(){
+                run('wpap_backfill_keywords', function(d){ return 'Seeded keywords on ' + (d.seeded||0) + ' post(s) (of ' + (d.scanned||0) + '), then added ' + (d.links||0) + ' keyword link(s) and resolved ' + (d.resolved||0) + ' marker(s).'; });
+            }); }
+            rBtn.addEventListener('click', function(){
+                run('wpap_resolve_ilinks', function(d){ return 'Resolved ' + (d.linked||0) + ' link(s) across ' + (d.scanned||0) + ' post(s) with pending markers.'; });
+            });
+            kBtn.addEventListener('click', function(){
+                run('wpap_auto_keyword_link', function(d){ return 'Added ' + (d.links||0) + ' keyword link(s) in ' + (d.posts_linked||0) + ' post(s) (scanned ' + (d.scanned||0) + ').'; });
+            });
+        })();
+        </script>
+
         <h2 style="margin-top:32px;">Backup &amp; restore</h2>
         <?php
         if ( isset( $_GET['wpap_imported'] ) ) {

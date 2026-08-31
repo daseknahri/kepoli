@@ -407,6 +407,16 @@ function wpap_publish_article( array $item, array $opts = array() ) {
     /* Comments: close them on published posts if the owner opted in (spam hygiene). */
     $comment_status = ! empty( $copts['disable_comments'] ) ? 'closed' : get_default_comment_status( 'post' );
 
+    /* ── internal links: [[link:slug|anchor]] → a real <a href> when a PUBLISHED post owns the slug,
+       else a reader-invisible, kses-safe marker the "Resolve internal links" pass upgrades once the
+       target goes live (forward references across a batch self-heal). Runs on the raw body BEFORE the
+       page split (tokens are inline, never straddle a <!--nextpage-->). Skips a self-link via the slug
+       WordPress will derive from the title. No-op when the body carries no tokens. */
+    $wpap_ilink_pending = 0;
+    if ( function_exists( 'wpap_resolve_internal_links' ) ) {
+        $content = wpap_resolve_internal_links( $content, sanitize_title( $title ), $wpap_ilink_pending );
+    }
+
     /* ── split the body into pages (per-item "parts" overrides the global choice) ── */
     $item_parts = isset( $item['parts'] ) ? intval( $item['parts'] ) : $default_parts;
     if ( $item_parts < 1 )  { $item_parts = 1; }
@@ -416,12 +426,15 @@ function wpap_publish_article( array $item, array $opts = array() ) {
     /* Sanitize the body unless this user may post raw HTML — OR the caller forces
        it (the automation does, because Sheet content is outside the trust boundary).
        kses runs per page so the <!--nextpage--> markers survive and the raw
-       $wpdb->update below can't smuggle scripts. */
+       $wpdb->update below can't smuggle scripts. The wpap_ilink_kses flag lets the
+       internal-link forward-ref marker's data attribute through kses for THIS pass only. */
     if ( $force_kses || ! current_user_can( 'unfiltered_html' ) ) {
+        $GLOBALS['wpap_ilink_kses'] = true;
         $content_split = implode( '<!--nextpage-->', array_map(
             'wp_kses_post',
             explode( '<!--nextpage-->', $content_split )
         ) );
+        unset( $GLOBALS['wpap_ilink_kses'] );
     }
 
     /* ── decide publish time (immediate, or a random slot in the next hours) ── */
@@ -659,6 +672,26 @@ function wpap_publish_article( array $item, array $opts = array() ) {
         update_post_meta( $post_id, '_wpap_related_manual', array_slice( array_values( array_unique( $related_slugs ) ), 0, 10 ) );
     }
 
+    /* ── auto-link keywords: a per-item `keywords` list of phrases this post should be the internal-link
+       TARGET for. Stored as a comma list in _wpap_keywords; the "Auto-link keywords" pass (and the
+       auto-run after a bulk publish) then links the first mention of each phrase in OTHER posts to this
+       one. Accepts an array or a comma/newline string. Bounded so a malformed feed can't bloat meta. */
+    $keywords_raw = $item['keywords'] ?? $item['link_keywords'] ?? '';
+    $kw_list      = array();
+    if ( is_array( $keywords_raw ) ) {
+        foreach ( $keywords_raw as $kw ) {
+            if ( is_scalar( $kw ) ) { $k = sanitize_text_field( wp_unslash( (string) $kw ) ); if ( '' !== $k ) { $kw_list[] = $k; } }
+        }
+    } elseif ( is_scalar( $keywords_raw ) && '' !== trim( (string) $keywords_raw ) ) {
+        foreach ( preg_split( '/[,\r\n]+/', (string) wp_unslash( $keywords_raw ) ) as $kw ) {
+            $k = sanitize_text_field( $kw ); if ( '' !== $k ) { $kw_list[] = $k; }
+        }
+    }
+    if ( ! empty( $kw_list ) ) {
+        $kw_list = array_slice( array_values( array_unique( $kw_list ) ), 0, 12 );
+        update_post_meta( $post_id, '_wpap_keywords', implode( ', ', $kw_list ) );
+    }
+
     /* ── distribution row ── */
     /* The Hub row carries the FACEBOOK-preferred image so the export/auto-poster use it: the FB
        image when one was supplied (fbImage/local_fb_image_path, computed above), else the blog
@@ -879,6 +912,16 @@ function wpap_ajax_bulk_publish_posts() {
             'message'  => 'No posts were published.',
             'messages' => $messages,
         ) );
+    }
+
+    /* Bake in-content internal links across the freshly-published batch (forward-ref [[link]] markers +
+       keyword cross-links). Bounded + self-isolating so it can never fail a publish that already
+       succeeded. Same pass the Bulk-ZIP path runs. */
+    if ( function_exists( 'wpap_internal_links_bake' ) ) {
+        list( $il_linked, $kw_linked ) = wpap_internal_links_bake( 500 );
+        if ( $il_linked > 0 || $kw_linked > 0 ) {
+            $messages[] = sprintf( 'Internal links: resolved %d forward reference(s), added %d keyword link(s).', (int) $il_linked, (int) $kw_linked );
+        }
     }
 
     /* Purge page caches so freshly published posts appear on the blog immediately. */
@@ -1331,6 +1374,17 @@ function wpap_ajax_bulk_publish_zip() {
     if ( empty( $created ) ) {
         wp_send_json_error( array( 'message' => 'No posts were published from the bundle.', 'messages' => $messages ) );
     }
+
+    /* Bake in-content internal links across the freshly-published batch: upgrade any forward-reference
+       [[link:slug]] markers now that the whole batch is live, then weave keyword cross-links. Bounded +
+       self-isolating so a linking hiccup can never fail the publish that already succeeded. */
+    if ( function_exists( 'wpap_internal_links_bake' ) ) {
+        list( $il_linked, $kw_linked ) = wpap_internal_links_bake( 500 );
+        if ( $il_linked > 0 || $kw_linked > 0 ) {
+            $messages[] = sprintf( 'Internal links: resolved %d forward reference(s), added %d keyword link(s).', (int) $il_linked, (int) $kw_linked );
+        }
+    }
+
     wpap_purge_caches();
     wp_send_json_success( array(
         'created'  => count( $created ),
