@@ -189,20 +189,33 @@ function wpap_autolink_content( $content, $entries, $self_id, $max_links = 4 ) {
 			continue;
 		}
 		if ( $in_a > 0 || $in_skip > 0 || $added >= $max_links ) { continue; }
-		foreach ( $entries as $e ) {
-			if ( $added >= $max_links ) { break; }
-			if ( isset( $used[ (int) $e['pid'] ] ) ) { continue; }
-			if ( '' === $e['permalink'] ) { continue; }
-			if ( preg_match( $e['re'], $part, $mm, PREG_OFFSET_CAPTURE ) ) {
-				$match = $mm[0][0];
-				$off   = (int) $mm[0][1];
-				$link  = '<a href="' . esc_url( $e['permalink'] ) . '">' . $match . '</a>';
-				$part  = substr( $part, 0, $off ) . $link . substr( $part, $off + strlen( $match ) );
-				$used[ (int) $e['pid'] ] = true;
-				$added++;
+		/* Scan this text run left-to-right, matching ONLY against not-yet-linked text. Injected
+		   <a>…</a> markup accumulates in $out and is NEVER re-scanned, so a later phrase can't land
+		   inside an earlier link's href — that intra-part re-injection was the bug that produced nested,
+		   broken anchors (e.g. href="…lemon-and-<a href="…">baking</a>-soda-fix/"). Longest-phrase-first
+		   priority is preserved by iterating $entries (already longest-first) and, each round, taking the
+		   earliest match (ties keep the longer, earlier-listed entry). */
+		$out  = '';
+		$rest = $part;
+		while ( $added < $max_links && '' !== $rest ) {
+			$best_off = -1; $best_entry = null; $best_match = '';
+			foreach ( $entries as $e ) {
+				if ( isset( $used[ (int) $e['pid'] ] ) || '' === $e['permalink'] ) { continue; }
+				if ( preg_match( $e['re'], $rest, $mm, PREG_OFFSET_CAPTURE ) ) {
+					$off = (int) $mm[0][1];
+					if ( $best_off < 0 || $off < $best_off ) {
+						$best_off = $off; $best_entry = $e; $best_match = (string) $mm[0][0];
+					}
+				}
 			}
+			if ( null === $best_entry ) { break; }
+			$out .= substr( $rest, 0, $best_off )
+			      . '<a href="' . esc_url( $best_entry['permalink'] ) . '">' . $best_match . '</a>';
+			$rest = substr( $rest, $best_off + strlen( $best_match ) );
+			$used[ (int) $best_entry['pid'] ] = true;
+			$added++;
 		}
-		$parts[ $i ] = $part;
+		$parts[ $i ] = $out . $rest;
 	}
 	return array( implode( '', $parts ), $added );
 }
@@ -285,13 +298,65 @@ function wpap_backfill_keywords_from_tags( $limit = 2000, $overwrite = false ) {
 	return array( $scanned, $seeded );
 }
 
+/* Repair posts damaged by the pre-9.28.1 auto-linker bug: a keyword link that was injected INSIDE another
+   link's href value, e.g.  <a href="…lemon-and-<a href="…">baking</a>-soda-fix/">dark spots</a>. The inner
+   anchor is collapsed back to its plain text, which restores the intact outer link. Idempotent + safe to
+   re-run (a clean post never matches). Returns [ scanned, repaired ]. */
+function wpap_repair_nested_ilinks( $limit = 2000 ) {
+	global $wpdb;
+	$limit = max( 1, min( 5000, (int) $limit ) );
+	/* Cheap pre-filter: at least two link-starts (the corruption needs an inner <a href=" inside an outer
+	   one). The regex below is the real test, so a normal two-link post is scanned but left untouched. */
+	$ids = $wpdb->get_col( $wpdb->prepare(
+		"SELECT ID FROM {$wpdb->posts}
+		  WHERE post_type='post' AND post_status IN ('publish','future','draft','pending')
+		    AND post_content LIKE %s LIMIT %d",
+		'%<a href="%<a href="%', $limit
+	) );
+	$scanned = 0; $repaired = 0;
+	foreach ( array_map( 'intval', (array) $ids ) as $pid ) {
+		if ( $pid <= 0 ) { continue; }
+		$scanned++;
+		$post = get_post( $pid );
+		if ( ! $post ) { continue; }
+		$before = (string) $post->post_content;
+		$after  = $before;
+		/* Collapse an inner <a href="…">text</a> that sits WITHIN an unfinished href value, repeatedly
+		   (handles more than one nesting), with a hard guard against pathological loops. */
+		$guard = 0;
+		do {
+			$prev  = $after;
+			$after = (string) preg_replace(
+				'#(<a href="[^"]*?)<a href="[^"]*?">([^<>]*)</a>#i',
+				'$1$2',
+				$after
+			);
+			$guard++;
+		} while ( '' !== $after && $after !== $prev && $guard < 30 );
+		if ( '' !== $after && $after !== $before ) {
+			$wpdb->update( $wpdb->posts, array( 'post_content' => $after ), array( 'ID' => $pid ) );
+			clean_post_cache( $pid );
+			$repaired++;
+		}
+	}
+	return array( $scanned, $repaired );
+}
+
 /* Run BOTH in-content passes over the freshly-published catalogue. Called at the tail of a bulk publish
    (so forward-ref markers link up once the whole batch is live, then keyword cross-links are woven) and
    by the admin buttons. Per-item isolation lives in the passes; wrap the whole thing so a linking hiccup
    can never fail the publish response. Returns [ ilinks_linked, kw_links ]. */
 function wpap_internal_links_bake( $limit = 500 ) {
-	$il = array( 0, 0 );
-	$kw = array( 0, 0, 0 );
+	$rep = array( 0, 0 );
+	$il  = array( 0, 0 );
+	$kw  = array( 0, 0, 0 );
+	/* Repair FIRST: heal any nested-anchor corruption from the pre-9.28.1 bug before (re)linking, so a
+	   re-run of "Activate on existing posts" both fixes the damage and links cleanly. */
+	try {
+		$rep = wpap_repair_nested_ilinks( max( $limit, 2000 ) );
+	} catch ( \Throwable $e ) {
+		error_log( '[Automation Hamri] repair-nested-ilinks pass failed: ' . $e->getMessage() );
+	}
 	try {
 		$il = wpap_resolve_pending_ilinks( $limit );
 	} catch ( \Throwable $e ) {
@@ -302,7 +367,7 @@ function wpap_internal_links_bake( $limit = 500 ) {
 	} catch ( \Throwable $e ) {
 		error_log( '[Automation Hamri] auto-keyword-link pass failed: ' . $e->getMessage() );
 	}
-	return array( (int) ( $il[1] ?? 0 ), (int) ( $kw[2] ?? 0 ) );
+	return array( (int) ( $il[1] ?? 0 ), (int) ( $kw[2] ?? 0 ), (int) ( $rep[1] ?? 0 ) );
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -338,12 +403,13 @@ function wpap_ajax_backfill_keywords() {
 	check_ajax_referer( 'wpap_nonce', 'nonce' );
 	if ( ! current_user_can( 'manage_options' ) ) { wp_send_json_error( 'Unauthorized' ); }
 	@set_time_limit( 300 );
-	list( $scanned, $seeded )    = wpap_backfill_keywords_from_tags( 5000, false );
-	list( $il_linked, $kw_links ) = wpap_internal_links_bake( 2000 );
+	list( $scanned, $seeded )               = wpap_backfill_keywords_from_tags( 5000, false );
+	list( $il_linked, $kw_links, $repaired ) = wpap_internal_links_bake( 2000 );
 	wp_send_json_success( array(
 		'scanned'  => (int) $scanned,
 		'seeded'   => (int) $seeded,
 		'resolved' => (int) $il_linked,
 		'links'    => (int) $kw_links,
+		'repaired' => (int) $repaired,
 	) );
 }

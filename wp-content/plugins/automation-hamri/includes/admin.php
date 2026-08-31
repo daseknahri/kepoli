@@ -739,7 +739,7 @@ function wpap_render_settings() {
                 }).catch(function(e){ if(bBtn){ bBtn.disabled = false; } rBtn.disabled = kBtn.disabled = false; msg.textContent = 'Request failed: ' + e; });
             }
             if(bBtn){ bBtn.addEventListener('click', function(){
-                run('wpap_backfill_keywords', function(d){ return 'Seeded keywords on ' + (d.seeded||0) + ' post(s) (of ' + (d.scanned||0) + '), then added ' + (d.links||0) + ' keyword link(s) and resolved ' + (d.resolved||0) + ' marker(s).'; });
+                run('wpap_backfill_keywords', function(d){ return 'Seeded keywords on ' + (d.seeded||0) + ' post(s) (of ' + (d.scanned||0) + '); repaired ' + (d.repaired||0) + ' post(s); added ' + (d.links||0) + ' keyword link(s); resolved ' + (d.resolved||0) + ' marker(s).'; });
             }); }
             rBtn.addEventListener('click', function(){
                 run('wpap_resolve_ilinks', function(d){ return 'Resolved ' + (d.linked||0) + ' link(s) across ' + (d.scanned||0) + ' post(s) with pending markers.'; });

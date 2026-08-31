@@ -4,7 +4,7 @@ Tags: content, automation, adsense, seo, publishing
 Requires at least: 5.8
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 9.28.0
+Stable tag: 9.28.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,9 @@ No. Instant indexing (IndexNow) is opt-in and off until you enable it. License a
 No. It renders its own ad zones and SEO/recipe output on any theme, and defers to a dedicated SEO plugin if one is active.
 
 == Changelog ==
+
+= 9.28.1 =
+* Fix: the 9.28.0 keyword auto-linker could, within one paragraph, insert a link inside another link's URL (a nested, broken anchor). The linker no longer re-scans text it just linked. A built-in repair pass fixes any posts already affected — just re-open Settings → Internal linking and click "Activate on existing posts" (it repairs first, then re-links cleanly, and reports how many posts it fixed).
 
 = 9.28.0 =
 * Internal linking: two in-content cross-linking mechanisms that lift crawl depth and pages-per-session (an SEO / AdSense signal). Writers can drop `[[link:slug]]` or `[[link:slug|anchor text]]` tokens that become real links on publish (and self-heal across a batch when the target is published later). A per-item `keywords` field registers the phrases a post should be linked FROM elsewhere, and an "Auto-link keywords" pass weaves the first mention of each into other posts — bounded, idempotent, and tag-aware (never inside a heading, code, or an existing link). Both run automatically after every bulk publish, and are also available as manual buttons under Settings → Internal linking. Already have a published catalogue? One click on "Activate on existing posts" seeds keyword targets from each post's tags and links everything — no re-publishing.

@@ -3,6 +3,25 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.28.1
+
+Bugfix for the 9.28.0 auto-keyword linker + a repair pass for content it already damaged.
+
+### Fixed
+- **Nested-anchor corruption in `wpap_autolink_content()`.** Within a single text run, after the pass
+  injected one keyword link it kept matching the *remaining* entries against the **modified** string — so
+  a later phrase could match text **inside the just-injected link's `href`** and get nested into it,
+  producing broken HTML like `href="…lemon-and-<a href="…">baking</a>-soda-fix/"`. The inner loop now
+  scans each text run left-to-right and never re-scans injected markup (`$out`/`$rest` split), so a link
+  can never land inside another link's URL. Longest-phrase-first priority is preserved.
+
+### Added
+- **`wpap_repair_nested_ilinks()`** — a one-time, idempotent repair that finds the nested-anchor damage
+  and collapses the inner anchor back to plain text, restoring the intact outer link. It runs FIRST inside
+  `wpap_internal_links_bake()`, so simply re-clicking **Settings → Internal linking → "Activate on existing
+  posts"** (or the next bulk publish) both heals the damage and re-links cleanly. The button now also
+  reports how many posts were repaired.
+
 ## 9.28.0
 
 Internal linking — the passive build's in-content cross-linking engine, ported to the active plugin
