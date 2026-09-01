@@ -3,6 +3,14 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.31.0
+
+Noindex now also excludes the post from the core XML sitemap. `wpap_sitemap_exclude_noindex` filters
+`wp_sitemaps_posts_query_args` so any post carrying `_wpap_noindex` is dropped from `wp-sitemap-posts-post`.
+A noindexed URL sitting in the sitemap is self-contradictory — Google reports "Submitted URL marked
+'noindex'" in Search Console and wastes crawl budget — so noindex now cleanly implies sitemap-exclusion.
+No DB schema change.
+
 ## 9.30.0
 
 Apply Rewrites now carries an optional per-item **`noindex`** flag: `{ id, title, content, "noindex": true }`

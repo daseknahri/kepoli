@@ -166,6 +166,22 @@ function wpap_robots_honor_noindex( $robots ) {
     return $robots;
 }
 
+/* Keep _wpap_noindex posts OUT of the core XML sitemap. A noindexed URL sitting in the sitemap is
+   self-contradictory — Google reports "Submitted URL marked 'noindex'" in Search Console and wastes crawl
+   budget on pages we've told it not to index. This makes noindex imply sitemap-exclusion (correct + tidy). */
+add_filter( 'wp_sitemaps_posts_query_args', 'wpap_sitemap_exclude_noindex', 10, 2 );
+function wpap_sitemap_exclude_noindex( $args, $post_type ) {
+    if ( 'post' !== $post_type ) { return $args; }
+    $mq = ( isset( $args['meta_query'] ) && is_array( $args['meta_query'] ) ) ? $args['meta_query'] : array();
+    $mq[] = array(
+        'relation' => 'OR',
+        array( 'key' => '_wpap_noindex', 'compare' => 'NOT EXISTS' ),
+        array( 'key' => '_wpap_noindex', 'value' => '1', 'compare' => '!=' ),
+    );
+    $args['meta_query'] = $mq;
+    return $args;
+}
+
 /* True when a dedicated SEO plugin is already handling <head> meta. */
 function wpap_seo_plugin_active() {
     return ( defined( 'WPSEO_VERSION' )                /* Yoast SEO      */
