@@ -122,6 +122,20 @@ function kepoli_link_recovery_maps(): array
         }
         $cand[$id] = $slugs;
     }
+    // Old slugs kept as aliases when a post was renamed (kepoli-slug-cleanup) — exact-map them so a link to
+    // the pre-rename slug still 301s to the post (token-overlap alone can't bridge an honest rename).
+    $arows = $wpdb->get_results(
+        "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_kepoli_slug_aliases' AND meta_value <> ''"
+    );
+    foreach ((array) $arows as $ar) {
+        $id = (int) $ar->post_id;
+        foreach (explode(',', (string) $ar->meta_value) as $al) {
+            $al = sanitize_title(trim($al));
+            if ($al !== '' && !isset($exact[$al])) {
+                $exact[$al] = $id;
+            }
+        }
+    }
     $maps = ['exact' => $exact, 'candidates' => $cand];
     set_transient('kepoli_link_recovery_maps', $maps, 10 * MINUTE_IN_SECONDS);
     return $maps;
