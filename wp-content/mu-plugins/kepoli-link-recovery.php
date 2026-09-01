@@ -2,13 +2,14 @@
 /**
  * Plugin Name: Kepoli Link Recovery (404 → canonical)
  * Description: kepoli permalinks are /%category%/%postname%/. WordPress already 301-redirects
- *   wrong-category and ?p=ID links to the canonical URL, but NOT a bare-slug link, nor a title-derived
- *   slug that doesn't match the post's actual (sometimes length-capped/truncated) slug — those hard-404.
- *   Facebook / campaign links shared in those forms then die and the traffic is lost. On ANY 404 this
- *   finds the intended post — first by EXACT slug (the last URL path segment), then by the best
- *   token-overlap of that segment against published post/page slugs — and 301-redirects to its canonical
- *   permalink. Recovers already-shared links and any future mis-slugged share. Read-only, cached, and
- *   only ever runs on a 404, so it adds nothing to normal page loads.
+ *   wrong-category and ?p=ID links to canonical, but NOT a bare-slug link, nor a slug that doesn't match
+ *   the post's actual (sometimes length-capped/truncated) slug — those hard-404. Facebook / campaign
+ *   links are frequently built from the post TITLE, so a title-derived slug (old title OR the current
+ *   rewritten title) rarely equals the stored slug, and the link dies. On ANY 404 this finds the intended
+ *   post by, in order: (1) EXACT match of the last URL segment against every post's actual slug AND its
+ *   title-slug, then (2) strong, unambiguous token-overlap against those slugs — and 301s to the canonical
+ *   permalink. Recovers every title-based or bare-slug share, past or future. Read-only, cached, and only
+ *   runs on a 404, so it adds nothing to normal page loads.
  *
  * @package Kepoli
  */
@@ -34,71 +35,96 @@ function kepoli_link_recovery(): void
         return;
     }
 
-    // 1) Exact slug match — a flat /slug/ link, or the right slug under a wrong path prefix.
-    $exact = get_posts([
-        'name'           => $attempt,
-        'post_type'      => ['post', 'page'],
-        'post_status'    => 'publish',
-        'posts_per_page' => 1,
-        'no_found_rows'  => true,
-        'fields'         => 'ids',
-    ]);
-    if (!empty($exact)) {
-        kepoli_link_recovery_go((int) $exact[0]);
+    $maps = kepoli_link_recovery_maps();
+
+    // 1) Exact match — the last segment equals a real slug OR a post's title-slug.
+    if (isset($maps['exact'][$attempt])) {
+        kepoli_link_recovery_go((int) $maps['exact'][$attempt]);
         return;
     }
 
-    // 2) Fuzzy match — the shared slug differs from the actual slug (e.g. title-slug vs a truncated slug).
-    //    Pick the published post/page whose slug shares the most tokens with the attempted slug, but only
-    //    when the match is strong AND clearly unambiguous, so a genuine 404 is never mis-redirected.
+    // 2) Fuzzy — best token-overlap of the attempted slug against each post's actual slug and title-slug.
+    //    Only redirect on a strong, clearly unambiguous match, so a genuine 404 is never mis-sent.
     $aTok = array_values(array_filter(explode('-', $attempt), static fn($t) => strlen($t) > 2));
     if (count($aTok) < 3) {
-        return; // too little signal to match safely
+        return;
     }
     $aSet = array_flip($aTok);
-
-    $map = get_transient('kepoli_slug_map');
-    if (!is_array($map)) {
-        global $wpdb;
-        $rows = $wpdb->get_results(
-            "SELECT ID, post_name FROM {$wpdb->posts}
-              WHERE post_status='publish' AND post_type IN ('post','page') AND post_name<>''"
-        );
-        $map = [];
-        foreach ((array) $rows as $r) {
-            $map[(int) $r->ID] = (string) $r->post_name;
-        }
-        set_transient('kepoli_slug_map', $map, 10 * MINUTE_IN_SECONDS);
-    }
 
     $bestId = 0;
     $best   = 0.0;
     $second = 0.0;
-    foreach ($map as $id => $name) {
-        $bTok = array_filter(explode('-', $name), static fn($t) => strlen($t) > 2);
-        if (!$bTok) {
-            continue;
-        }
-        $inter = 0;
-        foreach ($bTok as $t) {
-            if (isset($aSet[$t])) {
-                $inter++;
+    foreach ($maps['candidates'] as $id => $slugs) {
+        $top = 0.0;
+        foreach ($slugs as $name) {
+            $bTok = array_filter(explode('-', $name), static fn($t) => strlen($t) > 2);
+            if (!$bTok) {
+                continue;
+            }
+            $inter = 0;
+            foreach ($bTok as $t) {
+                if (isset($aSet[$t])) {
+                    $inter++;
+                }
+            }
+            $union = count($aSet) + count($bTok) - $inter;
+            $score = $union > 0 ? $inter / $union : 0.0;
+            if ($score > $top) {
+                $top = $score;
             }
         }
-        $union = count($aSet) + count($bTok) - $inter;
-        $score = $union > 0 ? $inter / $union : 0.0;
-        if ($score > $best) {
+        if ($top > $best) {
             $second = $best;
-            $best   = $score;
+            $best   = $top;
             $bestId = (int) $id;
-        } elseif ($score > $second) {
-            $second = $score;
+        } elseif ($top > $second) {
+            $second = $top;
         }
     }
 
     if ($bestId > 0 && $best >= 0.6 && $best >= $second + 0.15) {
         kepoli_link_recovery_go($bestId);
     }
+}
+
+/**
+ * Cached lookup maps: exact slug/title-slug → id, and id → [slug, title-slug] for fuzzy scoring.
+ */
+function kepoli_link_recovery_maps(): array
+{
+    $maps = get_transient('kepoli_link_recovery_maps');
+    if (is_array($maps)) {
+        return $maps;
+    }
+    global $wpdb;
+    $rows = $wpdb->get_results(
+        "SELECT ID, post_name, post_title FROM {$wpdb->posts}
+          WHERE post_status='publish' AND post_type IN ('post','page') AND post_name<>''"
+    );
+    $exact = [];
+    $cand  = [];
+    foreach ((array) $rows as $r) {
+        $id    = (int) $r->ID;
+        $slug  = (string) $r->post_name;
+        $tslug = sanitize_title((string) $r->post_title);
+        $slugs = [];
+        if ($slug !== '') {
+            $slugs[] = $slug;
+            if (!isset($exact[$slug])) {
+                $exact[$slug] = $id;
+            }
+        }
+        if ($tslug !== '' && $tslug !== $slug) {
+            $slugs[] = $tslug;
+            if (!isset($exact[$tslug])) {
+                $exact[$tslug] = $id; // first (oldest) post wins a shared title-slug
+            }
+        }
+        $cand[$id] = $slugs;
+    }
+    $maps = ['exact' => $exact, 'candidates' => $cand];
+    set_transient('kepoli_link_recovery_maps', $maps, 10 * MINUTE_IN_SECONDS);
+    return $maps;
 }
 
 function kepoli_link_recovery_go(int $id): void
@@ -110,7 +136,7 @@ function kepoli_link_recovery_go(int $id): void
     }
 }
 
-/* Keep the cached slug map fresh when posts change (cheap; the map rebuilds lazily on the next 404). */
+/* Refresh the cached maps when posts change (cheap; rebuilds lazily on the next 404). */
 add_action('save_post', static function (): void {
-    delete_transient('kepoli_slug_map');
+    delete_transient('kepoli_link_recovery_maps');
 });
