@@ -101,19 +101,15 @@ function kepoli_ga4_head(): void
 add_action('wp_footer', 'kepoli_histats_footer', 20);
 function kepoli_histats_footer(): void
 {
-    if (!kepoli_mu_env_bool('HISTATS_ENABLE')) {
-        return;
-    }
-    if (kepoli_mu_env_bool('HISTATS_EXCLUDE_ADMINS', true) && is_user_logged_in() && current_user_can('edit_posts')) {
-        return;
-    }
-    $b64 = trim(kepoli_mu_env('HISTATS_CODE_BASE64'));
-    if ($b64 === '') {
-        return;
-    }
-    $snippet = base64_decode($b64, true);
-    if ($snippet === false || trim($snippet) === '') {
-        return;
-    }
-    echo "\n<!-- Histats -->\n" . $snippet . "\n<!-- /Histats -->\n"; // phpcs:ignore WordPress.Security.EscapeOutput -- owner-configured tracking snippet, emitted verbatim by design
+    // HARD-DISABLED 2026-09-03. Live network inspection showed the Histats snippet (its js15_as.js) injects,
+    // at RUNTIME, a chain of unvetted third-party DATA-BROKER trackers that are NOT present in the served HTML
+    // and fire before the consent gate: DTScout (e./t.dtscout.com, t.dtscdn.com), Lotame Crowd Control
+    // (tags./bcp.crwdcntrl.net), OnAudience (pixel.onaudience.com) and Market Metrics (p.mrktmtrcs.net). On a
+    // site seeking AdSense approval this is a triple liability — privacy/GDPR (undisclosed pre-consent data
+    // harvesting), page speed (10+ extra third-party origins + a render-blocking inject), and an "unvetted
+    // third-party ad/data script" signal to review. Basic visitor stats are already covered by GA4 / Site Kit,
+    // so Histats adds no value that justifies the cost. Left OFF unconditionally regardless of the env flags;
+    // also clear HISTATS_ENABLE / HISTATS_CODE_BASE64 in the Coolify env for tidiness. If a live counter is
+    // ever wanted again, use a privacy-respecting, consent-gated one — not Histats.
+    return;
 }
