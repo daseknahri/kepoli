@@ -62,6 +62,27 @@ function kepoli_polish_css(): void
 .single-extras .author-box{order:2}
 .single-extras .post-navigation-simple{order:3}
 .single-extras .comments-area{order:4}
+/* Any in-page jump (FAQ anchor, jump-to-section) clears the 69px sticky header. */
+html{scroll-padding-top:88px}
+/* MOBILE — let the header row wrap so the OPEN hamburger nav drops to its own full-width row. The theme
+   intends this (.site-nav{order:5;width:100%} in the <=900 block) but never set flex-wrap, so without this
+   the nav is squeezed to a ~157px column pinned right instead of a full-width dropdown. */
+@media(max-width:900px){.site-header__inner{flex-wrap:wrap}}
+/* MOBILE — the homepage "Explore by topic" band stacked all 8 cards (~1.8 screens), pushing the actual post
+   grid ~3.3 screens down. Turn it into a horizontal swipe strip so latest stories surface far sooner. */
+@media(max-width:640px){
+  .category-list{display:flex;flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;gap:12px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .category-card{flex:0 0 78%;scroll-snap-align:start}
+}
+/* MOBILE — secondary-list links carried their spacing on the <li>, not the <a>, so the real tap target was
+   only the ~20px text line-box. Make the link itself a full 44px hit area. Recent-stories rows (56px thumb)
+   and the inline copyright link are left alone. */
+@media(max-width:640px){
+  .site-footer__explore li,.site-footer__info li{padding:0}
+  .site-footer__explore a,.site-footer__info a{display:flex;align-items:center;min-height:44px;padding:6px 0}
+  .sidebar__list li:not(:has(.sidebar__recent)){padding:0}
+  .sidebar__list a:not(.sidebar__recent){display:flex;align-items:center;min-height:44px;padding:6px 0}
+}
 CSS;
     echo "\n<style id=\"kepoli-polish\">" . $css . "</style>\n";
 }
