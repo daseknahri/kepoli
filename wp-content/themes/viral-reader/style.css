@@ -4,7 +4,7 @@ Theme URI: https://wa.me/212637122491
 Author: Oussama Hamri
 Author URI: https://wa.me/212637122491
 Description: A warm, editorial, mobile-first blog theme for viral story & health content — cream "paper" palette, serif reading column with a sans UI, a cinematic hero, a sticky reading sidebar, and ad-native spacing. Fast and light (system fonts, no jQuery, light mode). Pairs with the WP Automator Pro plugin: header/sidebar/footer ad zones and native in-content ad styling. English throughout.
-Version: 1.9.9
+Version: 1.9.10
 Requires at least: 5.5
 Tested up to: 6.6
 Requires PHP: 7.2
@@ -34,7 +34,7 @@ Tags: blog, news, two-columns, right-sidebar, custom-menu, custom-logo, featured
 
 /* ===== Base ===== */
 *,*::before,*::after{box-sizing:border-box}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+html{scroll-behavior:smooth;scroll-padding-top:88px;-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:16px;line-height:1.65;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;overflow-wrap:break-word;font-feature-settings:"kern","liga"}
 img,video{max-width:100%;height:auto}
 iframe{max-width:100%}
@@ -93,7 +93,7 @@ body.admin-bar .vr-progress{top:32px}
 .site-header{position:sticky;top:0;z-index:60;background:var(--paper);border-bottom:1px solid var(--line)}
 body.admin-bar .site-header{top:32px}
 .site-header__inner{display:flex;align-items:center;gap:18px;padding:12px 0}
-.site-brand{display:flex;align-items:center;gap:10px;min-width:0;margin-inline-end:auto}
+.site-brand{display:flex;align-items:center;gap:10px;min-width:0;flex-shrink:0;margin-inline-end:auto}
 .site-brand .custom-logo{max-height:42px;width:auto}
 .site-brand__name{font-family:var(--serif);font-size:1.3rem;font-weight:500;color:var(--ink);letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .site-brand__name:hover{color:var(--ink);text-decoration:none}
@@ -122,6 +122,9 @@ body.nav-open .nav-toggle span{background:transparent}
 body.nav-open .nav-toggle span::before{top:0;transform:rotate(45deg)}
 body.nav-open .nav-toggle span::after{top:0;transform:rotate(-45deg)}
 @media(max-width:900px){
+  /* Let the header row wrap so the OPEN hamburger nav drops to its own full-width row
+     (the .site-nav order:5;width:100% below intends this; without flex-wrap it can't). */
+  .site-header__inner{flex-wrap:wrap}
   .site-nav{display:none;order:5;width:100%}
   body.nav-open .site-nav{display:block}
   .site-nav ul{flex-direction:column}
@@ -240,7 +243,12 @@ body.nav-open .nav-toggle span::after{top:0;transform:rotate(-45deg)}
    comments keep a comfortable line length; full-width on phones. Putting them
    below the grid is what lets the sidebar ad sit right after the article on
    mobile (high viewability) instead of under the comments. */
-.single-extras{max-width:var(--measure)}
+.single-extras{max-width:var(--measure);display:flex;flex-direction:column}
+/* Put the "Keep reading" related grid first — the highest-intent moment is where the article ends. */
+.single-extras .related-posts{order:1}
+.single-extras .author-box{order:2}
+.single-extras .post-navigation-simple{order:3}
+.single-extras .comments-area{order:4}
 .entry{min-width:0}
 .entry-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 /* On the single post, render the category as an eyebrow (accent rule + label)
@@ -252,6 +260,9 @@ body.nav-open .nav-toggle span::after{top:0;transform:rotate(-45deg)}
 .entry-excerpt{font-size:1.16rem;color:var(--muted);margin-bottom:1em;text-wrap:pretty}
 .entry-featured-media{margin:6px 0 18px}
 .entry-featured-media img{width:100%;border-radius:var(--radius);display:block}
+/* External-URL fallback images (no width/height) get a reserved aspect box so the single-post
+   LCP slot can't reflow. Local thumbnails carry .wp-post-image (already sized) and are left alone. */
+.entry-featured-media img:not(.wp-post-image){aspect-ratio:16/10;object-fit:cover}
 .entry-featured-media figcaption{font-family:var(--sans);font-size:.8rem;color:var(--muted);margin-top:8px;text-align:center}
 /* Byline: avatar + author + date · read time in one clean row. */
 .entry-byline{display:flex;align-items:center;gap:11px;margin:0 0 18px}
@@ -537,6 +548,19 @@ body .wpap-ad-label{color:var(--ad-label)}
   /* Cards/grids to a single comfortable column. */
   .post-grid{grid-template-columns:1fr;gap:20px}
   .related-grid{grid-template-columns:1fr 1fr;gap:12px}
+
+  /* Homepage "Explore by topic" band -> horizontal swipe strip so the latest-posts grid
+     surfaces far sooner (stacked, all cards ran ~1.8 screens before the first article). */
+  .category-list{display:flex;flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;gap:12px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .category-card{flex:0 0 78%;scroll-snap-align:start}
+
+  /* Full 44px tap targets for the stacked footer + sidebar-Topics link lists: the spacing lived
+     on the <li>, not the <a>, so the real hit area was only the ~20px text line-box. The inline
+     copyright link (.site-footer__bottom) and the thumbnail Recent-stories rows are left alone. */
+  .site-footer__explore li,.site-footer__info li{padding:0}
+  .site-footer__explore a,.site-footer__info a{display:flex;align-items:center;min-height:44px;padding:6px 0}
+  .sidebar__list li:not(:has(.sidebar__recent)){padding:0}
+  .sidebar__list a:not(.sidebar__recent){display:flex;align-items:center;min-height:44px;padding:6px 0}
 }
 @media(max-width:380px){
   .related-grid{grid-template-columns:1fr}
