@@ -10,6 +10,11 @@ rm -rf /var/www/html/wp-content/plugins/automation-hamri
 # and fatal every request. The repo only ships the single "automation-hamri".
 rm -rf /var/www/html/wp-content/plugins/automation-hamri-v* 2>/dev/null || true
 cp -a /opt/kepoli/wp-content/themes/viral-reader /var/www/html/wp-content/themes/viral-reader
+# The kepoli-*.php mu-plugins are ALL baked from the repo, so sweep any stale ones from the persistent volume
+# BEFORE copying the current set back. An additive cp alone leaves a mu-plugin that was DELETED from the repo
+# running forever — which double-emitted the share row + TOC after those features were promoted from mu-plugins
+# into the theme (v1.9.11). Only kepoli-*.php is swept, so any non-kepoli / plugin-dropped mu-plugin is untouched.
+rm -f /var/www/html/wp-content/mu-plugins/kepoli-*.php 2>/dev/null || true
 cp -a /opt/kepoli/wp-content/mu-plugins/. /var/www/html/wp-content/mu-plugins/
 cp -a /opt/kepoli/wp-content/plugins/automation-hamri /var/www/html/wp-content/plugins/automation-hamri
 

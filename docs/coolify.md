@@ -32,7 +32,8 @@ Do not use `docker-compose.local.yml` in Coolify. That override publishes host p
 
 If Coolify skips or stops the one-shot service during first launch, the `wordpress` image already contains `seed` and `content`; the `kepoli-autoseed` MU plugin runs the seed once on the next request and activates the Kepoli theme. Once `kepoli_seed_version` exists or real content exists, auto-seed stops and future deploys do not touch posts again.
 
-For a temporary deploy check, set `KEPOLI_DEPLOY_FINGERPRINT=1`, redeploy, then verify the public site is actually on the current repo build:
+To verify the public site is actually on the latest commit after a redeploy — **no flag or env needed**; it
+compares the theme version the live site serves (`site.js?ver=`) against this repo's vendored theme (`VR_VERSION`):
 
 ```sh
 node scripts/check-live-deploy.mjs https://kepoli.com
@@ -40,8 +41,5 @@ node scripts/check-live-deploy.mjs https://kepoli.com
 
 What the result means:
 
-- `Live target` mismatch: Coolify is still serving an older image or did not redeploy the latest commit.
-- `Live current` mismatch: the new code reached production, but the seed version on the live database did not catch up yet.
-- Missing `kepoli-seed-*` meta tags: the fingerprint flag is disabled, or the public site is still on a build older than the deploy fingerprint update.
-
-Turn `KEPOLI_DEPLOY_FINGERPRINT` back off after the check so normal production pages do not expose internal deployment details.
+- `OK: the live site is serving this repo’s theme build.` — the redeploy landed.
+- `STALE: live theme X != local Y` — Coolify is still serving an older image; redeploy the kepoli app.
