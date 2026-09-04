@@ -15,7 +15,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 if ( ! defined( 'VR_VERSION' ) ) {
-	define( 'VR_VERSION', '1.9.10' );
+	define( 'VR_VERSION', '1.9.11' );
 }
 
 /* ─────────────────────────────────────────────
@@ -937,3 +937,87 @@ function vr_recipe_card( $content ) {
 	return $content . ob_get_clean();
 }
 add_filter( 'the_content', 'vr_recipe_card', 9 );
+
+/**
+ * Second share row at the END of a post. On a long (often mobile) article the moment a reader decides to share
+ * is far below the top share row, so this appends a matching row at the content end. Reuses vr_share_links() /
+ * vr_icon() and the existing .share-tools CSS + document-delegated copy/print handlers in site.js. Disable per
+ * site with:  add_filter( 'vr_enable_share_at_end', '__return_false' );
+ */
+add_filter( 'the_content', 'vr_share_at_end', 20 );
+function vr_share_at_end( $content ) {
+	if ( ! is_singular( 'post' ) || ! in_the_loop() || ! is_main_query()
+		|| ! function_exists( 'vr_share_links' ) || ! function_exists( 'vr_icon' )
+		|| ! apply_filters( 'vr_enable_share_at_end', true ) ) {
+		return $content;
+	}
+	$icons = array( 'facebook' => 'facebook', 'whatsapp' => 'whatsapp', 'email' => 'email', 'copy' => 'link', 'print' => 'print' );
+	$out = '<div class="share-tools share-tools--end" role="group" aria-label="' . esc_attr__( 'Share this story', 'viral-reader' ) . '">';
+	foreach ( vr_share_links() as $s ) {
+		$ic = isset( $icons[ $s['type'] ] ) ? $icons[ $s['type'] ] : 'link';
+		if ( 'copy' === $s['type'] ) {
+			$out .= '<button class="share-tools__button" type="button" data-copy-url="' . esc_attr( $s['url'] )
+				. '" aria-label="' . esc_attr( $s['label'] ) . '" title="' . esc_attr( $s['label'] ) . '">' . vr_icon( $ic ) . '</button>';
+		} elseif ( 'print' === $s['type'] ) {
+			$out .= '<button class="share-tools__button" type="button" data-print aria-label="' . esc_attr( $s['label'] )
+				. '" title="' . esc_attr( $s['label'] ) . '">' . vr_icon( $ic ) . '</button>';
+		} else {
+			$out .= '<a class="share-tools__button" href="' . esc_url( $s['url'] ) . '" target="_blank" rel="noopener nofollow" aria-label="'
+				. esc_attr( $s['label'] ) . '" title="' . esc_attr( $s['label'] ) . '">' . vr_icon( $ic ) . '</a>';
+		}
+	}
+	$out .= '</div>';
+	return $content . $out;
+}
+
+/**
+ * Collapsed "Jump to section" TOC on long posts (>= 3 <h2>s), built client-side from the post's own headings
+ * (assigning stable ids so #anchors clear the sticky header via the html{scroll-padding-top} rule). Inserted
+ * after the opening paragraph so the drop-cap is preserved; textContent only (no HTML injection). Disable per
+ * site with:  add_filter( 'vr_enable_jump_to_section', '__return_false' );
+ */
+add_action( 'wp_footer', 'vr_jump_to_section' );
+function vr_jump_to_section() {
+	if ( ! is_singular( 'post' ) || ! apply_filters( 'vr_enable_jump_to_section', true ) ) {
+		return;
+	}
+	?>
+<script>
+(function(){
+  var content=document.querySelector('.entry-content');
+  if(!content) return;
+  var heads=content.querySelectorAll('h2');
+  if(heads.length<3) return;
+  var used={};
+  var list=document.createElement('ul');
+  list.className='vr-toc__list';
+  heads.forEach(function(h){
+    var id=h.id;
+    if(!id){
+      var base=(h.textContent||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'section';
+      id=base; var n=2;
+      while(used[id]||document.getElementById(id)){ id=base+'-'+(n++); }
+      h.id=id;
+    }
+    used[id]=true;
+    var li=document.createElement('li');
+    var a=document.createElement('a');
+    a.href='#'+id;
+    a.textContent=h.textContent;
+    li.appendChild(a);
+    list.appendChild(li);
+  });
+  var details=document.createElement('details');
+  details.className='vr-toc';
+  var sum=document.createElement('summary');
+  sum.className='vr-toc__summary';
+  sum.textContent='Jump to section';
+  details.appendChild(sum);
+  details.appendChild(list);
+  var firstP=content.querySelector('p');
+  if(firstP){ firstP.insertAdjacentElement('afterend', details); }
+  else { content.insertBefore(details, content.firstChild); }
+})();
+</script>
+	<?php
+}

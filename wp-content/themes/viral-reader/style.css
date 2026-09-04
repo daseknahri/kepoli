@@ -4,7 +4,7 @@ Theme URI: https://wa.me/212637122491
 Author: Oussama Hamri
 Author URI: https://wa.me/212637122491
 Description: A warm, editorial, mobile-first blog theme for viral story & health content — cream "paper" palette, serif reading column with a sans UI, a cinematic hero, a sticky reading sidebar, and ad-native spacing. Fast and light (system fonts, no jQuery, light mode). Pairs with the WP Automator Pro plugin: header/sidebar/footer ad zones and native in-content ad styling. English throughout.
-Version: 1.9.10
+Version: 1.9.11
 Requires at least: 5.5
 Tested up to: 6.6
 Requires PHP: 7.2
@@ -281,6 +281,17 @@ body.nav-open .nav-toggle span::after{top:0;transform:rotate(-45deg)}
 /* Copy-link confirmation: a state color + a small tooltip (the JS toggles
    .is-copied for ~1.5s and announces "Link copied" via an aria-live region). */
 .share-tools__button.is-copied{border-color:var(--olive);color:var(--olive);background:var(--sage)}
+/* End-of-article share row (vr_share_at_end) + long-post "Jump to section" TOC (vr_jump_to_section). */
+.share-tools--end{margin-top:2.2em;padding-top:1.4em;border-top:1px solid var(--line)}
+.vr-toc{margin:1.4em 0 1.6em;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:0 16px}
+.vr-toc__summary{cursor:pointer;list-style:none;padding:12px 0;min-height:44px;display:flex;align-items:center;font-family:var(--sans);font-weight:700;font-size:.88rem;letter-spacing:.02em;color:var(--olive-dark,#4a5a3a)}
+.vr-toc__summary::-webkit-details-marker{display:none}
+.vr-toc__summary::after{content:"\25be";margin-inline-start:auto;transition:transform .15s}
+.vr-toc[open] .vr-toc__summary::after{transform:rotate(180deg)}
+.vr-toc__list{list-style:none;margin:0;padding:0 0 10px}
+.vr-toc__list li{border-top:1px solid var(--line)}
+.vr-toc__list a{display:flex;align-items:center;min-height:44px;font-family:var(--sans);font-size:.88rem;color:var(--ink);text-decoration:none}
+.vr-toc__list a:hover{text-decoration:underline}
 .share-tools__button.is-copied::after{content:attr(data-copied);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--olive);color:#fff;font-family:var(--sans);font-size:.7rem;font-weight:700;letter-spacing:.03em;padding:.3em .55em;border-radius:6px;white-space:nowrap;pointer-events:none;box-shadow:var(--shadow);z-index:3}
 .entry-content{font-size:1.05rem;line-height:1.72;font-feature-settings:"kern","liga","onum","pnum"}
 .entry-content>p:first-of-type{font-size:1.12rem}
