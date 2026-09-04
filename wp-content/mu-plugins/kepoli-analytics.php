@@ -88,28 +88,11 @@ function kepoli_ga4_head(): void
         . "gtag('js',new Date());gtag('config','" . esc_js($id) . "');</script>" . "\n";
 }
 
-/**
- * Histats — a lightweight live visitor counter. Emitted in the footer only when
- * HISTATS_ENABLE is on and a base64-encoded snippet is provided. Logged-in managers are
- * excluded (HISTATS_EXCLUDE_ADMINS, default on) so admin visits don't inflate the count.
- *
- * Note: Histats predates Consent Mode and sets its own cookies, so treat it as a
- * non-essential tracker your consent notice/privacy policy must cover for EEA/UK/CH — it is
- * off by default here for that reason. The snippet is your own, base64-encoded env value
- * (owner-controlled), so it is emitted verbatim.
+/*
+ * Histats was REMOVED 2026-09-04 (was a hard-disabled no-op stub since 2026-09-03; now fully deleted).
+ * Its snippet runtime-injected a chain of unvetted third-party DATA BROKERS (DTScout / Lotame / OnAudience /
+ * Market Metrics) that fired BEFORE the consent gate — a privacy/GDPR + AdSense liability, plus 10+ extra
+ * third-party origins. GA4 via Google Site Kit covers analytics. Do NOT re-add Histats; if a visitor counter
+ * is ever wanted, use a privacy-respecting, consent-gated one. The HISTATS_ENABLE / HISTATS_CODE_BASE64 env
+ * vars are now inert — clear them in the Coolify env for tidiness.
  */
-add_action('wp_footer', 'kepoli_histats_footer', 20);
-function kepoli_histats_footer(): void
-{
-    // HARD-DISABLED 2026-09-03. Live network inspection showed the Histats snippet (its js15_as.js) injects,
-    // at RUNTIME, a chain of unvetted third-party DATA-BROKER trackers that are NOT present in the served HTML
-    // and fire before the consent gate: DTScout (e./t.dtscout.com, t.dtscdn.com), Lotame Crowd Control
-    // (tags./bcp.crwdcntrl.net), OnAudience (pixel.onaudience.com) and Market Metrics (p.mrktmtrcs.net). On a
-    // site seeking AdSense approval this is a triple liability — privacy/GDPR (undisclosed pre-consent data
-    // harvesting), page speed (10+ extra third-party origins + a render-blocking inject), and an "unvetted
-    // third-party ad/data script" signal to review. Basic visitor stats are already covered by GA4 / Site Kit,
-    // so Histats adds no value that justifies the cost. Left OFF unconditionally regardless of the env flags;
-    // also clear HISTATS_ENABLE / HISTATS_CODE_BASE64 in the Coolify env for tidiness. If a live counter is
-    // ever wanted again, use a privacy-respecting, consent-gated one — not Histats.
-    return;
-}

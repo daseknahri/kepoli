@@ -99,7 +99,9 @@ add_action('init', static function (): void {
     }
     try {
         $cat_ids = [];
-        foreach (['colds-respiratory', 'skin-wounds-teeth', 'aches-pains-fever'] as $slug) {
+        // Single source of truth (kepoli-shared.php) — after the 2026-09-01 merge this is 'natural-remedies'.
+        // Was hard-coded to the pre-merge slugs, which no longer resolve, so this backfill retried forever.
+        foreach ((function_exists('kepoli_remedy_slugs') ? kepoli_remedy_slugs() : ['natural-remedies']) as $slug) {
             $term = get_term_by('slug', $slug, 'category');
             if ($term instanceof WP_Term) {
                 $cat_ids[] = (int) $term->term_id;

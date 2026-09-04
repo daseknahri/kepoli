@@ -37,39 +37,6 @@ add_filter('wp_robots', static function (array $robots): array {
     return $robots;
 }, 26);
 
-/* 3) One-time: delete empty tags (0 posts). Safe — nothing to reassign, no redirect needed. */
-add_action('admin_init', 'kepoli_thin_archives_purge_empty_tags');
-add_action('wp_loaded', static function (): void {
-    if (wp_doing_cron()) {
-        kepoli_thin_archives_purge_empty_tags();
-    }
-});
-
-function kepoli_thin_archives_purge_empty_tags(): void
-{
-    if (!is_admin() && !wp_doing_cron()) {
-        return;
-    }
-    if (get_option('kepoli_purge_empty_tags_v1')) {
-        return;
-    }
-    $deleted = 0;
-    try {
-        $terms = get_terms([
-            'taxonomy'   => 'post_tag',
-            'hide_empty' => false,
-        ]);
-        if (!is_wp_error($terms)) {
-            foreach ($terms as $term) {
-                if ((int) $term->count === 0) {
-                    wp_delete_term($term->term_id, 'post_tag');
-                    $deleted++;
-                }
-            }
-        }
-    } catch (\Throwable $e) {
-        error_log('[kepoli] empty-tag purge threw: ' . $e->getMessage());
-    }
-    update_option('kepoli_purge_empty_tags_v1', 1, false);
-    error_log('[kepoli] thin-archive hygiene: deleted ' . $deleted . ' empty tag(s).');
-}
+/* The one-time empty-tag purge that lived here (deleted the 81 empty tags, 611→530, guarded by the option
+   kepoli_purge_empty_tags_v1) COMPLETED and was retired 2026-09-04 — the ongoing noindex + de-sitemap filters
+   above are what stay. (A fresh install never accumulates the sprawl, so the migration isn't needed again.) */
