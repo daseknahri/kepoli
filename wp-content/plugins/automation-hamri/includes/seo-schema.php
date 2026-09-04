@@ -565,6 +565,51 @@ function wpap_recipe_head() {
     echo '<script type="application/ld+json">' . wp_json_encode( $data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
 }
 
+/* ── FAQPage schema (OPT-IN) ─────────────────────────────────────────────────────────────────────────
+   Emits FAQPage JSON-LD built ONLY from a post's own on-page "<h2>… FAQ / Frequently Asked Questions …</h2>"
+   section of <h3>Question?</h3><p>Answer</p> pairs — purely additive, no new copy, no fabrication. OFF by
+   default; a site opts in with:  add_filter( 'wpap_faq_schema_enabled', '__return_true' );  Self-suppresses
+   when an SEO plugin owns the head, OR when a site plugin already emits FAQPage (function kepoli_faq_jsonld) —
+   so migrating that capability from a site mu-plugin into this engine never double-emits. Posts only. */
+add_action( 'wp_head', 'wpap_faq_head', 23 );   /* after the @graph(1) and recipe(2) emitters */
+function wpap_faq_head() {
+    if ( ! apply_filters( 'wpap_faq_schema_enabled', false ) ) { return; }   /* opt-in — DEFAULT OFF */
+    if ( ! is_singular( 'post' ) || is_feed() ) { return; }
+    if ( wpap_seo_plugin_active() ) { return; }                              /* an SEO plugin owns the head */
+    if ( function_exists( 'kepoli_faq_jsonld' ) ) { return; }                /* a site mu-plugin already emits it — defer */
+
+    $content = (string) get_post_field( 'post_content', get_queried_object_id() );
+    if ( ! preg_match( '/<h2\b[^>]*>[^<]*(?:FAQ|Frequently\s+Asked\s+Questions|Questions)[^<]*<\/h2>(.*?)(?=<h2\b|\z)/is', $content, $sec ) ) {
+        return;
+    }
+    if ( ! preg_match_all( '/<h3\b[^>]*>(.*?)<\/h3>\s*((?:(?!<h3\b|<h2\b).)*)/is', $sec[1], $pairs, PREG_SET_ORDER ) ) {
+        return;
+    }
+    $entities = array();
+    foreach ( $pairs as $p ) {
+        $q = wpap_faq_text( $p[1] );
+        $a = wpap_faq_text( isset( $p[2] ) ? $p[2] : '' );
+        if ( '' === $q || '' === $a ) { continue; }
+        $entities[] = array(
+            '@type'          => 'Question',
+            'name'           => $q,
+            'acceptedAnswer' => array( '@type' => 'Answer', 'text' => $a ),
+        );
+    }
+    if ( empty( $entities ) ) { return; }   /* never emit an empty/invalid FAQPage */
+    $ld = array( '@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => $entities );
+    echo '<script type="application/ld+json">' . wp_json_encode( $ld, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
+}
+
+/* Flatten an HTML fragment to clean plain text for schema: replace every tag with a space (so block
+   boundaries don't merge adjacent words), decode entities, collapse whitespace. */
+function wpap_faq_text( $html ) {
+    $text = preg_replace( '/<[^>]+>/', ' ', (string) $html );
+    $text = html_entity_decode( (string) $text, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+    $text = preg_replace( '/\s+/u', ' ', (string) $text );
+    return trim( (string) $text );
+}
+
 /* Body: append the visible recipe card so schema matches on-page content. */
 add_filter( 'the_content', 'wpap_recipe_card', 9 );
 function wpap_recipe_card( $content ) {

@@ -3,6 +3,16 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.35.0
+
+**FAQPage schema (opt-in)** — folded up from kepoli's `kepoli-faq-schema.php` mu-plugin into `seo-schema.php` as
+a reusable engine capability. `wpap_faq_head()` emits FAQPage JSON-LD built only from a post's own on-page
+"<h2>… FAQ …</h2>" + `<h3>Q</h3><p>A</p>` section (additive, no fabrication). **DEFAULT OFF** —
+`add_filter( 'wpap_faq_schema_enabled', '__return_true' )` to enable; also self-suppresses under an SEO plugin
+and when a site mu-plugin already emits FAQPage (`kepoli_faq_jsonld`), so migrating the capability off the
+mu-plugin never double-emits. First of the reusability "fold the generic mu-plugin capabilities up into the
+engine" ports; ships dormant (no output change) until a site opts in.
+
 ## 9.34.0
 
 **Human-drip scheduling** (ported from build-final). `wpap_compute_schedule()` now accepts a `"drip:N"` window
