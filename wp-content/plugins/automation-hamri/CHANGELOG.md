@@ -3,6 +3,18 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.34.0
+
+**Human-drip scheduling** (ported from build-final). `wpap_compute_schedule()` now accepts a `"drip:N"` window
+in addition to a numeric hours window: `wpap_compute_drip_schedule()` queues each post AFTER the latest
+already-scheduled one, spaced ~14h-daytime-window / N (jittered) and nudged into 08:00–22:00 site-local, so a
+batch fans out into a natural cadence over `ceil(total/N)` days instead of a random cluster or a 3am post — a
+more human publish signal for search + AdSense. Chains off the real `future` queue (`wpap_last_scheduled_ts_gmt`),
+so it self-corrects as posts publish/are deleted. `wpap_parse_schedule_window()` parses `drip:N` or hours; the
+**REST publish endpoint** now takes `schedule_window: "drip:N"`. `wpap_publish_article()` passes the window
+through untyped so the string survives. Backward-compatible: numeric windows behave exactly as before. (Admin
+Direct-Publish UI still sends hours; a `drip:N` field there is a small follow-up.)
+
 ## 9.33.0
 
 **REST publish endpoint** `POST /wp-json/wpap/v1/publish` (ported from build-final): headless/programmatic

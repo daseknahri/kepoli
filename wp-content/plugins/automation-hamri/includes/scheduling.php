@@ -14,6 +14,11 @@ function wpap_last_scheduled_ts_gmt() {
 }
 
 function wpap_compute_schedule( $window_hours, $index = null, $total = null ) {
+    /* Human "drip" mode: "drip:N" queues each post AFTER the last scheduled one, ~N/day, daytime only —
+       chained off the real 'future' queue (so it ignores index/total, which drive the even-spread below). */
+    if ( is_string( $window_hours ) && preg_match( '/^drip:(\d{1,3})$/', $window_hours, $wpap_drip_m ) ) {
+        return wpap_compute_drip_schedule( max( 1, min( 100, (int) $wpap_drip_m[1] ) ) );
+    }
     $window_hours = (float) $window_hours;
 
     if ( $window_hours <= 0 ) {
@@ -75,6 +80,60 @@ function wpap_compute_schedule( $window_hours, $index = null, $total = null ) {
         'ts_gmt'   => $ts_gmt,
         'label'    => get_date_from_gmt( $date_gmt, 'M j, Y g:i A' ),
     );
+}
+
+/**
+ * Human-like DRIP schedule: queue each post AFTER the latest already-scheduled one, spaced ~24h/$per_day
+ * (jittered) and nudged into daytime hours (08:00–22:00 site-local). Because publishing submits items one at
+ * a time, a whole batch fans out into a natural cadence over ceil(total/$per_day) days instead of all at once
+ * or in a random cluster — a more human publish signal for search + AdSense than a 3am post. Chains off the
+ * real 'future' queue via wpap_last_scheduled_ts_gmt(), so it self-corrects as posts publish or are deleted.
+ *
+ * @param int $per_day Target posts per day (1–100).
+ * @return array{status:string,date:string,date_gmt:string,ts_gmt:int,label:string}
+ */
+function wpap_compute_drip_schedule( $per_day ) {
+    $per_day = max( 1, min( 100, (int) $per_day ) );
+    /* Space by the ~14h DAYTIME window (08:00–22:00), not 24h, so ~$per_day posts actually land per day
+       (night times roll to the next morning below, which would otherwise compress the real rate). */
+    $gap     = (int) max( 5 * MINUTE_IN_SECONDS, ( 14 * HOUR_IN_SECONDS ) / $per_day );
+    $last_ts = wpap_last_scheduled_ts_gmt();                     /* latest 'future' post; chain after it */
+    $base    = max( time() + 5 * MINUTE_IN_SECONDS, $last_ts );
+    $jitter  = wp_rand( (int) round( -0.20 * $gap ), (int) round( 0.30 * $gap ) );  /* ±spacing, not robotic */
+    $ts_gmt  = $base + $gap + $jitter;
+
+    /* Keep it human: land between 08:00 and 22:00 site-local; else roll to the next morning + a little jitter. */
+    try {
+        $dt = new DateTime( '@' . $ts_gmt );
+        $dt->setTimezone( wp_timezone() );
+        $hour = (int) $dt->format( 'G' );
+        if ( $hour < 8 ) {
+            $dt->setTime( 8, wp_rand( 0, 59 ) );
+            $dt->modify( '+' . wp_rand( 0, 150 ) . ' minutes' );
+        } elseif ( $hour >= 22 ) {
+            $dt->modify( '+1 day' )->setTime( 8, wp_rand( 0, 59 ) );
+            $dt->modify( '+' . wp_rand( 0, 150 ) . ' minutes' );
+        }
+        $ts_gmt = $dt->getTimestamp();
+    } catch ( \Exception $e ) { /* keep the raw $ts_gmt on any timezone hiccup */ }
+
+    $date_gmt = gmdate( 'Y-m-d H:i:s', $ts_gmt );
+    return array(
+        'status'   => 'future',
+        'date'     => get_date_from_gmt( $date_gmt ),
+        'date_gmt' => $date_gmt,
+        'ts_gmt'   => $ts_gmt,
+        'label'    => get_date_from_gmt( $date_gmt, 'M j, Y g:i A' ),
+    );
+}
+
+/* Parse a "Schedule" value: a window in hours (0–168), or the human "drip:N" mode (N posts/day). */
+function wpap_parse_schedule_window( $raw ) {
+    $raw = sanitize_text_field( wp_unslash( (string) $raw ) );
+    if ( preg_match( '/^drip:(\d{1,3})$/', $raw, $m ) ) {
+        return 'drip:' . max( 1, min( 100, (int) $m[1] ) );
+    }
+    return max( 0.0, min( 168.0, (float) $raw ) );
 }
 
 /**

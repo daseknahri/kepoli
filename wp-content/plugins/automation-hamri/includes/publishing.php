@@ -199,7 +199,7 @@ function wpap_ajax_bulk_import_distribution() {
  *
  * $item keys: title, content, imageUrl|image_url|image, hook|fb_text|comment,
  *             category (name or id, optional), parts (int, optional)
- * $opts keys: default_parts (int, default 1), schedule_window (float hrs, default 0),
+ * $opts keys: default_parts (int, default 1), schedule_window (float hrs 0–168, or "drip:N" string, default 0),
  *             default_category (string|int, optional),
  *             source_key (string, optional — stored as _wpap_source_key meta for dedup)
  * @return int|WP_Error
@@ -303,7 +303,7 @@ function wpap_publish_article( array $item, array $opts = array() ) {
 
     /* ── options ── */
     $default_parts    = isset( $opts['default_parts'] ) ? intval( $opts['default_parts'] ) : 1;
-    $schedule_window  = isset( $opts['schedule_window'] ) ? (float) $opts['schedule_window'] : 0;
+    $schedule_window  = isset( $opts['schedule_window'] ) ? $opts['schedule_window'] : 0;  /* float hours OR a "drip:N" string — wpap_compute_schedule() handles both */
     /* Ordered scheduling: the batch position + size, so scheduled posts go live
        in submission order (spread evenly across the window) instead of random. */
     $schedule_index   = isset( $opts['schedule_index'] ) ? (int) $opts['schedule_index'] : null;
@@ -2061,8 +2061,8 @@ add_action( 'wp_ajax_wpap_get_posts', 'wpap_ajax_get_posts' );
    Direct Publish (bodies, [[link]] tokens, keywords, recipe, SEO). Lets an external
    tool push a batch without a live wp-admin session, so publishing can be fully
    automated. Per-item try/catch so one bad row can't wedge the batch.
-   Body: { items:[ contract objects ], num_parts?:1-10, schedule_window?:0-168
-          (hours; flat even-spread across the window), category?:name|id }.
+   Body: { items:[ contract objects ], num_parts?:1-10, schedule_window?:0-168 hours (even-spread)
+          OR "drip:N" (N posts/day, daytime, queued after the last), category?:name|id }.
 ════════════════════════════════════════════ */
 add_action( 'rest_api_init', 'wpap_rest_register_routes' );
 function wpap_rest_register_routes() {
@@ -2082,9 +2082,7 @@ function wpap_rest_publish( WP_REST_Request $request ) {
     $parts = (int) $request->get_param( 'num_parts' );
     if ( $parts < 1 )  { $parts = 1; }
     if ( $parts > 10 ) { $parts = 10; }
-    $schedule_window = (float) ( $request->get_param( 'schedule_window' ) ?? 0 );  /* hours, flat even-spread */
-    if ( $schedule_window < 0 )   { $schedule_window = 0; }
-    if ( $schedule_window > 168 ) { $schedule_window = 168; }                       /* cap at 1 week */
+    $schedule_window = wpap_parse_schedule_window( $request->get_param( 'schedule_window' ) ?? 0 );  /* hours 0–168, or "drip:N" (N posts/day, daytime) */
     $default_category = sanitize_text_field( (string) ( $request->get_param( 'category' ) ?? '' ) );
 
     $created = array(); $skipped = 0; $failed = 0; $messages = array();
