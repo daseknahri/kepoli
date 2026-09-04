@@ -2,16 +2,18 @@
 /**
  * Plugin Name: Kepoli Noindex Remedies (AdSense-review YMYL shield)
  * Description: Keeps the folk-remedy (YMYL) content out of the crawlable/indexed footprint while
- *   kepoli is under AdSense review, so the site reads as a food + kitchen-wellness blog. Four
- *   coordinated actions, all gated on ONE env toggle KEPOLI_NOINDEX_REMEDIES (default ON; set to 0
+ *   kepoli is under AdSense review, so the site reads as a food + kitchen-wellness blog. The remedy
+ *   slug set lives in kepoli-shared.php (one 'natural-remedies' category after the 2026-09-01 merge).
+ *   Five coordinated actions, all gated on ONE env toggle KEPOLI_NOINDEX_REMEDIES (default ON; set to 0
  *   after approval to fully reverse):
- *     1. sets Automation Hamri's _wpap_noindex marker on every post in the remedy categories
+ *     1. sets Automation Hamri's _wpap_noindex marker on every post in the remedy category
  *        (its 9.27.0 wp_robots filter then adds `noindex` to those pages' robots meta),
  *     2. noindexes the remedy CATEGORY ARCHIVE pages (the plugin's own filter covers singular only),
  *     3. drops remedy posts from the core XML sitemap (so crawlers don't discover them there),
- *     4. hides the remedy categories from the theme footer's "Explore" list.
+ *     4. hides the remedy category from the theme footer's "Explore" list,
+ *     5. drops the remedy category from the PRIMARY nav (consistent de-emphasis during review).
  *   Fully reversible: KEPOLI_NOINDEX_REMEDIES=0 re-indexes the posts + archives, restores the
- *   sitemap entries, and restores the footer links on the next admin/cron tick.
+ *   sitemap entries, and restores the footer + nav links on the next admin/cron tick.
  *
  * @package Kepoli
  */
@@ -20,10 +22,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-/** The remedy (YMYL folk-cure) category slugs — the only content this shield touches. */
+/** The remedy (YMYL folk-cure) category slugs — the only content this shield touches. Single source of
+ *  truth in kepoli-shared.php (post-2026-09-01-merge this is the one 'natural-remedies' category); the
+ *  fallback keeps the shield working even if the shared helper ever fails to load. */
 function kepoli_noindex_remedy_slugs(): array
 {
-    return ['colds-respiratory', 'skin-wounds-teeth', 'aches-pains-fever'];
+    return function_exists('kepoli_remedy_slugs') ? kepoli_remedy_slugs() : ['natural-remedies'];
 }
 
 /** Remedy category term IDs (memoized per request). */
@@ -54,6 +58,23 @@ function kepoli_noindex_remedies_on(): bool
 add_filter('vr_hide_footer_categories', static function (array $slugs): array {
     return kepoli_noindex_remedies_on() ? array_merge($slugs, kepoli_noindex_remedy_slugs()) : $slugs;
 });
+
+/* (5) While the shield is on, also drop the remedy category from the PRIMARY nav — it is already noindexed
+   and hidden from the footer, so featuring it in the top nav during AdSense review is inconsistent and
+   surfaces YMYL folk-remedy content prominently. Posts stay reachable by direct link (with the disclaimer).
+   Fully reversible: KEPOLI_NOINDEX_REMEDIES=0 restores the nav item. */
+add_filter('wp_nav_menu_objects', static function ($items, $args) {
+    if (!kepoli_noindex_remedies_on() || !is_object($args) || ($args->theme_location ?? '') !== 'primary') {
+        return $items;
+    }
+    $ids = kepoli_noindex_remedy_ids();
+    if (empty($ids) || !is_array($items)) {
+        return $items;
+    }
+    return array_values(array_filter($items, static function ($it) use ($ids) {
+        return !(($it->object ?? '') === 'category' && in_array((int) ($it->object_id ?? 0), $ids, true));
+    }));
+}, 10, 2);
 
 /* (2) Noindex the remedy CATEGORY ARCHIVE pages via WP core's wp_robots API. */
 add_filter('wp_robots', static function ($robots) {
@@ -99,7 +120,9 @@ function kepoli_noindex_remedies_sync(): void
         return;
     }
     $want   = kepoli_noindex_remedies_on() ? '1' : '0';
-    $marker = 'kepoli_noindex_remedies_state';
+    // _v2: the remedy categories were merged into 'natural-remedies' on 2026-09-01; bumping the marker forces
+    // a one-time re-apply against the new category so posts that were never (re)marked get the _wpap_noindex flag.
+    $marker = 'kepoli_noindex_remedies_state_v2';
     if ((string) get_option($marker, '') === $want) {
         return; // already applied for this state
     }

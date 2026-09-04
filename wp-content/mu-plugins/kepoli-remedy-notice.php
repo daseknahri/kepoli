@@ -4,8 +4,9 @@
  * Description: Prepends a short medical-disclaimer notice to the TOP of single posts in the
  *   home-remedy categories. Google's YMYL guidance favours a disclaimer near the top of health
  *   content, not only in the footer; the full disclaimer still renders in the body and links to
- *   /medical-disclaimer/. Scoped to the three remedy categories so recipes/tips/stories are
- *   untouched, and applies automatically to future remedy posts.
+ *   /medical-disclaimer/. Scoped to the remedy category (kepoli-shared.php — 'natural-remedies' after
+ *   the 2026-09-01 merge) so recipes/tips/stories are untouched, and applies automatically to future
+ *   remedy posts.
  *
  * @package Kepoli
  */
@@ -15,12 +16,13 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * The remedy category slugs. Kept in one place so it matches the autoseed course-backfill
- * and the archive-canonical logic.
+ * The remedy category slug(s) — single source of truth in kepoli-shared.php (one 'natural-remedies'
+ * category after the 2026-09-01 merge). The fallback keeps the disclaimer working even if the shared
+ * helper ever fails to load.
  */
 function kepoli_remedy_category_slugs(): array
 {
-    return ['colds-respiratory', 'skin-wounds-teeth', 'aches-pains-fever'];
+    return function_exists('kepoli_remedy_slugs') ? kepoli_remedy_slugs() : ['natural-remedies'];
 }
 
 /*
