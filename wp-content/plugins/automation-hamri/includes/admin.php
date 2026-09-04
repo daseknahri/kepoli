@@ -581,6 +581,63 @@ function wpap_render_settings() {
                 </tr>
             </table>
 
+            <?php /* ── Custom placements (Option 2): unlimited, up to 10 — {pos, after, code} rows ── */ ?>
+            <h3 style="margin-top:20px;">Custom placements <span style="font-weight:400;color:#666;">— add your own, up to 10</span></h3>
+            <p class="description" style="max-width:820px;">Place an extra unit exactly where you want it: <strong>after paragraph&nbsp;N</strong>, at the <strong>top</strong> of the article, or <strong>before the related posts</strong>. Each row needs its own AdSense code, and all placements honour the min-gap / max-ads caps below. A row left blank is simply dropped on save.</p>
+            <div id="wpap-cust-rows">
+                <?php
+                $wpap_custom_rows = ( isset( $ads['custom'] ) && is_array( $ads['custom'] ) ) ? $ads['custom'] : array();
+                foreach ( $wpap_custom_rows as $wpap_cr ) :
+                    $cr_pos   = isset( $wpap_cr['pos'] ) ? (string) $wpap_cr['pos'] : 'after';
+                    $cr_after = isset( $wpap_cr['after'] ) ? (int) $wpap_cr['after'] : 2;
+                    $cr_code  = isset( $wpap_cr['code'] ) ? (string) $wpap_cr['code'] : '';
+                    ?>
+                    <div class="wpap-cust-row" style="border:1px solid #e2e0d8;border-radius:8px;padding:12px 14px;margin:0 0 12px;max-width:820px;background:#fcfbf8">
+                        <label>Position
+                            <select name="wpap_ads_cust_pos[]">
+                                <option value="after" <?php selected( $cr_pos, 'after' ); ?>>After paragraph</option>
+                                <option value="top" <?php selected( $cr_pos, 'top' ); ?>>Top of article</option>
+                                <option value="before_related" <?php selected( $cr_pos, 'before_related' ); ?>>Before related posts</option>
+                            </select>
+                        </label>
+                        &nbsp; ¶ <input type="number" name="wpap_ads_cust_after[]" min="1" max="50" step="1" value="<?php echo esc_attr( (string) $cr_after ); ?>" class="small-text" title="Paragraph number (used only for the After-paragraph position)" />
+                        <button type="button" class="button-link wpap-cust-remove" style="color:#b32d2e;float:right">Remove</button>
+                        <textarea name="wpap_ads_cust_code[]" rows="3" class="large-text code" placeholder="Paste an AdSense unit…"><?php echo esc_textarea( $cr_code ); ?></textarea>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <template id="wpap-cust-tpl">
+                <div class="wpap-cust-row" style="border:1px solid #e2e0d8;border-radius:8px;padding:12px 14px;margin:0 0 12px;max-width:820px;background:#fcfbf8">
+                    <label>Position
+                        <select name="wpap_ads_cust_pos[]">
+                            <option value="after">After paragraph</option>
+                            <option value="top">Top of article</option>
+                            <option value="before_related">Before related posts</option>
+                        </select>
+                    </label>
+                    &nbsp; ¶ <input type="number" name="wpap_ads_cust_after[]" min="1" max="50" step="1" value="2" class="small-text" title="Paragraph number (used only for the After-paragraph position)" />
+                    <button type="button" class="button-link wpap-cust-remove" style="color:#b32d2e;float:right">Remove</button>
+                    <textarea name="wpap_ads_cust_code[]" rows="3" class="large-text code" placeholder="Paste an AdSense unit…"></textarea>
+                </div>
+            </template>
+            <p><button type="button" class="button" id="wpap-add-placement">+ Add placement</button> &nbsp;<span class="description">Up to 10. Saved with the same “Save changes” button below.</span></p>
+            <script>
+            (function(){
+                var addBtn = document.getElementById('wpap-add-placement');
+                var rows   = document.getElementById('wpap-cust-rows');
+                var tpl    = document.getElementById('wpap-cust-tpl');
+                if ( ! addBtn || ! rows || ! tpl ) { return; }
+                addBtn.addEventListener('click', function(){
+                    if ( rows.querySelectorAll('.wpap-cust-row').length >= 10 ) { window.alert('Up to 10 custom placements.'); return; }
+                    rows.appendChild( tpl.content.cloneNode( true ) );
+                });
+                rows.addEventListener('click', function(e){
+                    var b = e.target && e.target.closest ? e.target.closest('.wpap-cust-remove') : null;
+                    if ( b ) { var row = b.closest('.wpap-cust-row'); if ( row ) { row.remove(); } }
+                });
+            })();
+            </script>
+
             <?php /* ── Content options (publishing guards) ── */ ?>
             <?php
             $copts_ui = get_option( 'wpap_content_opts', array() );

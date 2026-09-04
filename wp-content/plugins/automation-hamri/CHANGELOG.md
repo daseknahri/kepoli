@@ -3,6 +3,16 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.32.0
+
+Settings → AdSense: **rendered the Custom-placements admin UI** (repeatable rows + "Add placement" button).
+The model, save handler (`wpap_ads_cust_pos/after/code[]` → `wpap_ads_inject['custom']`, capped at 10),
+normalizer, front-end injector and the live-preview JS all already existed — only the markup + the row
+add/remove JS were missing, so an entire "place a unit after paragraph N / at top / before related" revenue
+lever was unreachable dead code. Each row is `{pos: after|top|before_related, after: 1-50, code}`; blank rows
+drop on save; honours the same min-gap/max-ads caps and updates the live preview. Admin-only; no front-end
+change.
+
 ## 9.31.0
 
 Noindex now also excludes the post from the core XML sitemap. `wpap_sitemap_exclude_noindex` filters
