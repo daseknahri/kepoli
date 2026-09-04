@@ -9,7 +9,8 @@
  *     1. sets Automation Hamri's _wpap_noindex marker on every post in the remedy category
  *        (its 9.27.0 wp_robots filter then adds `noindex` to those pages' robots meta),
  *     2. noindexes the remedy CATEGORY ARCHIVE pages (the plugin's own filter covers singular only),
- *     3. drops remedy posts from the core XML sitemap (so crawlers don't discover them there),
+ *     3. drops remedy posts AND the remedy category-archive term from the core XML sitemap (so a
+ *        noindexed archive isn't also advertised for indexing — no "submitted URL marked noindex"),
  *     4. hides the remedy category from the theme footer's "Explore" list,
  *     5. drops the remedy category from the PRIMARY nav (consistent de-emphasis during review).
  *   Fully reversible: KEPOLI_NOINDEX_REMEDIES=0 re-indexes the posts + archives, restores the
@@ -103,6 +104,25 @@ add_filter('wp_sitemaps_posts_query_args', static function ($args, $post_type) {
             'operator' => 'NOT IN',
         ];
         $args['tax_query'] = $tax;
+    }
+    return $args;
+}, 10, 2);
+
+/* (3b) Drop the remedy CATEGORY-ARCHIVE term from the core taxonomy sitemap. Action 2 noindexes that
+   archive, so listing it in wp-sitemap-taxonomies-category-*.xml is contradictory (Google reports it as
+   "Submitted URL marked noindex" and it keeps the thin remedy archive in the crawlable footprint). The
+   `exclude` term-id list is merged in so any other filter's exclusions survive. */
+add_filter('wp_sitemaps_taxonomies_query_args', static function ($args, $taxonomy) {
+    if ('category' !== $taxonomy || !kepoli_noindex_remedies_on()) {
+        return $args;
+    }
+    $ids = kepoli_noindex_remedy_ids();
+    if ($ids) {
+        $existing = array();
+        if (isset($args['exclude'])) {
+            $existing = is_array($args['exclude']) ? $args['exclude'] : wp_parse_id_list($args['exclude']);
+        }
+        $args['exclude'] = array_values(array_unique(array_map('intval', array_merge($existing, $ids))));
     }
     return $args;
 }, 10, 2);
