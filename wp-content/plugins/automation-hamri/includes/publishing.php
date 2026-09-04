@@ -2052,3 +2052,77 @@ function wpap_build_clean_hook( string $fb_text, string $lang, string $title = '
    with plugin table as fallback.
 ════════════════════════════════════════════ */
 add_action( 'wp_ajax_wpap_get_posts', 'wpap_ajax_get_posts' );
+
+/* ════════════════════════════════════════════
+   9. REST PUBLISH ENDPOINT  —  POST /wp-json/wpap/v1/publish
+   Opt-in headless/programmatic publish via a WordPress Application Password
+   (auth = manage_options; no anonymous access, registers no front-end output).
+   Publishes each item through wpap_publish_article() — the SAME full contract as
+   Direct Publish (bodies, [[link]] tokens, keywords, recipe, SEO). Lets an external
+   tool push a batch without a live wp-admin session, so publishing can be fully
+   automated. Per-item try/catch so one bad row can't wedge the batch.
+   Body: { items:[ contract objects ], num_parts?:1-10, schedule_window?:0-168
+          (hours; flat even-spread across the window), category?:name|id }.
+════════════════════════════════════════════ */
+add_action( 'rest_api_init', 'wpap_rest_register_routes' );
+function wpap_rest_register_routes() {
+    register_rest_route( 'wpap/v1', '/publish', array(
+        'methods'             => 'POST',
+        'callback'            => 'wpap_rest_publish',
+        'permission_callback' => function () { return current_user_can( 'manage_options' ); },
+    ) );
+}
+function wpap_rest_publish( WP_REST_Request $request ) {
+    $items = $request->get_param( 'items' );
+    if ( ! is_array( $items ) || empty( $items ) ) {
+        return new WP_REST_Response( array( 'ok' => false, 'error' => 'Provide a non-empty "items" array.' ), 400 );
+    }
+    if ( count( $items ) > 2000 ) { $items = array_slice( $items, 0, 2000 ); }   /* sane per-request cap */
+
+    $parts = (int) $request->get_param( 'num_parts' );
+    if ( $parts < 1 )  { $parts = 1; }
+    if ( $parts > 10 ) { $parts = 10; }
+    $schedule_window = (float) ( $request->get_param( 'schedule_window' ) ?? 0 );  /* hours, flat even-spread */
+    if ( $schedule_window < 0 )   { $schedule_window = 0; }
+    if ( $schedule_window > 168 ) { $schedule_window = 168; }                       /* cap at 1 week */
+    $default_category = sanitize_text_field( (string) ( $request->get_param( 'category' ) ?? '' ) );
+
+    $created = array(); $skipped = 0; $failed = 0; $messages = array();
+    foreach ( array_values( $items ) as $i => $item ) {
+        if ( ! is_array( $item ) ) { $failed++; $messages[] = sprintf( 'Item %d: not an object.', $i + 1 ); continue; }
+        try {
+            $opts = array(
+                'default_parts'    => $parts,
+                'schedule_window'  => $schedule_window,
+                'default_category' => $default_category,
+            );
+            $r = wpap_publish_article( $item, $opts );
+            if ( is_wp_error( $r ) ) {
+                $skipped++; $messages[] = sprintf( 'Item %d skipped: %s', $i + 1, $r->get_error_message() );
+                continue;
+            }
+            $pid  = (int) $r;
+            $post = get_post( $pid );
+            $created[] = array(
+                'post_id'   => $pid,
+                'title'     => $post ? $post->post_title : '',
+                'url'       => (string) wpap_public_permalink( $pid ),
+                'status'    => $post ? $post->post_status : '',
+                'scheduled' => ( $post && 'future' === $post->post_status ) ? $post->post_date : '',
+            );
+        } catch ( \Throwable $e ) {
+            $failed++;
+            $messages[] = sprintf( 'Item %d fatal: %s', $i + 1, $e->getMessage() );
+            error_log( '[Automation Hamri] REST publish crashed on item ' . ( $i + 1 ) . ': ' . $e->getMessage() );
+        }
+    }
+
+    return new WP_REST_Response( array(
+        'ok'       => true,
+        'created'  => count( $created ),
+        'skipped'  => $skipped,
+        'failed'   => $failed,
+        'posts'    => $created,
+        'messages' => array_slice( $messages, 0, 50 ),
+    ), 200 );
+}

@@ -3,6 +3,17 @@
 Newest-first. build-v9 is the modular (`includes/*.php`), full-featured product that keeps its
 front-end (SEO/ads/recipe). See `readme.txt` for the WordPress-directory changelog.
 
+## 9.33.0
+
+**REST publish endpoint** `POST /wp-json/wpap/v1/publish` (ported from build-final): headless/programmatic
+publish via a WordPress Application Password (auth = `manage_options`, no anonymous access, no front-end
+output — additive). Body `{ items:[contract objects], num_parts?:1-10, schedule_window?:0-168 hrs, category? }`;
+each item goes through the same `wpap_publish_article()` full contract as Direct Publish (bodies, `[[link]]`
+tokens, keywords, recipe, SEO), with per-item try/catch and a `created/skipped/failed` summary. Closes the
+last case where publishing needed a live wp-admin session, enabling fully automated publishing. build-v9 uses
+its native flat even-spread scheduling (hours); the build-final `drip:N` humanized cadence is a separate
+follow-up (scheduling.php).
+
 ## 9.32.0
 
 Settings → AdSense: **rendered the Custom-placements admin UI** (repeatable rows + "Add placement" button).
