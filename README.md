@@ -1,6 +1,8 @@
 # Kepoli WordPress Blog
 
-Kepoli is a GitHub-driven WordPress food blog for Romanian recipes and kitchen articles. This repo contains the live site stack, content seed, custom theme, and the clone tooling used to launch future sibling food blogs from the same engine.
+Kepoli is a WordPress **food & everyday-wellness blog (English)**. This repo is the **SITE** layer of a three-part, reusable blog-creator: it holds the live Docker/Coolify stack, content seed, and kepoli-only `wp-content/mu-plugins/`, and **vendors** the shared **theme** (`viral-reader`) and **plugin** (Automation Hamri) into `wp-content/`. Those vendored copies are build artifacts — never edit them here.
+
+> ⚠ Some files under `docs/` (and older phrasing below) predate the 2026 pivot from a Romanian recipe site to the current English food & wellness blog — treat them as historical, not current.
 
 For repeatable cloning and launch steps, use `docs/new-blog-launch-plan.md`. For deeper clone details, use `docs/replicate-food-blog.md`. For a fresh Codex handoff prompt, use `docs/codex-new-site-prompt.md`. For current operating status, use `docs/project-status.md`; for a future-session continuation guide, use `docs/future-session-handoff.md`; for the authoring extraction pipeline, use `docs/content-machine-extraction-map.md`. The most robust path is: create `site-brief.json` with `node scripts/create-site-brief.mjs ... --write`, run `node scripts/start-new-blog.mjs --brief site-brief.json --write`, then run `node scripts/validate-new-blog.mjs --brief site-brief.json`. When changing the shared engine itself, run `node scripts/audit-engine-readiness.mjs` before using it for another clone.
 
@@ -35,7 +37,7 @@ The seed is idempotent for a fresh launch, but after the site is live it should 
 2. In Coolify, create a Docker Compose application from the GitHub repo.
 3. Add the environment variables from `.env.example`.
 4. Assign `https://kepoli.com` to the `wordpress` service on port `80`.
-5. Enable GitHub auto-deploy on push.
+5. **Do NOT enable auto-deploy.** After pushing to GitHub, deploy by clicking **Redeploy** in Coolify **manually** — this is the deliberate production gate (the VPS hosts other live sites; a bad push must never auto-ship).
 6. Do not enable the `seed` profile for normal Coolify deploys. WordPress self-seeds only on first launch, before real content exists.
 
 The `CANONICAL_REDIRECT_HOSTS` value should include any extra hostnames that may reach the app, such as `www.kepoli.com`, `api.kepoli.com`, or `recipe.kepoli.com`. The MU plugin redirects those hosts to `SITE_URL` so Search Console and readers see one canonical site.

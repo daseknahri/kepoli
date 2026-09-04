@@ -4,7 +4,7 @@ This is the short handoff note for Kepoli. For the full continuation guide, read
 
 ## Current Role
 
-Kepoli is the Romanian AdSense-clean food site. Keep it conservative while AdSense approval and consent setup are pending.
+Kepoli is the **English food & everyday-wellness blog**, kept AdSense-clean while AdSense approval + consent setup are pending. (It pivoted from a Romanian recipe site in 2026 — anything here still saying "Romanian" is stale.)
 
 This repo should not be mixed with Dr Purg Jr., viral-health, KuchniaTwist, or other Facebook/ad-network experiments.
 
@@ -20,14 +20,13 @@ KEPOLI_FORCE_RESEED=0
 AI_EXTRACTION_ENABLE=0
 ```
 
-`HISTATS_ENABLE` can become `1` only after `HISTATS_CODE_BASE64` has a real hidden counter snippet. Do not add Monetag, Adsterra, popups, forced redirects, push ads, or aggressive instant ad formats to Kepoli before AdSense approval unless the owner explicitly changes the project strategy.
+**Histats was removed (2026-09-03)** — its snippet runtime-injected third-party data brokers (DTScout / Lotame / OnAudience / Market Metrics), a privacy + AdSense liability; `kepoli-analytics.php` now hard-disables it regardless of `HISTATS_ENABLE`. Analytics is GA4 via Google Site Kit. Do not add Monetag, Adsterra, popups, forced redirects, push ads, or aggressive instant ad formats to Kepoli before AdSense approval unless the owner explicitly changes the project strategy.
 
 ## Content Workflow
 
-- Admin stays English.
-- Public content stays Romanian.
-- Use outside writing tools for title and clean plain-text content only.
-- In WordPress, choose `Reteta` or `Articol`, then use `Completeaza automat`.
+- Admin and public content are **English**.
+- Content is human-voiced and honest; YMYL remedy content carries a top disclaimer and is noindexed during AdSense review.
+- Publish enriched batches via **📦 Direct Publish**, or write in WordPress (choose **Recipe** or **Article**, then auto-fill).
 - Review all generated fields before publish.
 - Use `Pregateste pentru publicare` near the Publish box for the final setup pass.
 - For long posts, use `Impartire automata` or `2 parti` / `3 parti` only when it helps readability.
