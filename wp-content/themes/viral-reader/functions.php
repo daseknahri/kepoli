@@ -15,7 +15,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 if ( ! defined( 'VR_VERSION' ) ) {
-	define( 'VR_VERSION', '1.9.11' );
+	define( 'VR_VERSION', '1.9.12' );
 }
 
 /* ─────────────────────────────────────────────
@@ -553,7 +553,12 @@ function vr_card_meta( $post_id = null ) {
 
 /* Numbered pagination. */
 function vr_pagination() {
-	$links = paginate_links( array( 'type' => 'list', 'mid_size' => 1, 'prev_text' => '&lsaquo;', 'next_text' => '&rsaquo;' ) );
+	/* Give the prev/next arrows a real accessible name — a bare "&lsaquo;/&rsaquo;"
+	   is announced as a stray glyph by TalkBack/VoiceOver. Visible glyph stays via the
+	   aria-hidden span; the .screen-reader-text span carries the name (WCAG 2.4.4/4.1.2). */
+	$vr_prev_txt = '<span aria-hidden="true">&lsaquo;</span><span class="screen-reader-text">' . esc_html__( 'Previous page', 'viral-reader' ) . '</span>';
+	$vr_next_txt = '<span aria-hidden="true">&rsaquo;</span><span class="screen-reader-text">' . esc_html__( 'Next page', 'viral-reader' ) . '</span>';
+	$links = paginate_links( array( 'type' => 'list', 'mid_size' => 1, 'prev_text' => $vr_prev_txt, 'next_text' => $vr_next_txt ) );
 	if ( $links ) {
 		echo '<nav class="vr-pagination" aria-label="' . esc_attr__( 'Posts navigation', 'viral-reader' ) . '">' . wp_kses_post( $links ) . '</nav>';
 	}
@@ -971,52 +976,101 @@ function vr_share_at_end( $content ) {
 }
 
 /**
- * Collapsed "Jump to section" TOC on long posts (>= 3 <h2>s), built client-side from the post's own headings
- * (assigning stable ids so #anchors clear the sticky header via the html{scroll-padding-top} rule). Inserted
- * after the opening paragraph so the drop-cap is preserved; textContent only (no HTML injection). Disable per
- * site with:  add_filter( 'vr_enable_jump_to_section', '__return_false' );
+ * Collapsed "Jump to section" TOC on long posts (>= 3 <h2>s), built SERVER-SIDE and spliced into the content
+ * before it reaches the browser — so it is present at first paint with NO client-side DOM insertion (the old
+ * wp_footer JS version inserted the box after the first paragraph once the page had already painted, shifting
+ * everything below it: a Cumulative Layout Shift on a CWV/AdSense-sensitive, ~99%-mobile surface). Assigns stable
+ * slug ids to each <h2> (so #anchors clear the sticky header via html{scroll-padding-top}) and links to them;
+ * inserted after the opening paragraph so the drop-cap is preserved. Runs at priority 21 — after the recipe card
+ * (9) and end-share (20) — so it sees exactly the headings the old client-side version saw. Zero added JS.
+ * Disable per site with:  add_filter( 'vr_enable_jump_to_section', '__return_false' );
  */
-add_action( 'wp_footer', 'vr_jump_to_section' );
-function vr_jump_to_section() {
-	if ( ! is_singular( 'post' ) || ! apply_filters( 'vr_enable_jump_to_section', true ) ) {
+add_filter( 'the_content', 'vr_jump_to_section', 21 );
+function vr_jump_to_section( $content ) {
+	if ( ! is_singular( 'post' ) || ! in_the_loop() || ! is_main_query()
+		|| ! apply_filters( 'vr_enable_jump_to_section', true )
+		|| false !== strpos( $content, 'vr-toc' ) ) {
+		return $content;
+	}
+	if ( ! preg_match_all( '/<h2\b[^>]*>.*?<\/h2>/is', $content, $probe ) || count( $probe[0] ) < 3 ) {
+		return $content;
+	}
+
+	$used  = array();
+	$items = '';
+	$content = preg_replace_callback(
+		'/<h2\b([^>]*)>(.*?)<\/h2>/is',
+		function ( $mm ) use ( &$used, &$items ) {
+			$attrs = $mm[1];
+			$inner = $mm[2];
+			$text  = trim( html_entity_decode( wp_strip_all_tags( $inner ), ENT_QUOTES, 'UTF-8' ) );
+			if ( '' === $text ) {
+				return $mm[0];
+			}
+			$id = '';
+			if ( preg_match( '/\bid\s*=\s*("|\')(.*?)\1/i', $attrs, $idm ) ) {
+				$id = $idm[2];
+			}
+			$out = $mm[0];
+			if ( '' === $id ) {
+				$base = trim( preg_replace( '/[^a-z0-9]+/i', '-', $text ), '-' );
+				$base = '' === $base ? 'section' : strtolower( $base );
+				$id   = $base;
+				$n    = 2;
+				while ( isset( $used[ $id ] ) ) {
+					$id = $base . '-' . $n;
+					$n++;
+				}
+				$out = '<h2' . $attrs . ' id="' . esc_attr( $id ) . '">' . $inner . '</h2>';
+			}
+			$used[ $id ] = true;
+			$items      .= '<li><a href="#' . esc_attr( $id ) . '">' . esc_html( $text ) . '</a></li>';
+			return $out;
+		},
+		$content
+	);
+
+	if ( '' === $items ) {
+		return $content;
+	}
+	$toc = '<details class="vr-toc"><summary class="vr-toc__summary">'
+		. esc_html__( 'Jump to section', 'viral-reader' )
+		. '</summary><ul class="vr-toc__list">' . $items . '</ul></details>';
+
+	/* Splice after the first closing </p> so the drop-cap opening paragraph is preserved. */
+	$pos = stripos( $content, '</p>' );
+	if ( false !== $pos ) {
+		return substr( $content, 0, $pos + 4 ) . $toc . substr( $content, $pos + 4 );
+	}
+	return $toc . $content;
+}
+
+/**
+ * Back-to-top control on long single posts. Facebook's in-app browser (the dominant referral surface) disables
+ * the OS "tap the status bar to scroll to top" gesture, so a long article (content + share + TOC + related +
+ * author + comments) leaves no quick way up. Emits a 44x44 fixed button, hidden until a tiny inline script adds
+ * .is-visible past ~1.2 viewports; JS-off degrades to nothing. Disable per site with:
+ *   add_filter( 'vr_enable_back_to_top', '__return_false' );
+ */
+add_action( 'wp_footer', 'vr_back_to_top' );
+function vr_back_to_top() {
+	if ( ! is_singular( 'post' ) || ! apply_filters( 'vr_enable_back_to_top', true ) ) {
 		return;
 	}
+	printf(
+		'<button type="button" class="vr-to-top" aria-label="%s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>',
+		esc_attr__( 'Back to top', 'viral-reader' )
+	);
 	?>
 <script>
 (function(){
-  var content=document.querySelector('.entry-content');
-  if(!content) return;
-  var heads=content.querySelectorAll('h2');
-  if(heads.length<3) return;
-  var used={};
-  var list=document.createElement('ul');
-  list.className='vr-toc__list';
-  heads.forEach(function(h){
-    var id=h.id;
-    if(!id){
-      var base=(h.textContent||'').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'section';
-      id=base; var n=2;
-      while(used[id]||document.getElementById(id)){ id=base+'-'+(n++); }
-      h.id=id;
-    }
-    used[id]=true;
-    var li=document.createElement('li');
-    var a=document.createElement('a');
-    a.href='#'+id;
-    a.textContent=h.textContent;
-    li.appendChild(a);
-    list.appendChild(li);
-  });
-  var details=document.createElement('details');
-  details.className='vr-toc';
-  var sum=document.createElement('summary');
-  sum.className='vr-toc__summary';
-  sum.textContent='Jump to section';
-  details.appendChild(sum);
-  details.appendChild(list);
-  var firstP=content.querySelector('p');
-  if(firstP){ firstP.insertAdjacentElement('afterend', details); }
-  else { content.insertBefore(details, content.firstChild); }
+  var btn=document.querySelector('.vr-to-top');
+  if(!btn) return;
+  var ticking=false;
+  function apply(){ btn.classList.toggle('is-visible', window.scrollY > window.innerHeight*1.2); ticking=false; }
+  window.addEventListener('scroll', function(){ if(!ticking){ window.requestAnimationFrame(apply); ticking=true; } }, {passive:true});
+  btn.addEventListener('click', function(){ window.scrollTo({top:0, behavior:(matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth')}); });
+  apply();
 })();
 </script>
 	<?php

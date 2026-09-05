@@ -24,6 +24,11 @@
 		toggle.addEventListener('click', function () {
 			var open = document.body.classList.toggle('nav-open');
 			toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+			/* Move focus into the menu on open. #site-nav is BEFORE .nav-toggle in the
+			   DOM, so without this a keyboard / Switch Access / linear-swipe user would
+			   tab PAST the just-revealed links; the Escape handler restores focus to the
+			   toggle on close. Mirrors the search-reveal focus pattern below. */
+			if (open) { var firstLink = nav.querySelector('a'); if (firstLink) { firstLink.focus(); } }
 		});
 		nav.addEventListener('click', function (e) {
 			if (e.target.tagName === 'A') {

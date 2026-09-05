@@ -149,8 +149,13 @@ while ( have_posts() ) :
 			<?php endif; ?>
 
 			<?php
-			$vr_prev = get_previous_post();
-			$vr_next = get_next_post();
+			/* Same-category prev/next keeps the reader on-topic (topic retention for the
+			   ~99% Facebook→article audience). Falls back gracefully: the guard below omits
+			   the block when there's no same-category neighbour. Opt out with
+			   add_filter( 'vr_same_category_post_nav', '__return_false' ) for chronological. */
+			$vr_same_cat = (bool) apply_filters( 'vr_same_category_post_nav', true );
+			$vr_prev = get_previous_post( $vr_same_cat );
+			$vr_next = get_next_post( $vr_same_cat );
 			if ( $vr_prev || $vr_next ) :
 				?>
 				<nav class="post-navigation-simple" aria-label="<?php esc_attr_e( 'Post navigation', 'viral-reader' ); ?>">

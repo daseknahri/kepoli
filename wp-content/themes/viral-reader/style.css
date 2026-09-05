@@ -4,7 +4,7 @@ Theme URI: https://wa.me/212637122491
 Author: Oussama Hamri
 Author URI: https://wa.me/212637122491
 Description: A warm, editorial, mobile-first blog theme for viral story & health content — cream "paper" palette, serif reading column with a sans UI, a cinematic hero, a sticky reading sidebar, and ad-native spacing. Fast and light (system fonts, no jQuery, light mode). Pairs with the WP Automator Pro plugin: header/sidebar/footer ad zones and native in-content ad styling. English throughout.
-Version: 1.9.11
+Version: 1.9.12
 Requires at least: 5.5
 Tested up to: 6.6
 Requires PHP: 7.2
@@ -84,6 +84,17 @@ th{background:var(--paper-soft);font-weight:700}
    layout/paint — smoother scroll + lower INP on the highest-traffic template. */
 .vr-progress{position:fixed;top:0;left:0;height:3px;width:100%;transform:scaleX(0);transform-origin:0 50%;background:linear-gradient(90deg,var(--olive),var(--copper));z-index:1200;will-change:transform}
 body.admin-bar .vr-progress{top:32px}
+
+/* ===== Back to top (single posts; vr_back_to_top) ===== */
+/* Facebook's in-app browser (the dominant referral surface) disables the OS
+   "tap the status bar to scroll to top" gesture, so long articles need an on-page
+   way up. Hidden until JS adds .is-visible past ~1.2 viewports; JS-off = no-op.
+   The safe-area inset keeps it clear of the iOS home indicator. */
+.vr-to-top{position:fixed;inset-block-end:calc(18px + env(safe-area-inset-bottom,0px));inset-inline-end:16px;width:44px;height:44px;border-radius:50%;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-lift);color:var(--ink);display:none;align-items:center;justify-content:center;z-index:80;cursor:pointer;transition:color .15s,border-color .15s,transform .15s}
+.vr-to-top.is-visible{display:inline-flex}
+.vr-to-top:hover{border-color:var(--copper);color:var(--copper);text-decoration:none}
+.vr-to-top:active{transform:translateY(1px)}
+.vr-to-top svg{width:20px;height:20px}
 
 /* ===== Header ===== */
 /* Solid background (no backdrop-filter): a blurred sticky bar repaints its whole
@@ -208,6 +219,12 @@ body.nav-open .nav-toggle span::after{top:0;transform:rotate(-45deg)}
    cleaner than a filled pill in a dense grid). */
 .post-card .content-chip--category{background:none;color:var(--eyebrow);padding:0;font-size:.68rem;letter-spacing:.11em}
 .post-card .content-chip--category:hover{background:none;color:var(--copper);text-decoration:none}
+/* The card category eyebrow sits (z-index:2) above the whole-card stretched link
+   (z-index:1). With padding:0 its hit box was ~13px tall, so a near-miss tap fell
+   through to the card link. Give it a >=24px hit box (WCAG 2.5.8) without changing
+   its visual footprint: the negative block margin cancels the added height, so the
+   8px chip->title gap and title position stay identical on every breakpoint. */
+.post-card .content-chip--category{display:inline-flex;align-items:center;min-height:24px;padding-block:.5em;margin-block:-.5em}
 
 /* lead card on listings */
 .post-card.is-lead{grid-column:1/-1;flex-direction:row;align-items:stretch}
@@ -295,9 +312,13 @@ body.nav-open .nav-toggle span::after{top:0;transform:rotate(-45deg)}
 .share-tools__button.is-copied::after{content:attr(data-copied);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--olive);color:#fff;font-family:var(--sans);font-size:.7rem;font-weight:700;letter-spacing:.03em;padding:.3em .55em;border-radius:6px;white-space:nowrap;pointer-events:none;box-shadow:var(--shadow);z-index:3}
 .entry-content{font-size:1.05rem;line-height:1.72;font-feature-settings:"kern","liga","onum","pnum"}
 .entry-content>p:first-of-type{font-size:1.12rem}
-/* Editorial drop-cap: one accent initial opens the story. Skips gracefully on
-   very short first paragraphs and never overlaps following lines. */
+/* Editorial drop-cap: one accent initial opens the story. */
 .entry-content>p:first-of-type::first-letter{font-family:var(--serif);font-size:3.1rem;line-height:.82;font-weight:600;color:var(--copper);float:left;padding-block:.06em 0;padding-inline:0 .12em}
+/* Contain the float: if the first paragraph is a single short line (a one-line hook,
+   ~<45 chars at phone width) the 3.1rem glyph is taller than the line box and would
+   bleed into the next paragraph. This self-clearing box grows the paragraph to hold
+   it; invisible on the common multi-line case. */
+.entry-content>p:first-of-type::after{content:"";display:table;clear:both}
 .entry-content>*:first-child{margin-top:0}
 .entry-content h2{margin-top:1.5em;font-size:clamp(1.5rem,2.6vw,1.9rem)}
 .entry-content h3{margin-top:1.4em}
@@ -572,6 +593,21 @@ body .wpap-ad-label{color:var(--ad-label)}
   .site-footer__explore a,.site-footer__info a{display:flex;align-items:center;min-height:44px;padding:6px 0}
   .sidebar__list li:not(:has(.sidebar__recent)){padding:0}
   .sidebar__list a:not(.sidebar__recent){display:flex;align-items:center;min-height:44px;padding:6px 0}
+
+  /* Featured image: match the 16:10 crop used by cards/related so a PORTRAIT source
+     doesn't render ~2x tall (measured ~436px, ~53% of the viewport) above the first
+     line of body. Also crops the external (_wpap_image_url) fallback consistently.
+     Desktop keeps the native aspect (the :not(.wp-post-image) rule at ~line 265). */
+  .entry-featured-media img{aspect-ratio:16/10;object-fit:cover}
+
+  /* Remaining sub-44px tap targets → parity with the nav/share/footer targets above.
+     Breadcrumbs (were ~34x17), tag pills (~100x30), author-social pills (~30 tall),
+     and threaded-comment Reply / date links. Compact desktop rules are left intact. */
+  .vr-breadcrumbs{display:flex;flex-wrap:wrap;align-items:center;row-gap:2px}
+  .vr-breadcrumbs a{display:inline-flex;align-items:center;min-height:44px}
+  .entry-tags a{display:inline-flex;align-items:center;min-height:44px;padding-inline:1em}
+  .vr-author-social__link{display:inline-flex;align-items:center;min-height:44px;padding-inline:16px}
+  .comment-reply-link,.comment-metadata a{display:inline-flex;align-items:center;min-height:44px;padding-block:.35em}
 }
 @media(max-width:380px){
   .related-grid{grid-template-columns:1fr}
@@ -580,7 +616,7 @@ body .wpap-ad-label{color:var(--ad-label)}
 
 /* ===== Print ===== */
 @media print{
-  .site-header,.vr-ad-strip,.wpap-ad,.sidebar,.share-tools,.vr-progress,.site-footer,.comments-area,.post-navigation-simple,.related-posts,.nav-toggle,.vr-skip,.vr-breadcrumbs,.entry-tags,.header-search__form{display:none!important}
+  .site-header,.vr-ad-strip,.wpap-ad,.sidebar,.share-tools,.vr-progress,.vr-to-top,.site-footer,.comments-area,.post-navigation-simple,.related-posts,.nav-toggle,.vr-skip,.vr-breadcrumbs,.entry-tags,.header-search__form{display:none!important}
   .content-layout--single-post{display:block}
   .single-extras,.entry{max-width:100%}
   .entry-content{font-size:12pt;line-height:1.55}
