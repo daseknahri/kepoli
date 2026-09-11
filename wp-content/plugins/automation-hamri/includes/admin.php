@@ -698,6 +698,65 @@ function wpap_render_settings() {
                 </tr>
             </table>
 
+            <h2 style="margin-top:32px;">Duplicate cleanup</h2>
+            <p class="description" style="max-width:860px;">Finds posts that cover the <strong>same topic under a reworded title</strong> &mdash; the near-duplicates the exact-title guard can&rsquo;t catch (e.g. &ldquo;Rice Water for Tender Skin&rdquo; vs &ldquo;The Humblest Medicine: Rice Water&hellip;&rdquo;). It groups them, keeps the <strong>oldest original</strong>, and lets you move the rest to <strong>Trash</strong> (recoverable). Duplicate/thin content is a common AdSense &amp; SEO problem &mdash; but always <strong>review the list and untick any false positive</strong> (two different recipes can share words) before trashing.</p>
+            <p>
+                <button type="button" class="button button-primary" id="wpap-dup-scan">&#128269; Scan for duplicates</button>
+                <label style="margin-left:12px">Sensitivity <input type="number" id="wpap-dup-threshold" value="0.42" min="0.2" max="0.95" step="0.02" class="small-text" title="Lower catches looser matches (more false positives); higher is stricter. 0.42 is a good default." /></label>
+                <button type="button" class="button" id="wpap-dup-trash" style="display:none;margin-left:12px">&#129529; Move checked to Trash</button>
+                <span id="wpap-dup-status" style="margin-left:8px;color:#334155;"></span>
+            </p>
+            <div id="wpap-dup-results" style="max-width:920px"></div>
+            <script>
+            (function(){
+                var ajaxUrl = <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>,
+                    nonce   = <?php echo wp_json_encode( wp_create_nonce( 'wpap_nonce' ) ); ?>;
+                var scanBtn=document.getElementById('wpap-dup-scan'), trashBtn=document.getElementById('wpap-dup-trash'),
+                    out=document.getElementById('wpap-dup-results'), statusEl=document.getElementById('wpap-dup-status'),
+                    thr=document.getElementById('wpap-dup-threshold');
+                if(!scanBtn) return;
+                function esc(s){var d=document.createElement('div');d.textContent=(s==null?'':String(s));return d.innerHTML;}
+                scanBtn.addEventListener('click', function(){
+                    scanBtn.disabled=true; statusEl.textContent='Scanning…'; out.innerHTML=''; trashBtn.style.display='none';
+                    fetch(ajaxUrl,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                        body:'action=wpap_scan_near_duplicates&nonce='+encodeURIComponent(nonce)+'&threshold='+encodeURIComponent(thr.value||'0.42')})
+                    .then(function(r){return r.json();}).then(function(res){
+                        scanBtn.disabled=false;
+                        if(!res||!res.success){statusEl.textContent='Error: '+((res&&res.data)||'failed');return;}
+                        var d=res.data;
+                        if(!d.group_count){statusEl.textContent='No near-duplicates found. ✅';return;}
+                        statusEl.textContent=d.group_count+' duplicate group(s) · '+d.dup_count+' post(s) can be trashed (checked below). KEEP = the oldest original.';
+                        var html='';
+                        d.groups.forEach(function(g){
+                            html+='<div style="border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;margin:8px 0;background:#fff;">';
+                            html+='<div style="color:#0f766e"><strong>KEEP</strong> <span style="color:#64748b">['+esc(g.keep.date)+']</span> '+esc(g.keep.title)+'</div>';
+                            g.dups.forEach(function(dp){
+                                html+='<div style="margin-top:4px"><label><input type="checkbox" class="wpap-dup-cb" checked value="'+esc(dp.id)+'"> <strong style="color:#b91c1c">TRASH</strong> <span style="color:#64748b">['+esc(dp.date)+' · '+esc(dp.status)+']</span> '+esc(dp.title)+'</label></div>';
+                            });
+                            html+='</div>';
+                        });
+                        out.innerHTML=html; trashBtn.style.display='';
+                    }).catch(function(){scanBtn.disabled=false;statusEl.textContent='Request failed.';});
+                });
+                trashBtn.addEventListener('click', function(){
+                    var checked=[].slice.call(document.querySelectorAll('.wpap-dup-cb:checked'));
+                    var ids=checked.map(function(c){return c.value;});
+                    if(!ids.length){statusEl.textContent='Nothing checked.';return;}
+                    if(!window.confirm('Move '+ids.length+' post(s) to Trash? They stay recoverable in Posts → Trash.'))return;
+                    trashBtn.disabled=true; statusEl.textContent='Trashing '+ids.length+'…';
+                    fetch(ajaxUrl,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                        body:'action=wpap_trash_near_duplicates&nonce='+encodeURIComponent(nonce)+'&'+ids.map(function(i){return 'ids[]='+encodeURIComponent(i);}).join('&')})
+                    .then(function(r){return r.json();}).then(function(res){
+                        trashBtn.disabled=false;
+                        if(!res||!res.success){statusEl.textContent='Error: '+((res&&res.data)||'failed');return;}
+                        statusEl.textContent='Trashed '+res.data.trashed+' post(s). ✅ Recoverable from Posts → Trash. Re-scan to confirm.';
+                        checked.forEach(function(c){var box=c.closest('div');if(box){box.style.opacity=0.4;}c.disabled=true;c.checked=false;});
+                        trashBtn.style.display='none';
+                    }).catch(function(){trashBtn.disabled=false;statusEl.textContent='Request failed.';});
+                });
+            })();
+            </script>
+
             <h2 style="margin-top:32px;">ads.txt (AdSense)</h2>
             <p class="description" style="max-width:760px;">
                 Paste your ad networks' <code>ads.txt</code> lines. Served automatically at
