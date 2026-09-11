@@ -129,6 +129,10 @@ function wpap_render_settings() {
             /* Global default first-comment template (Distribution Hub / export). {{link}} is
                replaced by each post's link; a per-post _wpap_fb_comment override wins. */
             'fb_comment_template' => mb_substr( sanitize_textarea_field( (string) wp_unslash( $_POST['wpap_fb_comment_template'] ?? '' ) ), 0, 2000 ),
+            /* Facebook identifiers (both optional, default empty = nothing emitted). Domain-verification is
+               output site-wide (Meta crawls the homepage <head>); fb:app_id only on this plugin's post pages. */
+            'fb_domain_verify' => preg_replace( '/[^A-Za-z0-9]/', '', (string) wp_unslash( $_POST['wpap_fb_domain_verify'] ?? '' ) ),
+            'fb_app_id'        => preg_replace( '/[^0-9]/', '', (string) wp_unslash( $_POST['wpap_fb_app_id'] ?? '' ) ),
         ), false );
 
         /* Image optimization: convert imported JPEG/PNG to WebP (default ON). */
@@ -676,6 +680,21 @@ function wpap_render_settings() {
                     <th scope="row">Convert images to WebP</th>
                     <td><label><input type="checkbox" name="wpap_webp_enabled" value="1" <?php checked( '1' === (string) get_option( 'wpap_webp_enabled', '1' ) ); ?> /> Re-encode downloaded JPEG/PNG images to WebP &mdash; ~25&ndash;50% smaller, faster on mobile</label>
                         <p class="description">On by default. Applies to newly imported images (featured image + all sizes). Needs GD or Imagick with WebP support (standard on most hosts); if unsupported it keeps the original automatically, so publishing is never affected.</p></td>
+                </tr>
+            </table>
+
+            <h2 style="margin-top:32px;">Facebook identifiers</h2>
+            <p class="description" style="max-width:760px;">Both optional and empty by default &mdash; nothing is added to your pages until you fill one in. Purge any page cache after saving.</p>
+            <table class="form-table">
+                <tr>
+                    <th scope="row">Domain verification</th>
+                    <td><input type="text" name="wpap_fb_domain_verify" class="regular-text" value="<?php echo esc_attr( (string) ( $copts_ui['fb_domain_verify'] ?? '' ) ); ?>" placeholder="e.g. a1b2c3d4e5f6g7h8" autocomplete="off" />
+                        <p class="description">Proves to Meta that you own this domain, so you control how its links preview on Facebook. In Meta Business Suite &rarr; Settings &rarr; Brand safety &amp; suitability &rarr; Domains, add your domain, choose <em>Add a meta-tag</em>, and paste ONLY the tag&rsquo;s <code>content</code> value here (not the whole tag). Output site-wide &mdash; Meta crawls the homepage <code>&lt;head&gt;</code>.</p></td>
+                </tr>
+                <tr>
+                    <th scope="row">App ID <span style="font-weight:400;color:#666">(<code>fb:app_id</code>)</span></th>
+                    <td><input type="text" name="wpap_fb_app_id" class="regular-text" value="<?php echo esc_attr( (string) ( $copts_ui['fb_app_id'] ?? '' ) ); ?>" placeholder="numeric app id" inputmode="numeric" autocomplete="off" />
+                        <p class="description">Optional. If you have a Meta for Developers app, paste its numeric App ID to silence the Sharing Debugger&rsquo;s &ldquo;missing <code>fb:app_id</code>&rdquo; warning and tie shares to your app for Insights. Output only on this plugin&rsquo;s post pages. Leave blank if you don&rsquo;t have one.</p></td>
                 </tr>
             </table>
 
