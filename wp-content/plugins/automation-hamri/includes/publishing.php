@@ -1284,9 +1284,9 @@ function wpap_ajax_bulk_publish_zip() {
     $default_parts = intval( $_POST['num_parts'] ?? 1 );
     if ( $default_parts < 1 ) { $default_parts = 1; }
     if ( $default_parts > 10 ) { $default_parts = 10; }
-    $schedule_window = isset( $_POST['schedule_window'] ) ? (float) $_POST['schedule_window'] : 0;
-    if ( $schedule_window < 0 )   { $schedule_window = 0; }
-    if ( $schedule_window > 168 ) { $schedule_window = 168; }
+    /* Accept a plain hours window (0–168) OR the human "drip:N" mode (N posts/day, daytime 8am–10pm),
+       parity with the REST endpoint. wpap_parse_schedule_window() clamps + sanitizes both forms. */
+    $schedule_window = wpap_parse_schedule_window( $_POST['schedule_window'] ?? 0 );
     $default_category = sanitize_text_field( wp_unslash( $_POST['category'] ?? '' ) );
 
     $created = array();
