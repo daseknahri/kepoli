@@ -15,8 +15,31 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 if ( ! defined( 'VR_VERSION' ) ) {
-	define( 'VR_VERSION', '1.9.12' );
+	define( 'VR_VERSION', '1.9.18' );
 }
+
+/* ─────────────────────────────────────────────
+   Skin system
+   A site selects a visual skin via the 'vr_skin' filter; the theme stamps it as a
+   body class (vr-skin-<name>) and style.css defines the matching token overrides.
+   Default 'paper' = the light warm-editorial palette (no override block needed).
+   A per-site plugin opts into another skin, e.g.:
+     add_filter( 'vr_skin', fn() => 'cinematic' );
+   Kept sanitized to a slug so the class is always safe.
+───────────────────────────────────────────── */
+function vr_active_skin() {
+	$skin = sanitize_html_class( (string) apply_filters( 'vr_skin', 'paper' ) );
+	return '' !== $skin ? $skin : 'paper';
+}
+add_filter( 'body_class', function ( $classes ) {
+	$classes[] = 'vr-skin-' . vr_active_skin();
+	return $classes;
+} );
+
+/* Cleaner archive titles: drop WordPress's "Category:" / "Tag:" / "Author:" prefix — the
+   breadcrumb already says where you are, and a bare topic name reads far better in the
+   cover-banner headline. */
+add_filter( 'get_the_archive_title_prefix', '__return_empty_string' );
 
 /* ─────────────────────────────────────────────
    Setup
@@ -61,7 +84,76 @@ function vr_external_image_url( $post_id = 0 ) {
 }
 function vr_has_post_image( $post_id = 0 ) {
 	$post_id = $post_id ? (int) $post_id : (int) get_the_ID();
-	return has_post_thumbnail( $post_id ) || '' !== vr_external_image_url( $post_id );
+	return has_post_thumbnail( $post_id ) || '' !== vr_external_image_url( $post_id ) || '' !== vr_fallback_image_url( $post_id );
+}
+
+/* Final image fallback (filterable, default NONE). When a post has neither a local
+   thumbnail nor an external image, a site can supply a designed placeholder — e.g. a
+   per-category cover or a brand default — so cards/hero/single never show a blank media
+   box. Default '' preserves the original "no image ⇒ no media box" behavior (kepoli). */
+function vr_fallback_image_url( $post_id = 0 ) {
+	$post_id = $post_id ? (int) $post_id : (int) get_the_ID();
+	$url = apply_filters( 'vr_fallback_image_url', '', $post_id );
+	return ( is_string( $url ) && preg_match( '#^https?://#i', $url ) ) ? $url : '';
+}
+
+/* Front-page hero background (filterable, default NONE): a site can supply a standing
+   hero image so the homepage has a cinematic banner even before any post exists. */
+function vr_hero_image_url() {
+	$url = apply_filters( 'vr_hero_image_url', '' );
+	return ( is_string( $url ) && preg_match( '#^https?://#i', $url ) ) ? $url : '';
+}
+
+/* Optional standing hero VIDEO (filterable, default NONE): a site can supply a muted,
+   looping background clip for the homepage hero. When set it renders instead of the hero
+   image (which becomes the <video> poster + no-JS/older-browser fallback). Text-free stock
+   footage keeps the overlaid headline legible — never a picture with baked-in text. */
+function vr_hero_video_url() {
+	$url = apply_filters( 'vr_hero_video_url', '' );
+	return ( is_string( $url ) && preg_match( '#^https?://#i', $url ) ) ? $url : '';
+}
+
+/* Render the homepage hero background: the standing video (muted/looping, with the hero
+   image as poster) when one is configured, else the standing hero image. Keeps the hero
+   background DECOUPLED from any post's featured image — so a post's text-baked cover art
+   never becomes the banner behind the overlaid title. */
+function vr_hero_media() {
+	$video = vr_hero_video_url();
+	$img   = vr_hero_image_url();
+	if ( '' !== $video ) {
+		/* Poster image sits underneath as the static fallback — shown to reduced-motion
+		   users (CSS hides the video for them) and while the clip loads. */
+		if ( '' !== $img ) {
+			printf( '<img class="home-hero__img home-hero__poster" src="%s" alt="" loading="eager" fetchpriority="high" decoding="async" />', esc_url( $img ) );
+		}
+		printf(
+			'<video class="home-hero__img home-hero__video" autoplay muted loop playsinline preload="metadata"%s><source src="%s" type="video/mp4" /></video>',
+			$img ? ' poster="' . esc_url( $img ) . '"' : '',
+			esc_url( $video )
+		);
+		return true;
+	}
+	if ( '' !== $img ) {
+		printf( '<img class="home-hero__img" src="%s" alt="" loading="eager" fetchpriority="high" decoding="async" />', esc_url( $img ) );
+		return true;
+	}
+	return false;
+}
+
+/* Per-category cover art (filterable, default NONE): a site maps a term to a cover
+   image, used as the category-archive header banner and as topic-tile backgrounds. */
+function vr_category_cover_url( $term_id = 0 ) {
+	$term_id = $term_id ? (int) $term_id : (int) get_queried_object_id();
+	$url = apply_filters( 'vr_category_cover_url', '', $term_id );
+	return ( is_string( $url ) && preg_match( '#^https?://#i', $url ) ) ? $url : '';
+}
+
+/* Categories to feature in the homepage "Explore by topic" showcase. Defaults to the
+   top non-empty categories; a site can override (e.g. always show its fixed pillars,
+   with covers, even before they have posts) via the 'vr_showcase_categories' filter. */
+function vr_showcase_categories( $n = 6 ) {
+	$cats = apply_filters( 'vr_showcase_categories', vr_top_categories( $n ), $n );
+	return is_array( $cats ) ? $cats : array();
 }
 /* Echo the post's featured <img>: local thumbnail (srcset-aware, via core) when
    present, else the external fallback as a plain <img>. $attr mirrors
@@ -73,6 +165,7 @@ function vr_the_post_image( $size = 'large', $attr = array(), $post_id = 0 ) {
 		return;
 	}
 	$ext = vr_external_image_url( $post_id );
+	if ( '' === $ext ) { $ext = vr_fallback_image_url( $post_id ); }
 	if ( '' === $ext ) { return; }
 	/* array_key_exists (not isset) so a caller-supplied alt="" (decorative) is
 	   respected rather than replaced with the title. */
@@ -137,7 +230,11 @@ function vr_top_categories( $n = 8 ) {
 			} ) );
 		}
 	}
-	return array_slice( $all, 0, max( 0, (int) $n ) );
+	/* Let a site replace the count-based list entirely — e.g. always show a fixed set of
+	   pillars, in editorial order, even before they have posts (the default hide_empty list
+	   is empty pre-launch and uneven while posts ramp up). Return an array of WP_Term. */
+	$cats = apply_filters( 'vr_top_categories', array_slice( $all, 0, max( 0, (int) $n ) ), $n );
+	return is_array( $cats ) ? $cats : array();
 }
 
 /* ─────────────────────────────────────────────
@@ -171,11 +268,20 @@ function vr_scripts() {
 	if ( is_singular() && comments_open() && get_option( 'thread_comments' ) ) {
 		wp_enqueue_script( 'comment-reply' );
 	}
+
+	/* Opt-in presentation-hardening layer: net-new UX patterns (editorial
+	   callouts, tutorial step lists, per-heading anchor-copy) that the base
+	   theme does not already ship. Token-only CSS, so it inherits the active
+	   palette and both skins. Filter off per-site if unwanted. */
+	if ( apply_filters( 'vr_enable_presentation_hardening', true ) ) {
+		wp_enqueue_style( 'viral-reader-hardening', get_template_directory_uri() . '/assets/css/hardening.css', array( 'viral-reader' ), VR_VERSION );
+		wp_enqueue_script( 'viral-reader-hardening', get_template_directory_uri() . '/assets/js/hardening.js', array( 'viral-reader' ), VR_VERSION, true );
+	}
 }
 add_action( 'wp_enqueue_scripts', 'vr_scripts' );
 
 function vr_defer_js( $tag, $handle ) {
-	if ( 'viral-reader' === $handle && false === strpos( $tag, ' defer' ) ) {
+	if ( in_array( $handle, array( 'viral-reader', 'viral-reader-hardening' ), true ) && false === strpos( $tag, ' defer' ) ) {
 		$tag = str_replace( ' src=', ' defer src=', $tag );
 	}
 	return $tag;
@@ -992,15 +1098,23 @@ function vr_jump_to_section( $content ) {
 		|| false !== strpos( $content, 'vr-toc' ) ) {
 		return $content;
 	}
+	// Prefer <h2> section headings; fall back to <h3> for essays outlined entirely at H3
+	// (H1 = title, sections skip H2) so a long, deeply-outlined piece still gets its TOC —
+	// the single most useful long-read aid on mobile.
+	$tag = 'h2';
 	if ( ! preg_match_all( '/<h2\b[^>]*>.*?<\/h2>/is', $content, $probe ) || count( $probe[0] ) < 3 ) {
-		return $content;
+		if ( preg_match_all( '/<h3\b[^>]*>.*?<\/h3>/is', $content, $probe3 ) && count( $probe3[0] ) >= 3 ) {
+			$tag = 'h3';
+		} else {
+			return $content;
+		}
 	}
 
 	$used  = array();
 	$items = '';
 	$content = preg_replace_callback(
-		'/<h2\b([^>]*)>(.*?)<\/h2>/is',
-		function ( $mm ) use ( &$used, &$items ) {
+		'/<' . $tag . '\b([^>]*)>(.*?)<\/' . $tag . '>/is',
+		function ( $mm ) use ( &$used, &$items, $tag ) {
 			$attrs = $mm[1];
 			$inner = $mm[2];
 			$text  = trim( html_entity_decode( wp_strip_all_tags( $inner ), ENT_QUOTES, 'UTF-8' ) );
@@ -1021,7 +1135,7 @@ function vr_jump_to_section( $content ) {
 					$id = $base . '-' . $n;
 					$n++;
 				}
-				$out = '<h2' . $attrs . ' id="' . esc_attr( $id ) . '">' . $inner . '</h2>';
+				$out = '<' . $tag . $attrs . ' id="' . esc_attr( $id ) . '">' . $inner . '</' . $tag . '>';
 			}
 			$used[ $id ] = true;
 			$items      .= '<li><a href="#' . esc_attr( $id ) . '">' . esc_html( $text ) . '</a></li>';
