@@ -35,20 +35,29 @@ function kepoli_schema_jsonld(): void
         $logo = get_template_directory_uri() . '/assets/img/kepoli-icon.png';
     }
 
-    $graph = [
-        [
-            '@type'       => 'Organization',
-            '@id'         => $org_id,
-            'name'        => $name,
-            'url'         => $home,
-            'description' => get_bloginfo('description'),
-            'logo'        => [
-                '@type'  => 'ImageObject',
-                'url'    => $logo,
-                'width'  => 512,
-                'height' => 512,
-            ],
+    // Brand social profiles (E-E-A-T sameAs). Kept in one place so the footer
+    // brand row (kepoli-social-profiles.php) and this Organization node agree.
+    $same_as = function_exists('kepoli_social_urls') ? kepoli_social_urls() : [];
+
+    $org = [
+        '@type'       => 'Organization',
+        '@id'         => $org_id,
+        'name'        => $name,
+        'url'         => $home,
+        'description' => get_bloginfo('description'),
+        'logo'        => [
+            '@type'  => 'ImageObject',
+            'url'    => $logo,
+            'width'  => 512,
+            'height' => 512,
         ],
+    ];
+    if (!empty($same_as)) {
+        $org['sameAs'] = array_values($same_as);
+    }
+
+    $graph = [
+        $org,
         [
             '@type'      => 'WebSite',
             '@id'        => $site_id,
